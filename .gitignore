@@ -4,3 +4,6 @@
 !utils/vgui/lib/win32_vc16/vgui.lib
 # IDE settings
 .vscode/settings.json
+# Never commit
+steam_appid.txt
+*.pdb
