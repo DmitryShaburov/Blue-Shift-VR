@@ -21,7 +21,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -62,7 +62,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;CLIENT_DLL;CLIENT_WEAPONS;HL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\..\dlls;..\..\cl_dll;..\..\cl_dll\particleman;..\..\public;..\..\common;..\..\pm_shared;..\..\engine;..\..\utils\vgui\include;..\..\game_shared;..\..\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\dlls;..\..\cl_dll;..\..\cl_dll\particleman;..\..\cl_dll\EasyHook\include;..\..\public;..\..\common;..\..\pm_shared;..\..\engine;..\..\utils\vgui\include;..\..\game_shared;..\..\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -71,7 +71,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>..\..\utils\vgui\lib\win32_vc16\vgui.lib;wsock32.lib;..\..\lib\public\sdl2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\..\utils\vgui\lib\win32_vc16\vgui.lib;wsock32.lib;..\..\lib\public\sdl2.lib;..\..\lib\public\openvr_api.lib;opengl32.lib;..\..\cl_dll\EasyHook\lib\EasyHook32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>
       </BaseAddress>
     </Link>
@@ -93,7 +93,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;CLIENT_DLL;CLIENT_WEAPONS;HL_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\..\dlls;..\..\cl_dll;..\..\cl_dll\particleman;..\..\public;..\..\common;..\..\pm_shared;..\..\engine;..\..\utils\vgui\include;..\..\game_shared;..\..\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\dlls;..\..\cl_dll;..\..\cl_dll\particleman;..\..\cl_dll\EasyHook\include;..\..\public;..\..\common;..\..\pm_shared;..\..\engine;..\..\utils\vgui\include;..\..\game_shared;..\..\external;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <AdditionalOptions>/Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -104,7 +104,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>..\..\utils\vgui\lib\win32_vc16\vgui.lib;wsock32.lib;..\..\lib\public\sdl2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\..\utils\vgui\lib\win32_vc16\vgui.lib;wsock32.lib;..\..\lib\public\sdl2.lib;..\..\lib\public\openvr_api.lib;opengl32.lib;..\..\cl_dll\EasyHook\lib\EasyHook32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>
       </BaseAddress>
     </Link>
@@ -172,6 +172,35 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\cl_dll\vgui_teammenu.cpp" />
     <ClCompile Include="..\..\cl_dll\view.cpp" />
     <ClCompile Include="..\..\cl_dll\voice_status.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\Matrices.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRCommon.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRHelper.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRRandom.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRClientDLLUnloadHandler.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VREngineInterceptor.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VROpenGLInterceptor.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRInput.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRInputAction.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRInputHLMenu.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRInputHLWindow.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRInputInteractHandlers.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRInputMovementHandlers.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRInputOtherHandlers.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRInputPosesHandlers.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRInputWeaponsHandlers.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRSettings.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRGameFunctions.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRSound.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRSteamworksManager.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRModExtraDataCacheHook.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRDebugPhysicsRenderer.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRGUIRenderer.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRIntermissionAndMenuRenderer.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRHUDRenderer.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRRenderer.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRTextureHelper.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\lodepng.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\vr_gl.cpp" />
     <ClCompile Include="..\..\common\mathlib.cpp" />
     <ClCompile Include="..\..\common\parsemsg.cpp" />
     <ClCompile Include="..\..\dlls\crossbow.cpp" />
@@ -233,6 +262,31 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClInclude Include="..\..\cl_dll\vgui_ScorePanel.h" />
     <ClInclude Include="..\..\cl_dll\vgui_SpectatorPanel.h" />
     <ClInclude Include="..\..\cl_dll\view.h" />
+    <ClInclude Include="..\..\cl_dll\vr\DoOnDestruct.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRGUIRenderer.h" />
+    <ClInclude Include="..\..\cl_dll\vr\nuklear.h" />
+    <ClInclude Include="..\..\cl_dll\vr\Matrices.h" />
+    <ClInclude Include="..\..\cl_dll\vr\openvr.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRCommon.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VREngineInterceptor.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRHelper.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRTextureHelper.h" />
+    <ClInclude Include="..\..\cl_dll\vr\lodepng.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRRandom.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VROpenGLInterceptor.h" />
+    <ClInclude Include="..\..\cl_dll\vr\IGameConsole.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRInput.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRInputAction.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRInputHandlers.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRSettings.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRAchievements.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRGameFunctions.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRSound.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRSteamworksManager.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRRenderer.h" />
+    <ClInclude Include="..\..\cl_dll\vr\Vectors.h" />
+    <ClInclude Include="..\..\cl_dll\vr\vr_gl.h" />
+    <ClInclude Include="..\..\game_shared\vr\VRShared.h" />
     <ClInclude Include="..\..\common\beamdef.h" />
     <ClInclude Include="..\..\common\cl_entity.h" />
     <ClInclude Include="..\..\common\common_types.h" />

@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -44,11 +44,18 @@
 #define FL_IMMUNE_SLIME (1 << 18)
 #define FL_IMMUNE_LAVA (1 << 19)
 
+// BSVR start
+#define FL_BARNACLED FL_IMMUNE_WATER  // we just use this flag as it isn't used elsewhere - Max Makes Mods, 2019-05-26
+// BSVR end
+
 #define FL_PROXY (1 << 20)		  // This is a spectator proxy
 #define FL_ALWAYSTHINK (1 << 21)  // Brush model flag -- call think every frame regardless of nextthink - ltime (for constantly changing velocity/path)
 #define FL_BASEVELOCITY (1 << 22) // Base velocity has been applied this frame (used to convert base velocity into momentum)
 #define FL_MONSTERCLIP (1 << 23)  // Only collide in with monsters who have FL_MONSTERCLIP set
-#define FL_ONTRAIN (1 << 24)	  // Player is _controlling_ a train, so movement commands should be ignored on client during prediction.
+// BSVR start
+// #define FL_ONTRAIN (1 << 24)	  // Player is _controlling_ a train, so movement commands should be ignored on client during prediction.
+#define FL_STUCK_ONTRAIN	(1 << 24)  // Player is _controlling_ a train, so movement commands should be ignored on client during prediction.
+// BSVR end
 #define FL_WORLDBRUSH (1 << 25)	  // Not moveable/removeable brush entity (really part of the world, but represented as an entity for transparency or something)
 #define FL_SPECTATOR (1 << 26)	  // This client is a spectator, don't run touch functions, etc.
 #define FL_CUSTOMENTITY (1 << 29) // This is a custom entity
@@ -604,6 +611,10 @@
 #define CONTENT_FLYFIELD -17
 #define CONTENT_GRAVITY_FLYFIELD -18
 #define CONTENT_FOG -19
+
+// BSVR start
+#define CONTENTS_VR_TEMP_HACK	-32		// Hack value used by UTIL_IsPointInEntity
+// BSVR end
 
 #define CONTENT_EMPTY -1
 #define CONTENT_SOLID -2

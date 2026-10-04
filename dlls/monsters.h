@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -114,6 +114,14 @@ bool FBoxVisible(entvars_t* pevLooker, entvars_t* pevTarget, Vector& vecTargetOr
 #define bits_MEMORY_CUSTOM3 (1 << 29)	   // Monster-specific memory
 #define bits_MEMORY_CUSTOM2 (1 << 30)	   // Monster-specific memory
 #define bits_MEMORY_CUSTOM1 (1 << 31)	   // Monster-specific memory
+
+// BSVR start
+// For when a player in VR holds a barney or scientist at gunpoint
+#define bits_MEMORY_GUNPOINT_ONE (bits_MEMORY_CUSTOM1)
+#define bits_MEMORY_GUNPOINT_TWO (bits_MEMORY_CUSTOM2)
+#define bits_MEMORY_GUNPOINT_THREE (bits_MEMORY_CUSTOM3)
+#define bits_MEMORY_GUNPOINT_ATTACK (bits_MEMORY_CUSTOM4)
+// BSVR end
 
 // trigger conditions for scripted AI
 // these MUST match the CHOICES interface in halflife.fgd for the base monster

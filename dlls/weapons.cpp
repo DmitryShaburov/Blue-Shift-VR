@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -30,6 +30,11 @@
 #include "decals.h"
 #include "gamerules.h"
 #include "UserMessages.h"
+
+//BSVR start
+#include <regex>
+#include <filesystem>
+//BSVR end
 
 #define NOT_USED 255
 
@@ -354,6 +359,20 @@ void W_Precache()
 	PRECACHE_SOUND("weapons/bullet_hit2.wav"); // hit by bullet
 
 	PRECACHE_SOUND("items/weapondrop1.wav"); // weapon falls to the ground
+
+	// BSVR start
+	// VR hand model
+	PRECACHE_MODEL("models/v_hand_labcoat.mdl");
+	PRECACHE_MODEL("models/v_hand_hevsuit.mdl");
+	if (std::filesystem::exists(UTIL_GetFilePath("/models/vr_hand_hevsuit.mdl")))
+	{
+		PRECACHE_MODEL("models/vr_hand_hevsuit.mdl");
+	}
+	if (std::filesystem::exists(UTIL_GetFilePath("/models/vr_hand_labcoat.mdl")))
+	{
+		PRECACHE_MODEL("models/vr_hand_labcoat.mdl");
+	}
+	// BSVR ends
 }
 
 
@@ -1445,3 +1464,42 @@ TYPEDESCRIPTION CSatchel::m_SaveData[] =
 		DEFINE_FIELD(CSatchel, m_chargeReady, FIELD_INTEGER),
 };
 IMPLEMENT_SAVERESTORE(CSatchel, CBasePlayerWeapon);
+
+// BSVR start
+// Returns the minimum speed required to do melee damage with a VR controller - Max Makes Mods, 2019-04-07
+float GetMeleeSwingSpeed()
+{
+	float speed = CVAR_GET_FLOAT("vr_melee_swing_speed");
+	// Don't allow negative or 0 values
+	return std::max(1.f, speed);
+}
+
+float GetWeaponScale(const char* weaponModelName)
+{
+	float baseWeaponScale = CVAR_GET_FLOAT("vr_weaponscale");
+	if (baseWeaponScale < 0.01f)
+		baseWeaponScale = 1.f;
+
+	float worldScale = CVAR_GET_FLOAT("vr_world_scale");
+	if (worldScale == 0.f)
+		worldScale = 1.f;
+	else if (worldScale < 0.1f)
+		worldScale = 0.1f;
+	else if (worldScale > 100.f)
+		worldScale = 100.f;
+	baseWeaponScale /= worldScale;
+
+	// "models/w_<weapon>.mdl" -> "vr_<weapon>_scale"
+	// "models/v_<weapon>.mdl" -> "vr_<weapon>_scale"
+	std::string cvarWeaponModelScale =
+		std::regex_replace(
+			std::string{ weaponModelName },
+			std::regex{ "models/[vw]_([a-zA-Z_-]+)\\.mdl" },
+			"vr_$1_scale");
+	float weaponScale = CVAR_GET_FLOAT(cvarWeaponModelScale.data());
+	if (weaponScale < 0.01f)
+		weaponScale = 1.f;
+
+	return baseWeaponScale * weaponScale;
+}
+// BSVR end

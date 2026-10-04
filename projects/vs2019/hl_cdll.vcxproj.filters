@@ -64,6 +64,15 @@
     <Filter Include="Source Files\cl_dll\particleman">
       <UniqueIdentifier>{7085339d-2b33-4cdf-846c-0e4c7d33add8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="VR">
+      <UniqueIdentifier>{a3f8c1e2-7d45-4b92-8e6f-2c91d05b3a47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VR\Source Files">
+      <UniqueIdentifier>{b7e2d4f1-3a68-4c85-9f12-5e73a1c8d026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VR\Header Files">
+      <UniqueIdentifier>{c9d3e5f2-4b57-4a83-8e21-6f84b2d7e138}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\dlls\crossbow.cpp">
@@ -288,6 +297,27 @@
     <ClCompile Include="..\..\cl_dll\voice_status.cpp">
       <Filter>Source Files\cl_dll</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\Matrices.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRCommon.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRHelper.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRRandom.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VROpenGLInterceptor.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRRenderer.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\vr_gl.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\public\interface.cpp">
       <Filter>Source Files\public</Filter>
     </ClCompile>
@@ -424,6 +454,36 @@
     </ClInclude>
     <ClInclude Include="..\..\cl_dll\view.h">
       <Filter>Header Files\cl_dll</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\Matrices.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\openvr.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\VRCommon.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\VRHelper.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\VRRandom.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\VROpenGLInterceptor.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\VRRenderer.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\Vectors.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\vr_gl.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\vr\VRShared.h">
+      <Filter>VR\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\Platform.h">
       <Filter>Header Files\common</Filter>

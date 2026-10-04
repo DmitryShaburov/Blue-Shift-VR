@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -31,6 +31,7 @@ typedef struct usercmd_s
 	byte weaponselect;		// Current weapon id
 
 	// Experimental player impact stuff.
-	int impact_index;
+	// int impact_index;
+	unsigned int buttons_ex = 0;  // renamed to "buttons_ex" and used now for adding more buttons in VR mode
 	Vector impact_position;
 } usercmd_t;

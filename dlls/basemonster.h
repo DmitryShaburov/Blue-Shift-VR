@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -89,7 +89,9 @@ public:
 
 	int m_lastDamageAmount; // how much damage did monster (player) last take
 							// time based damage counters, decr. 1 per 2 seconds
-	int m_bloodColor;		// color of blood particless
+	// BSVR start - commented out
+	// int m_bloodColor;		// color of blood particless
+	// BSVR end
 
 	int m_failSchedule; // Schedule type to choose if current schedule fails
 
@@ -124,7 +126,9 @@ public:
 
 	// overrideable Monster member functions
 
-	int BloodColor() override { return m_bloodColor; }
+	// BSVR start - commented out
+	// int BloodColor() override { return m_bloodColor; }
+	// BSVR end
 
 	CBaseMonster* MyMonsterPointer() override { return this; }
 	virtual void Look(int iDistance); // basic sight function for monsters
@@ -360,4 +364,14 @@ public:
 	*	Will return @c nullptr if item dropping is disabled for this NPC.
 	*/
 	CBaseEntity* DropItem(const char* pszItemName, const Vector& vecPos, const Vector& vecAng);
+
+	// BSVR start
+	// Remember time when player points gun at us (scare/anger them for more immersive VR experience) - Max Makes Mods, 2018-01-02
+	float vr_flGunPointTime = 0;
+
+	// Remember time when player holds flat hand in front of our face (stop-command for more immersive VR experience) - Max Makes Mods, 2018-01-02
+	float vr_flStopSignalTime = 0;
+
+	bool HasClearSight(const Vector& pos);
+	// BSVR end
 };

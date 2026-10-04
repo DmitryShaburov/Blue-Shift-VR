@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -49,6 +49,10 @@ CBaseEntity
 #include "saverestore.h"
 #include "schedule.h"
 #include "monsterevent.h"
+
+// BSVR start
+#include "vr/VRCommons.h"
+// BSVR end
 
 // C functions for external declarations that call the appropriate C++ methods
 
@@ -119,6 +123,11 @@ class CSquadMonster;
 
 #define SF_NORESPAWN (1 << 30) // !!!set this bit on guns and stuff that should never respawn.
 
+// BSVR start - replace non-template EHANDLE with template to support typed handles in VR port
+#include <functional>
+#include <memory>
+#include <unordered_set>
+/*
 //
 // EHANDLE. Safe way to point to CBaseEntities who may die between frames
 //
@@ -137,6 +146,172 @@ public:
 	CBaseEntity* operator=(CBaseEntity* pEntity);
 	CBaseEntity* operator->();
 };
+*/
+
+template <class ENTITY>
+class EHandleT
+{
+	template <class ENTITY2>
+	friend class EHandleT;
+
+private:
+	edict_t* m_pent{ nullptr };
+	int m_serialnumber{ 0 };
+	void* m_privateData{ nullptr };
+
+public:
+	EHandleT() {}
+
+	EHandleT(ENTITY* pEntity)
+	{
+		if (pEntity && pEntity->pev)
+		{
+			m_pent = ENT(pEntity->pev);
+			if (m_pent)
+			{
+				m_serialnumber = m_pent->serialnumber;
+				m_privateData = m_pent->pvPrivateData;
+			}
+		}
+	}
+
+	EHandleT(const EHandleT<ENTITY>& other)
+	{
+		m_pent = other.m_pent;
+		m_serialnumber = other.m_serialnumber;
+		m_privateData = other.m_privateData;
+	}
+
+	template <class ENTITY2>
+	EHandleT(const EHandleT<ENTITY2>& other) :
+		EHandleT{ dynamic_cast<ENTITY*>(static_cast<CBaseEntity*>(const_cast<EHandleT<ENTITY2>&>(other).operator ENTITY2*())) }
+	{
+	}
+
+	edict_t* Get() const
+	{
+		if (m_pent
+			&& m_pent->serialnumber == m_serialnumber
+			&& m_pent->pvPrivateData == m_privateData)
+		{
+			return m_pent;
+		}
+		return nullptr;
+	}
+
+	edict_t* Set(edict_t* pent)
+	{
+		m_pent = pent;
+		if (pent)
+		{
+			m_serialnumber = m_pent->serialnumber;
+			m_privateData = m_pent->pvPrivateData;
+		}
+		else
+		{
+			m_serialnumber = 0;
+			m_privateData = nullptr;
+		}
+		return pent;
+	}
+
+	operator ENTITY*()
+	{
+		return static_cast<ENTITY*>(GET_PRIVATE(Get()));
+	}
+
+	operator const ENTITY*() const
+	{
+		return static_cast<const ENTITY*>(GET_PRIVATE(Get()));
+	}
+
+	operator int() const
+	{
+		return Get() != nullptr;
+	}
+
+	ENTITY* operator=(ENTITY* pEntity)
+	{
+		if (pEntity)
+		{
+			m_pent = ENT(pEntity->pev);
+			if (m_pent)
+			{
+				m_serialnumber = m_pent->serialnumber;
+				m_privateData = m_pent->pvPrivateData;
+			}
+		}
+		else
+		{
+			m_pent = nullptr;
+			m_serialnumber = 0;
+			m_privateData = nullptr;
+		}
+		return pEntity;
+	}
+
+	ENTITY* operator->()
+	{
+		return static_cast<ENTITY*>(GET_PRIVATE(Get()));
+	}
+
+	const ENTITY* operator->() const
+	{
+		return static_cast<const ENTITY*>(GET_PRIVATE(Get()));
+	}
+
+	template <class ENTITY2>
+	bool operator==(const EHandleT<ENTITY2>& other) const
+	{
+		return Get() == other.Get();
+	}
+
+	template <class ENTITY2>
+	bool operator!=(const EHandleT<ENTITY2>& other) const
+	{
+		return !(operator==(other));
+	}
+
+	class Hash
+	{
+	public:
+		std::size_t operator()(const EHandleT& e) const
+		{
+			std::hash<int> intHasher;
+			std::hash<edict_t*> entHasher;
+			std::hash<void*> ptrHasher;
+			return intHasher(e.m_serialnumber) ^ entHasher(e.m_pent) ^ ptrHasher(e.m_privateData);
+		}
+	};
+
+	class Equal
+	{
+	public:
+		bool operator()(const EHandleT& e1, const EHandleT& e2) const
+		{
+			return e1.m_serialnumber == e2.m_serialnumber
+				&& e1.m_pent == e2.m_pent
+				&& e1.m_privateData == e2.m_privateData;
+		}
+	};
+};
+
+using EHANDLE = EHandleT<CBaseEntity>;
+
+struct EHandleHash {
+	std::size_t operator()(const EHANDLE& e) const {
+		return std::hash<edict_t*>{}(e.Get());
+	}
+};
+struct EHandleEqual {
+	bool operator()(const EHANDLE& e1, const EHANDLE& e2) const {
+		return e1 == e2;
+	}
+};
+
+// For real rotation of rotating buttons in VR - Max Makes Mods, 2019-05-26
+class VRRotatableEnt;
+// BSVR end
 
 
 //
@@ -184,7 +359,15 @@ public:
 	virtual bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType);
 	virtual bool TakeHealth(float flHealth, int bitsDamageType);
 	virtual void Killed(entvars_t* pevAttacker, int iGib);
-	virtual int BloodColor() { return DONT_BLEED; }
+
+	// BSVR start
+	// virtual int BloodColor() { return DONT_BLEED; }
+	// Made BloodColor() non-virtual and moved m_bloodColor member here
+	// to avoid issues when temporarily disabling blood in VR melee code.
+	// - Max Makes Mods, 2019-04-13
+	int m_bloodColor{ DONT_BLEED };
+	int BloodColor() { return m_bloodColor; }
+	// BSVR end
 	virtual void TraceBleed(float flDamage, Vector vecDir, TraceResult* ptr, int bitsDamageType);
 	virtual bool IsTriggered(CBaseEntity* pActivator) { return true; }
 	virtual CBaseToggle* MyTogglePointer() { return NULL; }
@@ -300,6 +483,58 @@ public:
 		return NULL;
 	}
 
+	// BSVR start
+	inline static CBaseEntity* InstanceOrWorld(const edict_t* pent)
+	{
+		if (FNullEnt(pent))
+			return static_cast<CBaseEntity*>(GET_PRIVATE(ENT(0)));
+		else
+			return static_cast<CBaseEntity*>(GET_PRIVATE(const_cast<edict_t*>(pent)));
+	}
+
+	inline static CBaseEntity* InstanceOrWorld(const entvars_t* pev) { return InstanceOrWorld(ENT(pev)); }
+	inline static CBaseEntity* InstanceOrWorld(int eoffset) { return InstanceOrWorld(ENT(eoffset)); }
+
+	template<class T>
+	inline static EHandleT<T> SafeInstance(const edict_t* pent)
+	{
+		if (FNullEnt(pent) && !FWorldEnt(pent))
+		{
+			return nullptr;
+		}
+		else
+		{
+			return dynamic_cast<T*>(static_cast<CBaseEntity*>(GET_PRIVATE(const_cast<edict_t*>(pent))));
+		}
+	}
+
+	// template<>
+	// inline static EHandleT<CBaseEntity> SafeInstance(const edict_t* pent)
+	// {
+	// 	if (FNullEnt(pent) && !FWorldEnt(pent))
+	// 	{
+	// 		return nullptr;
+	// 	}
+	// 	else
+	// 	{
+	// 		return UnsafeInstance(pent);
+	// 	}
+	// }
+
+	template<class T>
+	inline static EHandleT<T> SafeInstance(const entvars_t* pev)
+	{
+		return SafeInstance<T>(ENT(pev));
+	}
+
+	template<class T>
+	inline static EHandleT<T> SafeInstance(int eoffset)
+	{
+		return SafeInstance<T>(ENT(eoffset));
+	}
+	// BSVR end
+
+
 
 	// Ugly code to lookup all functions to make sure they are exported when set.
 #ifdef _DEBUG
@@ -346,6 +581,42 @@ public:
 	//
 	static CBaseEntity* Create(const char* szName, const Vector& vecOrigin, const Vector& vecAngles, edict_t* pentOwner = NULL);
 
+	// BSVR start
+	// Typed version of Create() from Half-Life-VR. The non-template version above is kept for stock SDK callers.
+	template <class T>
+	static T* Create(const char* szName, const Vector& vecOrigin, const Vector& vecAngles, edict_t* pentOwner = nullptr)
+	{
+		edict_t* pent = CREATE_NAMED_ENTITY(MAKE_STRING(szName));
+		if (FNullEnt(pent))
+		{
+			ALERT(at_console, "nullptr pent in Create!\n");
+			return nullptr;
+		}
+
+		CBaseEntity* pEntity = SafeInstance<CBaseEntity>(pent);
+		if (!pEntity)
+		{
+			ALERT(at_console, "nullptr pEntity in Create!\n");
+			REMOVE_ENTITY(pent);
+			return nullptr;
+		}
+
+		T* pTypedEntity = dynamic_cast<T*>(pEntity);
+		if (!pTypedEntity)
+		{
+			ALERT(at_console, "Incompatible class_name and type used in Create!\n");
+			REMOVE_ENTITY(pent);
+			return nullptr;
+		}
+
+		pTypedEntity->pev->owner = pentOwner;
+		pTypedEntity->pev->origin = vecOrigin;
+		pTypedEntity->pev->angles = vecAngles;
+		DispatchSpawn(pTypedEntity->edict());
+		return pTypedEntity;
+	}
+	// BSVR end
+
 	virtual bool FBecomeProne() { return false; }
 	edict_t* edict() { return ENT(pev); }
 	int entindex() { return ENTINDEX(edict()); }
@@ -376,10 +647,60 @@ public:
 	int m_fInAttack;
 
 	int m_fireState;
+
+	// BSVR start
+	// This is used by the VR controller touch/interaction code to determine if something is touched directly after mapchange/load,
+	// we want to treat those entities as not touched, because otherwise those levelchanges near the tentacle monster bring the payer
+	// into an infinite mapchange-loop (as the next map has a button to go back in the same place)
+	const float m_spawnTime{
+#ifdef CLIENT_DLL
+		0
+#else
+		gpGlobals->time
+#endif
+	};
+
+	// Currently overriden by func_wall for gordon's coffee cup and retina scanners, and trigger_multiple for xen jump thingies
+	virtual bool CheckIsSpecialVREntity() { return true; }
+
+	// For real rotation of rotating buttons in VR - Max Makes Mods, 2019-05-26
+	virtual VRRotatableEnt* MyRotatableEntPtr() { return nullptr; }
+
+	// Prevents being pushed up by xen jumps when using the teleporter on them
+	virtual bool IsXenJumpTrigger() { return false; }
+
+	// For draggable entities
+	virtual bool IsDraggable() { return false; }
+	virtual void HandleDragStart() {}
+	virtual void HandleDragStop() {}
+	virtual void HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles)
+	{
+		// default implementation just copies values in
+		pev->origin = origin;
+		pev->velocity = velocity;
+		pev->angles = angles;
+	}
+	virtual void BaseBalled(CBaseEntity* pPlayer, const Vector& velocity) {}
+
+	bool m_isFirstDragThink = true;
+	void EXPORT DragStopThink(void)
+	{
+		m_isFirstDragThink = true;
+		m_pfnThink = nullptr;
+		HandleDragStop();
+	}
+	void EXPORT DragThink(void);
+
+	inline bool IsBeingDragged() { return m_vrDragger && m_vrDragController != VRControllerID::INVALID; }
+
+	EHANDLE m_vrDragger;
+	VRControllerID m_vrDragController{ VRControllerID::INVALID };
+	Vector m_vrDragOriginOffset;
+	Vector m_vrDragAnglesOffset;
+	// BSVR end
 };
 
 inline bool FNullEnt(CBaseEntity* ent) { return (ent == NULL) || FNullEnt(ent->edict()); }
-
 
 // Ugly technique to override base member functions
 // Normally it's illegal to cast a pointer to a member function of a derived class to a pointer to a
@@ -495,6 +816,9 @@ public:
 	int LookupSequence(const char* label);
 	void ResetSequenceInfo();
 	void DispatchAnimEvents(float flFutureInterval = 0.1); // Handle events that have happend since last time called up until X seconds into the future
+	// BSVR start
+	virtual void HandleClientAnimEvent(ClientAnimEvent_t* pEvent) { return; };  // Client side events for VR controller weapon models (fixes some issues) - Max Makes Mods - 2019-04-13
+	// BSVR end
 	virtual void HandleAnimEvent(MonsterEvent_t* pEvent) {}
 	float SetBoneController(int iController, float flValue);
 	void InitBoneControllers();

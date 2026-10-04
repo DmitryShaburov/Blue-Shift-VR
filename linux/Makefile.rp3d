@@ -1,0 +1,45 @@
+#
+# ReactPhysics3D static library Makefile for x86 Linux
+# Builds libreactphysics3d.a from sources in external/reactphysics3d/src/
+#
+
+RP3D_SRC_DIR=$(SOURCE_DIR)/external/reactphysics3d/include
+RP3D_LIB_DIR=$(SOURCE_DIR)/external/reactphysics3d/lib/Linux
+RP3D_OBJ_DIR=$(BUILD_OBJ_DIR)/rp3d
+
+RP3D_CFLAGS=-std=c++17 -O3 -fexceptions -include cstdint -m32 \
+	-march=pentium-m -mfpmath=387 -mno-sse \
+	-fno-strict-aliasing -w \
+	-DIS_DOUBLE_PRECISION_ENABLED \
+	-I$(RP3D_SRC_DIR)
+
+RP3D_SRCS=$(shell find $(RP3D_SRC_DIR) -name "*.cpp")
+RP3D_OBJS=$(patsubst $(RP3D_SRC_DIR)/%.cpp,$(RP3D_OBJ_DIR)/%.o,$(RP3D_SRCS))
+
+RP3D_LIB=$(RP3D_LIB_DIR)/libreactphysics3d.a
+
+all: dirs $(RP3D_LIB)
+
+dirs:
+	-mkdir -p $(RP3D_OBJ_DIR)/body
+	-mkdir -p $(RP3D_OBJ_DIR)/collision/broadphase
+	-mkdir -p $(RP3D_OBJ_DIR)/collision/narrowphase/GJK
+	-mkdir -p $(RP3D_OBJ_DIR)/collision/narrowphase/SAT
+	-mkdir -p $(RP3D_OBJ_DIR)/collision/shapes
+	-mkdir -p $(RP3D_OBJ_DIR)/constraint
+	-mkdir -p $(RP3D_OBJ_DIR)/containers
+	-mkdir -p $(RP3D_OBJ_DIR)/engine
+	-mkdir -p $(RP3D_OBJ_DIR)/mathematics
+	-mkdir -p $(RP3D_OBJ_DIR)/memory
+	-mkdir -p $(RP3D_OBJ_DIR)/utils
+	-mkdir -p $(RP3D_LIB_DIR)
+
+$(RP3D_OBJ_DIR)/%.o: $(RP3D_SRC_DIR)/%.cpp
+	$(CPLUS) $(RP3D_CFLAGS) -o $@ -c $<
+
+$(RP3D_LIB): $(RP3D_OBJS)
+	$(AR) rcs $@ $^
+
+clean:
+	-rm -rf $(RP3D_OBJ_DIR)
+	-rm -f $(RP3D_LIB)

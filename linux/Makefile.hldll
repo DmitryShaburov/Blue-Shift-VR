@@ -11,14 +11,18 @@ PM_OBJ_DIR=$(HLDLL_OBJ_DIR)/pm_shared
 GAME_SHARED_OBJ_DIR=$(HLDLL_OBJ_DIR)/game_shared
 PUBLIC_OBJ_DIR=$(HLDLL_OBJ_DIR)/public
 COMMON_OBJ_DIR=$(HLDLL_OBJ_DIR)/common
+VR_OBJ_DIR=$(HLDLL_OBJ_DIR)/vr
 
 CFLAGS=$(BASE_CFLAGS)  $(ARCH_CFLAGS)
 
-INCLUDEDIRS=-I$(HLDLL_SRC_DIR) -I$(ENGINE_SRC_DIR) -I$(COMMON_SRC_DIR) -I$(PM_SRC_DIR) -I$(GAME_SHARED_SRC_DIR) -I$(PUBLIC_SRC_DIR)
+INCLUDEDIRS=-I$(HLDLL_SRC_DIR) -I$(ENGINE_SRC_DIR) -I$(COMMON_SRC_DIR) -I$(PM_SRC_DIR) -I$(GAME_SHARED_SRC_DIR) -I$(PUBLIC_SRC_DIR) -I$(SOURCE_DIR)/external/reactphysics3d/include
+
+RP3D_LIB=$(SOURCE_DIR)/external/reactphysics3d/lib/Linux/libreactphysics3d.a
 
 LDFLAGS= $(CPP_LIB)
 
 DO_CC=$(CPLUS) $(INCLUDEDIRS) $(CFLAGS) -o $@ -c $<
+DO_CC_EXCEPTIONS=$(CPLUS) $(INCLUDEDIRS) $(filter-out -fno-exceptions,$(CFLAGS)) -fexceptions -o $@ -c $<
 
 #####################################################################
 
@@ -139,6 +143,25 @@ PUBLIC_OBJS = \
 COMMON_OBJS = \
 	$(COMMON_OBJ_DIR)/mathlib.o
 
+VR_OBJS = \
+	$(VR_OBJ_DIR)/hlmv_mathlib.o \
+	$(VR_OBJ_DIR)/StudioModel.o \
+	$(VR_OBJ_DIR)/studio_render.o \
+	$(VR_OBJ_DIR)/studio_utils.o \
+	$(VR_OBJ_DIR)/VRCommons.o \
+	$(VR_OBJ_DIR)/VRController.o \
+	$(VR_OBJ_DIR)/VRControllerInteractionManager.o \
+	$(VR_OBJ_DIR)/VRControllerModel.o \
+	$(VR_OBJ_DIR)/VRControllerTeleporter.o \
+	$(VR_OBJ_DIR)/VRCrushEntityHandler.o \
+	$(VR_OBJ_DIR)/VRDebugBBoxDrawer.o \
+	$(VR_OBJ_DIR)/VRGroundEntityHandler.o \
+	$(VR_OBJ_DIR)/VRModelHelper.o \
+	$(VR_OBJ_DIR)/VRMovementHandler.o \
+	$(VR_OBJ_DIR)/VRPhysicsHelper.o \
+	$(VR_OBJ_DIR)/VRRotatableEnt.o \
+	$(VR_OBJ_DIR)/VRSDModelHelper.o
+
 all: dirs hl.$(SHLIBEXT)
 
 dirs:
@@ -148,9 +171,10 @@ dirs:
 	-mkdir -p $(GAME_SHARED_OBJ_DIR)
 	-mkdir -p $(PUBLIC_OBJ_DIR)
 	-mkdir -p $(COMMON_OBJ_DIR)
+	-mkdir -p $(VR_OBJ_DIR)
 
-hl.$(SHLIBEXT): $(HLDLL_OBJS) $(PM_OBJS) $(GAME_SHARED_OBJS) $(PUBLIC_OBJS) $(COMMON_OBJS)
-	$(CPLUS) $(LDFLAGS) $(SHLIBLDFLAGS) -o $(BUILD_DIR)/$@ $(HLDLL_OBJS) $(PM_OBJS) $(GAME_SHARED_OBJS) $(PUBLIC_OBJS) $(COMMON_OBJS) $(CPP_LIB)
+hl.$(SHLIBEXT): $(HLDLL_OBJS) $(PM_OBJS) $(GAME_SHARED_OBJS) $(PUBLIC_OBJS) $(COMMON_OBJS) $(VR_OBJS) $(RP3D_LIB)
+	$(CPLUS) $(LDFLAGS) $(SHLIBLDFLAGS) -o $(BUILD_DIR)/$@ $(HLDLL_OBJS) $(PM_OBJS) $(GAME_SHARED_OBJS) $(PUBLIC_OBJS) $(COMMON_OBJS) $(VR_OBJS) $(RP3D_LIB) $(CPP_LIB)
 	./gendbg.sh $(BUILD_DIR)/hl.$(SHLIBEXT)
 
 $(HLDLL_OBJ_DIR)/%.o : $(HLDLL_SRC_DIR)/%.cpp
@@ -168,9 +192,13 @@ $(PUBLIC_OBJ_DIR)/%.o : $(PUBLIC_SRC_DIR)/%.cpp
 $(COMMON_OBJ_DIR)/%.o : $(COMMON_SRC_DIR)/%.cpp
 	$(DO_CC)
 
+$(VR_OBJ_DIR)/%.o : $(HLDLL_SRC_DIR)/vr/%.cpp
+	$(DO_CC_EXCEPTIONS)
+
 clean:
 	-rm -rf $(COMMON_OBJ_DIR)
 	-rm -rf $(GAME_SHARED_OBJ_DIR)
 	-rm -rf $(PM_OBJ_DIR)
+	-rm -rf $(VR_OBJ_DIR)
 	-rm -rf $(HLDLL_OBJ_DIR)
 	-rm -f hl_$(ARCH).$(SHLIBEXT)

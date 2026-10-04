@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "parsemsg.h"
+#include "vr/VRRenderer.h" // BSVR: VR HUD rendering (VRHUDDrawBegin / VRHUDDrawFinished)
 
 DECLARE_MESSAGE(m_AmmoSecondary, SecAmmoVal);
 DECLARE_MESSAGE(m_AmmoSecondary, SecAmmoIcon);
@@ -71,6 +72,8 @@ bool CHudAmmoSecondary::Draw(float flTime)
 	y = ScreenHeight - (gHUD.m_iFontHeight * 4); // this is one font height higher than the weapon ammo values
 	x = ScreenWidth - AmmoWidth;
 
+	gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::AMMO_SECONDARY); // BSVR
+
 	if (0 != m_HUD_ammoicon)
 	{
 		// Draw the ammo icon
@@ -106,6 +109,8 @@ bool CHudAmmoSecondary::Draw(float flTime)
 			FillRGBA(x, y, (AmmoWidth / 10), gHUD.m_iFontHeight, r, g, b, a);
 		}
 	}
+
+	gVRRenderer.VRHUDDrawFinished(); // BSVR
 
 	return true;
 }

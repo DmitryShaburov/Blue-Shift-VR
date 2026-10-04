@@ -620,6 +620,9 @@
     <ClInclude Include="..\..\game_shared\filesystem_utils.h">
       <Filter>Header Files\game_shared</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\game_shared\vr\VRShared.h">
+      <Filter>Header Files\game_shared</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\public\interface.h">
       <Filter>Header Files\public</Filter>
     </ClInclude>

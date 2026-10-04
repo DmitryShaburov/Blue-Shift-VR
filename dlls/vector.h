@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -14,6 +14,9 @@
 ****/
 
 #pragma once
+// BSVR start - needed so mathlib.h skips DotProduct macro when vector.h is already included
+#define VECTOR_H
+// BSVR end
 
 //=========================================================
 // 2DVector - used for many pathfinding and many other
@@ -37,6 +40,9 @@ public:
 	[[nodiscard]] constexpr Vector2D operator/(float fl) const { return Vector2D(x / fl, y / fl); }
 
 	[[nodiscard]] float Length() const { return static_cast<float>(sqrt(x * x + y * y)); }
+	// BSVR start - squared length added in Half-Life-VR for convenience
+	[[nodiscard]] constexpr float LengthSquared() const { return x * x + y * y; }
+	// BSVR end
 
 	[[nodiscard]] Vector2D Normalize() const
 	{
@@ -81,7 +87,7 @@ public:
 	{
 	}
 
-	constexpr Vector(float rgfl[3])
+	constexpr Vector(const float rgfl[3]) // BSVR: const added so const float arrays convert to Vector
 		: x(rgfl[0]), y(rgfl[1]), z(rgfl[2])
 	{
 	}
@@ -94,6 +100,10 @@ public:
 	[[nodiscard]] constexpr Vector operator-(const Vector& v) const { return Vector(x - v.x, y - v.y, z - v.z); }
 	[[nodiscard]] constexpr Vector operator*(float fl) const { return Vector(x * fl, y * fl, z * fl); }
 	[[nodiscard]] constexpr Vector operator/(float fl) const { return Vector(x / fl, y / fl, z / fl); }
+	// BSVR start - Vector +/- Vector2D from Half-Life-VR: applies a 2D offset to x/y, leaves z untouched
+	[[nodiscard]] constexpr Vector operator-(const Vector2D& v) const { return Vector(x - v.x, y - v.y, z); }
+	[[nodiscard]] constexpr Vector operator+(const Vector2D& v) const { return Vector(x + v.x, y + v.y, z); }
+	// BSVR end
 
 	// Methods
 	constexpr void CopyToArray(float* rgfl) const { rgfl[0] = x, rgfl[1] = y, rgfl[2] = z; }
@@ -118,6 +128,12 @@ public:
 	}
 
 	[[nodiscard]] float Length2D() const { return static_cast<float>(sqrt(x * x + y * y)); }
+
+	// BSVR start
+	[[nodiscard]] Vector ToViewAngles() const
+	{
+		return Vector(-x, y, z);
+	}
 
 	// Members
 	vec_t x = 0, y = 0, z = 0;

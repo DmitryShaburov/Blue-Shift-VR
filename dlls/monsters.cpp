@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -2298,7 +2298,7 @@ bool CBaseMonster::FindCover(Vector vecThreat, Vector vecViewOffset, float flMin
 						/*
 						MESSAGE_BEGIN( MSG_BROADCAST, SVC_TEMPENTITY );
 							WRITE_BYTE( TE_SHOWLINE);
-							
+
 							WRITE_COORD( node.m_vecOrigin.x );
 							WRITE_COORD( node.m_vecOrigin.y );
 							WRITE_COORD( node.m_vecOrigin.z );
@@ -3051,7 +3051,7 @@ bool CBaseMonster::FCheckAITrigger()
 		break;
 		/*
 
-  // !!!UNDONE - no persistant game state that allows us to track these two. 
+  // !!!UNDONE - no persistant game state that allows us to track these two.
 
 	case AITRIGGER_SQUADMEMBERDIE:
 		break;
@@ -3428,3 +3428,10 @@ bool CBaseMonster::ShouldFadeOnDeath()
 
 	return false;
 }
+
+// BSVR start
+bool CBaseMonster::HasClearSight(const Vector& pos)
+{
+	return UTIL_CheckClearSight(EyePosition(), pos, dont_ignore_monsters, dont_ignore_glass, edict());
+}
+// BSVR end

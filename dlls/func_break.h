@@ -87,3 +87,38 @@ public:
 	int m_iszGibModel;
 	int m_iszSpawnObject;
 };
+
+// BSVR start - moved from func_break.cpp so VR controller code can dynamic_cast to it
+class CPushable : public CBreakable
+{
+public:
+	void Spawn() override;
+	void Precache() override;
+	void Touch(CBaseEntity* pOther) override;
+	void Move(CBaseEntity* pMover, bool push);
+	bool KeyValue(KeyValueData* pkvd) override;
+	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value) override;
+	void EXPORT StopSound();
+	//	virtual void	SetActivator( CBaseEntity *pActivator ) { m_pPusher = pActivator; }
+
+	int ObjectCaps() override { return (CBaseEntity::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | FCAP_CONTINUOUS_USE; }
+	bool Save(CSave& save) override;
+	bool Restore(CRestore& restore) override;
+
+	inline float MaxSpeed() { return m_maxSpeed; }
+
+	void EmitPushSound(float length);
+
+	// breakables use an overridden takedamage
+	bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType) override;
+
+	int DamageDecal(int bitsDamageType) override;
+
+	static TYPEDESCRIPTION m_SaveData[];
+
+	static const char* m_soundNames[3];
+	int m_lastSound; // no need to save/restore, just keeps the same sound from playing twice in a row
+	float m_maxSpeed;
+	float m_soundTime;
+};
+// BSVR end

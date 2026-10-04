@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -54,7 +54,9 @@ public:
 	void EXPORT TumbleThink();
 
 	virtual void BounceSound();
-	int BloodColor() override { return DONT_BLEED; }
+	// BSVR start - commented out
+	int BloodColor() { return DONT_BLEED; }
+	// BSVR end
 	void Killed(entvars_t* pevAttacker, int iGib) override;
 
 	bool m_fRegisteredSound; // whether or not this grenade has issued its DANGER sound to the world sound list yet.
@@ -66,6 +68,29 @@ public:
 #define ITEM_ANTIDOTE 2
 #define ITEM_SECURITY 3
 #define ITEM_BATTERY 4
+
+// BSVR start
+#define WEAPON_NONE    0
+#define WEAPON_CROWBAR 1
+#define WEAPON_GLOCK   2
+#define WEAPON_PYTHON  3
+#define WEAPON_MP5     4
+//#define WEAPON_CHAINGUN			5
+#define WEAPON_CROSSBOW    6
+#define WEAPON_SHOTGUN     7
+#define WEAPON_RPG         8
+#define WEAPON_GAUSS       9
+#define WEAPON_EGON        10
+#define WEAPON_HORNETGUN   11
+#define WEAPON_HANDGRENADE 12
+#define WEAPON_TRIPMINE    13
+#define WEAPON_SATCHEL     14
+#define WEAPON_SNARK       15
+#define WEAPON_BAREHAND    16
+
+float GetMeleeSwingSpeed();
+float GetWeaponScale(const char* weaponModelName);
+// BSVR end
 
 #define MAX_NORMAL_BATTERY 100
 
@@ -204,6 +229,28 @@ struct AmmoInfo
 inline int giAmmoIndex = 0;
 
 void AddAmmoNameToAmmoRegistry(const char* szAmmoname, const char* weaponName);
+
+// BSVR start
+inline bool IsWeaponWithRange(int iId)
+{
+	return iId == WEAPON_GLOCK || iId == WEAPON_PYTHON || iId == WEAPON_MP5 || iId == WEAPON_CROSSBOW || iId == WEAPON_SHOTGUN || iId == WEAPON_RPG || iId == WEAPON_GAUSS || iId == WEAPON_EGON || iId == WEAPON_HORNETGUN;
+}
+
+inline bool IsWeapon(int iId)
+{
+	return iId == WEAPON_CROWBAR || iId == WEAPON_GLOCK || iId == WEAPON_PYTHON || iId == WEAPON_MP5 || iId == WEAPON_CROSSBOW || iId == WEAPON_SHOTGUN || iId == WEAPON_RPG || iId == WEAPON_GAUSS || iId == WEAPON_EGON || iId == WEAPON_HANDGRENADE || iId == WEAPON_TRIPMINE || iId == WEAPON_SATCHEL || iId == WEAPON_SNARK;
+}
+
+inline bool IsExplosiveWeapon(int iId)
+{
+	return iId == WEAPON_SNARK || iId == WEAPON_HANDGRENADE || iId == WEAPON_TRIPMINE || iId == WEAPON_SATCHEL;
+}
+
+inline bool IsWeaponWithVRLaserSpot(int iId)
+{
+	return IsWeaponWithRange(iId) && iId != WEAPON_RPG && iId != WEAPON_HORNETGUN;
+}
+// BSVR end
 
 // Items that the player has in their inventory that they can use
 class CBasePlayerItem : public CBaseAnimating

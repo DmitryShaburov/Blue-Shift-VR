@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -22,6 +22,9 @@
 //
 #include "activity.h"
 #include "enginecallback.h"
+// BSVR start
+#include <string>
+// BSVR end
 
 class CBaseEntity;
 
@@ -156,6 +159,8 @@ inline bool FNullEnt(EOFFSET eoffset)
 }
 inline bool FNullEnt(const edict_t* pent) { return pent == NULL || FNullEnt(OFFSET(pent)); }
 inline bool FNullEnt(entvars_t* pev) { return pev == NULL || FNullEnt(OFFSET(pev)); }
+inline bool FWorldEnt(const edict_t* pent) { return pent != nullptr && !pent->free && pent->v.pContainingEntity == pent && OFFSET(pent) == eoNullEntity; }
+inline bool FWorldEnt(entvars_t* pev) { return pev != nullptr && FWorldEnt(ENT(pev)); }
 
 // Testing strings for nullity
 #define iStringNull 0
@@ -207,7 +212,9 @@ typedef enum
 // Misc useful
 inline bool FStrEq(const char* sz1, const char* sz2)
 {
-	return (strcmp(sz1, sz2) == 0);
+	// BSVR start - null-safe comparison from Half-Life-VR (VR code passes results of TRACE_TEXTURE etc. that may be nullptr)
+	return (sz1 == sz2 || (sz1 != nullptr && sz2 != nullptr && strcmp(sz1, sz2) == 0));
+	// BSVR end
 }
 inline bool FClassnameIs(edict_t* pent, const char* szClassname)
 {
@@ -285,7 +292,9 @@ extern void UTIL_TraceHull(const Vector& vecStart, const Vector& vecEnd, IGNORE_
 extern TraceResult UTIL_GetGlobalTrace();
 extern void UTIL_TraceModel(const Vector& vecStart, const Vector& vecEnd, int hullNumber, edict_t* pentModel, TraceResult* ptr);
 extern Vector UTIL_GetAimVector(edict_t* pent, float flSpeed);
-extern int UTIL_PointContents(const Vector& vec);
+// BSVR start - replaced with new version
+// extern int UTIL_PointContents(const Vector& vec);
+// BSVR end
 
 extern bool UTIL_IsMasterTriggered(string_t sMaster, CBaseEntity* pActivator);
 extern void UTIL_BloodStream(const Vector& origin, const Vector& direction, int color, int amount);
@@ -497,7 +506,10 @@ int SENTENCEG_Lookup(const char* sample, char* sentencenum);
 
 void TEXTURETYPE_Init();
 char TEXTURETYPE_Find(char* name);
-float TEXTURETYPE_PlaySound(TraceResult* ptr, Vector vecSrc, Vector vecEnd, int iBulletType);
+// BSVR start
+// float TEXTURETYPE_PlaySound(TraceResult* ptr, Vector vecSrc, Vector vecEnd, int iBulletType);
+float TEXTURETYPE_PlaySound(TraceResult* ptr, Vector vecSrc, Vector vecEnd, int iBulletType, float volume = 1.f);
+// BSVR end
 
 // NOTE: use EMIT_SOUND_DYN to set the pitch of a sound. Pitch of 100
 // is no pitch shift.  Pitch > 100 up to 255 is a higher pitch, pitch < 100
@@ -507,6 +519,28 @@ float TEXTURETYPE_PlaySound(TraceResult* ptr, Vector vecSrc, Vector vecEnd, int 
 
 void EMIT_SOUND_DYN(edict_t* entity, int channel, const char* sample, float volume, float attenuation,
 	int flags, int pitch);
+
+// BSVR start - Half-Life-VR intercepts the model engine calls to support SD model variants.
+// The raw engine calls are PRECACHE_MODEL3 / PRECACHE_GENERIC3 / SET_MODEL2 / MODEL_INDEX2 (enginecallback.h).
+#ifdef CLIENT_DLL
+inline int PRECACHE_MODEL(const char* s) { return PRECACHE_MODEL3(s); }
+inline int PRECACHE_GENERIC(const char* s) { return PRECACHE_GENERIC3(s); }
+inline int PRECACHE_MODEL2(const char* s) { return PRECACHE_MODEL3(s); }
+inline int PRECACHE_GENERIC2(const char* s) { return PRECACHE_GENERIC3(s); }
+inline void SET_MODEL(edict_t* e, const char* m) { SET_MODEL2(e, m); }
+inline int MODEL_INDEX(const char* m) { return MODEL_INDEX2(m); }
+#else
+// Implemented in vr/VRSDModelHelper.cpp
+int PRECACHE_MODEL(const char* s);
+int PRECACHE_GENERIC(const char* s);
+int PRECACHE_MODEL2(const char* s);
+int PRECACHE_GENERIC2(const char* s);
+void SET_MODEL(edict_t* e, const char* m);
+int MODEL_INDEX(const char* m);
+extern bool gSDModelsEnabled;
+void UTIL_UpdateSDModels();
+#endif
+// BSVR end
 
 
 inline void EMIT_SOUND(edict_t* entity, int channel, const char* sample, float volume, float attenuation)
@@ -598,3 +632,38 @@ struct CallOnDestroy
 		Function();
 	}
 };
+
+// BSVR start
+#ifndef BSVR_EPSILON_DEFINED
+#define BSVR_EPSILON_DEFINED
+constexpr const float EPSILON = 0.000001f;
+constexpr const double EPSILON_D = 0.000001;
+#endif
+
+inline void UTIL_MakeAimVectorsPrivate(const Vector& vecAngles, float* p_vForward, float* p_vRight, float* p_vUp)
+{
+	Vector vecAimAngles = vecAngles;
+	vecAimAngles.x = -vecAimAngles.x;
+	g_engfuncs.pfnAngleVectors(vecAimAngles, p_vForward, p_vRight, p_vUp);
+}
+
+std::string UTIL_GetFilePath(const std::string& filename);
+extern bool UTIL_PointInsideBSPModel(const Vector& vec, const Vector& absmin, const Vector& absmax);
+extern int UTIL_PointContents(const Vector& vec, bool detectSolidEntities = false, edict_t** pPent = nullptr);
+extern bool UTIL_CheckClearSight(const Vector& pos1, const Vector& pos2, IGNORE_MONSTERS igmon, IGNORE_GLASS ignoreGlass, edict_t* pentIgnore = nullptr);
+extern void UTIL_GetAnglesFromVectors(const Vector& forward, const Vector& right, const Vector& up, Vector& angles);
+extern bool UTIL_BBoxIntersectsBBox(const Vector& absmins1, const Vector& absmaxs1, const Vector& absmins2, const Vector& absmaxs2);
+extern bool UTIL_PointInsideRotatedBBox(const Vector& bboxCenter, const Vector& bboxAngles, const Vector& bboxMins, const Vector& bboxMaxs, const Vector& checkVec);
+extern bool UTIL_PointInsideBBox(const Vector& vec, const Vector& absmin, const Vector& absmax);
+extern bool UTIL_IsPointInEntity(CBaseEntity* pEntity, const Vector& p);
+extern float UTIL_CalculateMeleeDamage(int iId, float speed);
+extern int UTIL_DamageTypeFromWeapon(int iId);
+extern bool UTIL_IsFacing(const Vector& origin, const Vector& view_angles, const Vector& reference);
+extern bool UTIL_CheckTraceIntersectsEntity(const Vector& pos1, const Vector& pos2, CBaseEntity* pCheck);
+extern Vector& UTIL_AnglesMod(Vector& angles);
+extern bool UTIL_TraceBBox(const Vector& vecStart, const Vector& vecEnd, const Vector& absmin, const Vector& absmax);
+extern const Vector UTIL_WaterLevelPos(const Vector& start, const Vector& end);
+extern bool UTIL_GetLineIntersectionWithBBox(const Vector& vec1, const Vector& vec2, const Vector& absmin, const Vector& absmax, Vector& result);
+extern void UTIL_ParabolaFromPoints(const Vector2D& p1, const Vector2D& p2, const Vector2D& p3, Vector& parabola);
+bool UTIL_StartsWith(const char* s1, const char* s2);
+// BSVR end

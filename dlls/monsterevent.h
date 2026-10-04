@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -20,6 +20,16 @@ typedef struct
 	int event;
 	char* options;
 } MonsterEvent_t;
+
+// BSVR start
+// Client events for VR controller weapon models - Max Makes Mods, 2019-04-13
+typedef struct
+{
+	bool isSet{ false };
+	int event{ 0 };
+	const char* options;
+} ClientAnimEvent_t;
+// BSVR end
 
 #define EVENT_SPECIFIC 0
 #define EVENT_SCRIPTED 1000

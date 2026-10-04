@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -127,10 +127,26 @@ public:
 	void UserCmd_NextWeapon();
 	void UserCmd_PrevWeapon();
 
+	// BSVR start
+	int FirstSlotWithWeapon();
+	int FirstSlotPosWithWeapon(int slot);
+	int LastSlotWithWeapon();
+	int LastSlotPosWithWeapon(int slot);
+
+	bool IsCurrentWeaponFirstWeapon();
+	bool IsCurrentWeaponLastWeapon();
+	// BSVR end
+
+	// BSVR start - moved to public for mod
+	WEAPON* m_pWeapon;
+	// BSVR end
+
 private:
 	float m_fFade;
 	RGBA m_rgba;
-	WEAPON* m_pWeapon;
+	// BSVR start - moved to public for mod
+	// WEAPON* m_pWeapon;
+	// BSVR end
 	int m_HUD_bucket0;
 	int m_HUD_selection;
 };
@@ -193,10 +209,13 @@ public:
 	bool VidInit() override;
 	bool Draw(float flTime) override;
 	bool MsgFunc_Train(const char* pszName, int iSize, void* pbuf);
+	// BSVR moved to public for VR train control
+	int m_iPos;
 
 private:
 	HSPRITE m_hSprite;
-	int m_iPos;
+	// BSVR moved to public for VR train control
+	// int m_iPos;
 };
 
 //
@@ -352,6 +371,9 @@ public:
 	void Reset() override;
 	bool MsgFunc_Flashlight(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_FlashBat(const char* pszName, int iSize, void* pbuf);
+	// BSVR start
+	bool IsOn() const { return m_fOn != 0; }
+	// BSVR end
 
 private:
 	HSPRITE m_hSprite1;
@@ -481,6 +503,37 @@ private:
 //-----------------------------------------------------
 //
 
+// BSVR start
+// For precise position when rendering
+struct ControllerModelData
+{
+	struct ModelData
+	{
+		int body{ 0 };
+		int skin{ 0 };
+		float scale{ 1.f };
+		int sequence{ 0 };
+		float frame{ 0.f };
+		float framerate{ 0.f };
+		float animtime{ 0.f };
+		int effects{ 0 };
+		int rendermode{ 0 };
+		int renderamt{ 0 };
+		int renderfx{ 0 };
+		color24 rendercolor{ 0, 0, 0 };
+		char modelname[1024];
+	};
+
+	ModelData controller;
+
+	bool hasDraggedEnt{ false };
+	int draggedEntIndex{ 0 };
+	Vector draggedEntOriginOffset;
+	Vector draggedEntAnglesOffset;
+	ModelData draggedEnt;
+};
+// BSVR end
+
 
 class CHud
 {
@@ -494,7 +547,29 @@ private:
 	float m_flMouseSensitivity;
 	int m_iConcussionEffect;
 
+	// BSVR start
+	int m_iGroundEntIndex{ 0 };
+	Vector m_trainControlPosition;
+	float m_trainControlYaw{ 0.f };
+	// BSVR end
+
 public:
+	// BSVR start
+	ControllerModelData m_leftControllerModelData{ 0 };
+	ControllerModelData m_rightControllerModelData{ 0 };
+
+	int m_vrGrabbedLadderEntIndex{ -1 };
+	bool m_vrIsPullingOnLedge{ false };
+
+	float m_screenShakeAmplitude = 0;
+	float m_screenShakeDuration = 0;
+	float m_screenShakeFrequency = 0;
+	bool m_hasScreenShake = false;
+
+	float m_vrLeftHandTouchVibrateIntensity = 0.f;
+	float m_vrRightHandTouchVibrateIntensity = 0.f;
+	// BSVR end
+
 	HSPRITE m_hsprCursor;
 	float m_flTime;		  // the current client time
 	float m_fOldTime;	  // the time at which the HUD was last redrawn
@@ -592,6 +667,15 @@ public:
 	bool MsgFunc_SetFOV(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_Concuss(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_Weapons(const char* pszName, int iSize, void* pbuf);
+	// BSVR start
+	bool MsgFunc_GroundEnt(const char* pszName, int iSize, void* pbuf);
+	bool MsgFunc_VRCtrlEnt(const char* pszName, int iSize, void* pbuf);
+	bool MsgFunc_TrainCtrl(const char* pszName, int iSize, void* pbuf);
+	bool MsgFunc_VRScrnShke(const char* pszName, int iSize, void* pbuf);
+	bool MsgFunc_GrbdLddr(const char* pszName, int iSize, void* pbuf);
+	bool MsgFunc_PullLdg(const char* pszName, int iSize, void* pbuf);
+	bool MsgFunc_VRTouch(const char* pszName, int iSize, void* pbuf);
+	// BSVR end
 
 	// Screen information
 	SCREENINFO m_scrinfo;
@@ -607,6 +691,14 @@ public:
 	void AddHudElem(CHudBase* p);
 
 	float GetSensitivity();
+
+	// BSVR start
+	// Ground entity for rotating with them in VR (since player rotation is done client side completely) - Max Makes Mods, 2019-04-09
+	struct cl_entity_s* GetGroundEntity();
+
+	// HUD (train control sprites) attachment for train we are controlling
+	bool GetTrainControlsOriginAndOrientation(Vector& origin, Vector& angles);
+	// BSVR end
 };
 
 extern CHud gHUD;

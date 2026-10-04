@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -16,7 +16,7 @@
 
 ===== triggers.cpp ========================================================
 
-  spawn and use functions for editor-placed triggers              
+  spawn and use functions for editor-placed triggers
 
 */
 
@@ -1526,6 +1526,15 @@ void CChangeLevel::ChangeLevelNow(CBaseEntity* pActivator)
 		strcpy(st_szNextSpot, m_szLandmarkName);
 		gpGlobals->vecLandmarkOffset = VARS(pentLandmark)->origin;
 	}
+
+	// BSVR start
+	// Backup player VR offsets (fixes origin issues in roomscale) - Max Makes Mods, 2018-04-02
+	if (pPlayer->IsPlayer())
+	{
+		reinterpret_cast<CBasePlayer*>(pPlayer)->StoreVROffsetsForLevelchange();
+	}
+	// BSVR end
+
 	//	ALERT( at_console, "Level touches %d levels\n", ChangeList( levels, 16 ) );
 	ALERT(at_console, "CHANGE LEVEL: %s %s\n", st_szNextMap, st_szNextSpot);
 	CHANGE_LEVEL(st_szNextMap, st_szNextSpot);
@@ -1575,9 +1584,25 @@ bool CChangeLevel::InTransitionVolume(CBaseEntity* pEntity, char* pVolumeName)
 {
 	edict_t* pentVolume;
 
+	// BSVR start
+	if (!pEntity)
+		return true;
+	// BSVR end
 
 	if ((pEntity->ObjectCaps() & FCAP_FORCE_TRANSITION) != 0)
 		return true;
+
+	// BSVR start
+	// TODO: Always return 1 for players?
+	// Can't think of a situation where a player wouldn't be in the transition volume
+	// when touching a trigger_changelevel
+	if (pEntity->IsPlayer())
+	{
+		CBasePlayer* pPlayer = dynamic_cast<CBasePlayer*>(pEntity);
+		if (pPlayer && pPlayer->vr_didJustTeleportThroughChangeLevel)
+			return true;
+	}
+	// BSVR end
 
 	// If you're following another entity, follow it through the transition (weapons follow the player)
 	if (pEntity->pev->movetype == MOVETYPE_FOLLOW)

@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -156,3 +156,113 @@ bool CHud::MsgFunc_Weapons(const char* pszName, int iSize, void* pbuf)
 
 	return true;
 }
+
+// BSVR start
+bool CHud::MsgFunc_GroundEnt(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	m_iGroundEntIndex = READ_SHORT();
+	return true;
+}
+
+bool CHud::MsgFunc_VRCtrlEnt(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+
+	bool isLeftHand = READ_BYTE() != 0;
+	auto& data = isLeftHand ? m_leftControllerModelData : m_rightControllerModelData;
+	data.controller.body = READ_BYTE();
+	data.controller.skin = READ_BYTE();
+	data.controller.scale = READ_FLOAT();
+
+	data.controller.sequence = READ_LONG();
+	data.controller.frame = READ_FLOAT();
+	data.controller.framerate = READ_FLOAT();
+	data.controller.animtime = READ_FLOAT();
+
+	strncpy(data.controller.modelname, READ_STRING(), sizeof(data.controller.modelname));
+
+	data.hasDraggedEnt = false;
+
+	bool hasDraggedEntity = READ_BYTE() != 0;
+	if (hasDraggedEntity)
+	{
+		data.draggedEntIndex = READ_SHORT();
+
+		data.draggedEntOriginOffset = Vector{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
+		data.draggedEntAnglesOffset = Vector{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
+
+		data.draggedEnt.body = READ_BYTE();
+		data.draggedEnt.skin = READ_BYTE();
+		data.draggedEnt.scale = READ_FLOAT();
+
+		data.draggedEnt.sequence = READ_LONG();
+		data.draggedEnt.frame = READ_FLOAT();
+		data.draggedEnt.framerate = READ_FLOAT();
+		data.draggedEnt.animtime = READ_FLOAT();
+
+		data.draggedEnt.effects = READ_LONG();
+		data.draggedEnt.rendermode = READ_BYTE() & 0xFF;
+		data.draggedEnt.renderamt = READ_BYTE() & 0xFF;
+		data.draggedEnt.renderfx = READ_BYTE() & 0xFF;
+		data.draggedEnt.rendercolor.r = READ_BYTE() & 0xFF;
+		data.draggedEnt.rendercolor.g = READ_BYTE() & 0xFF;
+		data.draggedEnt.rendercolor.b = READ_BYTE() & 0xFF;
+
+		strncpy(data.draggedEnt.modelname, READ_STRING(), sizeof(data.draggedEnt.modelname));
+
+		data.hasDraggedEnt = true;
+	}
+
+	return true;
+}
+
+bool CHud::MsgFunc_TrainCtrl(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	m_trainControlPosition.x = READ_COORD();
+	m_trainControlPosition.y = READ_COORD();
+	m_trainControlPosition.z = READ_COORD();
+	m_trainControlYaw = READ_ANGLE();
+	return true;
+}
+
+bool CHud::MsgFunc_VRScrnShke(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	m_screenShakeAmplitude = READ_FLOAT();
+	m_screenShakeDuration = READ_FLOAT();
+	m_screenShakeFrequency = READ_FLOAT();
+	m_hasScreenShake = true;
+	return true;
+}
+
+bool CHud::MsgFunc_GrbdLddr(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	m_vrGrabbedLadderEntIndex = READ_SHORT();
+	return true;
+}
+
+bool CHud::MsgFunc_PullLdg(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	m_vrIsPullingOnLedge = READ_BYTE() != 0;
+	return true;
+}
+
+bool CHud::MsgFunc_VRTouch(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	bool isLeftHand = READ_BYTE() != 0;
+	if (isLeftHand)
+	{
+		m_vrLeftHandTouchVibrateIntensity = READ_FLOAT();
+	}
+	else
+	{
+		m_vrRightHandTouchVibrateIntensity = READ_FLOAT();
+	}
+	return true;
+}
+// BSVR end

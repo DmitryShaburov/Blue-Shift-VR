@@ -474,6 +474,8 @@ void SaveReadFields(SAVERESTOREDATA* pSaveData, const char* pname, void* pBaseDa
 }
 
 
+// BSVR start - EHANDLE methods are now inline in the EHandleT<T> template in cbase.h
+/*
 edict_t* EHANDLE::Get()
 {
 	if (m_pent)
@@ -521,6 +523,8 @@ CBaseEntity* EHANDLE::operator->()
 {
 	return (CBaseEntity*)GET_PRIVATE(Get());
 }
+*/
+// BSVR end
 
 
 // give health

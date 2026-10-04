@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -1574,6 +1574,23 @@ void CFuncTrackTrain::Precache()
 	m_usAdjustPitch = PRECACHE_EVENT(1, "events/train.sc");
 }
 
+// BSVR start
+Vector2D CFuncTrackTrain::GetVRControlsOffset()
+{
+	// TODO: Do some magic to calculate this better.
+	// For now this should be sufficient for most trains in Half-Life,
+	// but ideally we'd have some logic that can identify/detect either
+	//  - the floor of the train and calculate an appropriate offset for controls
+	//  - the visual/physical controls of the train
+	//  - something else?
+	if (m_vrControlsOffset.LengthSquared() == 0.f)
+	{
+		m_vrControlsOffset = Vector2D{ -48.f, 20.f };
+	}
+	return m_vrControlsOffset;
+}
+// BSVR end
+
 // This class defines the volume of space that the player must stand in to control the train
 class CFuncTrainControls : public CBaseEntity
 {
@@ -2141,7 +2158,7 @@ public:
 	void EXPORT Wait();
 	void Stop() override;
 
-	int BloodColor() override { return DONT_BLEED; }
+	int BloodColor() { return DONT_BLEED; }
 	int Classify() override { return CLASS_MACHINE; }
 	bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType) override;
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value) override;

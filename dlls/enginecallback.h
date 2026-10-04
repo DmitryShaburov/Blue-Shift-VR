@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -23,11 +23,13 @@ inline enginefuncs_t g_engfuncs;
 
 // The actual engine callbacks
 #define GETPLAYERUSERID (*g_engfuncs.pfnGetPlayerUserId)
-#define PRECACHE_MODEL (*g_engfuncs.pfnPrecacheModel)
+// BSVR start - raw engine calls renamed; the stock names are intercepted in util.h / VRSDModelHelper.cpp for SD model support
+#define PRECACHE_MODEL3 (*g_engfuncs.pfnPrecacheModel3)
 #define PRECACHE_SOUND (*g_engfuncs.pfnPrecacheSound)
-#define PRECACHE_GENERIC (*g_engfuncs.pfnPrecacheGeneric)
-#define SET_MODEL (*g_engfuncs.pfnSetModel)
-#define MODEL_INDEX (*g_engfuncs.pfnModelIndex)
+#define PRECACHE_GENERIC3 (*g_engfuncs.pfnPrecacheGeneric3)
+#define SET_MODEL2 (*g_engfuncs.pfnSetModel2)
+#define MODEL_INDEX2 (*g_engfuncs.pfnModelIndex2)
+// BSVR end
 #define MODEL_FRAMES (*g_engfuncs.pfnModelFrames)
 #define SET_SIZE (*g_engfuncs.pfnSetSize)
 #define CHANGE_LEVEL (*g_engfuncs.pfnChangeLevel)
@@ -87,6 +89,25 @@ inline void WRITE_FLOAT(float value)
 {
 	WRITE_LONG(*reinterpret_cast<int*>(&value));
 }
+
+// BSVR start
+namespace
+{
+	bool _isBogusMessage = false;
+}
+
+inline void WRITE_PRECISE_VECTOR(const float* v)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message precise vector: %f %f %f\n", v[0], v[1], v[2]);
+		return;
+	}
+	WRITE_FLOAT(v[0]);
+	WRITE_FLOAT(v[1]);
+	WRITE_FLOAT(v[2]);
+}
+// BSVR end
 
 #define CVAR_REGISTER (*g_engfuncs.pfnCVarRegister)
 #define CVAR_GET_FLOAT (*g_engfuncs.pfnCVarGetFloat)

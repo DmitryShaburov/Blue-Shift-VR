@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -487,7 +487,8 @@ void EV_FireGlock1(event_args_t* args)
 
 	gEngfuncs.pEventAPI->EV_PlaySound(idx, origin, CHAN_WEAPON, "weapons/pl_gun3.wav", gEngfuncs.pfnRandomFloat(0.92, 1.0), ATTN_NORM, 0, 98 + gEngfuncs.pfnRandomLong(0, 3));
 
-	EV_GetGunPosition(args, vecSrc, origin);
+	EV_GetGunPosition(vecSrc);
+	EV_GetGunAim(forward, right, up, angles);
 
 	VectorCopy(forward, vecAiming);
 
@@ -533,7 +534,8 @@ void EV_FireGlock2(event_args_t* args)
 
 	gEngfuncs.pEventAPI->EV_PlaySound(idx, origin, CHAN_WEAPON, "weapons/pl_gun3.wav", gEngfuncs.pfnRandomFloat(0.92, 1.0), ATTN_NORM, 0, 98 + gEngfuncs.pfnRandomLong(0, 3));
 
-	EV_GetGunPosition(args, vecSrc, origin);
+	EV_GetGunPosition(vecSrc);
+	EV_GetGunAim(forward, right, up, angles);
 
 	VectorCopy(forward, vecAiming);
 
@@ -586,7 +588,8 @@ void EV_FireShotGunDouble(event_args_t* args)
 
 	gEngfuncs.pEventAPI->EV_PlaySound(idx, origin, CHAN_WEAPON, "weapons/dbarrel1.wav", gEngfuncs.pfnRandomFloat(0.98, 1.0), ATTN_NORM, 0, 85 + gEngfuncs.pfnRandomLong(0, 0x1f));
 
-	EV_GetGunPosition(args, vecSrc, origin);
+	EV_GetGunPosition(vecSrc);
+	EV_GetGunAim(forward, right, up, angles);
 	VectorCopy(forward, vecAiming);
 
 	if (gEngfuncs.GetMaxClients() > 1)
@@ -636,7 +639,8 @@ void EV_FireShotGunSingle(event_args_t* args)
 
 	gEngfuncs.pEventAPI->EV_PlaySound(idx, origin, CHAN_WEAPON, "weapons/sbarrel1.wav", gEngfuncs.pfnRandomFloat(0.95, 1.0), ATTN_NORM, 0, 93 + gEngfuncs.pfnRandomLong(0, 0x1f));
 
-	EV_GetGunPosition(args, vecSrc, origin);
+	EV_GetGunPosition(vecSrc);
+	EV_GetGunAim(forward, right, up, angles);
 	VectorCopy(forward, vecAiming);
 
 	if (gEngfuncs.GetMaxClients() > 1)
@@ -700,7 +704,8 @@ void EV_FireMP5(event_args_t* args)
 		break;
 	}
 
-	EV_GetGunPosition(args, vecSrc, origin);
+	EV_GetGunPosition(vecSrc);
+	EV_GetGunAim(forward, right, up, angles);
 	VectorCopy(forward, vecAiming);
 
 	EV_HLDM_FireBullets(idx, forward, right, up, 1, vecSrc, vecAiming, 8192, BULLET_PLAYER_MP5, 2, &tracerCount[idx - 1], args->fparam1, args->fparam2);
@@ -779,8 +784,8 @@ void EV_FirePython(event_args_t* args)
 		break;
 	}
 
-	EV_GetGunPosition(args, vecSrc, origin);
-
+	EV_GetGunPosition(vecSrc);
+	EV_GetGunAim(forward, right, up, angles);
 	VectorCopy(forward, vecAiming);
 
 	EV_HLDM_FireBullets(idx, forward, right, up, 1, vecSrc, vecAiming, 8192, BULLET_PLAYER_357, 0, &tracerCount[idx - 1], args->fparam1, args->fparam2);
@@ -863,7 +868,8 @@ void EV_FireGauss(event_args_t* args)
 	}
 
 	//	Con_Printf( "Firing gauss with %f\n", flDamage );
-	EV_GetGunPosition(args, vecSrc, origin);
+	EV_GetGunPosition(vecSrc);
+	EV_GetGunAim(forward, right, up, angles);
 
 	m_iBeam = gEngfuncs.pEventAPI->EV_FindModelIndex("sprites/smoke.spr");
 	m_iBalls = m_iGlow = gEngfuncs.pEventAPI->EV_FindModelIndex("sprites/hotglow.spr");
@@ -1170,7 +1176,8 @@ void EV_FireCrossbow2(event_args_t* args)
 
 	AngleVectors(angles, forward, right, up);
 
-	EV_GetGunPosition(args, vecSrc, origin);
+	EV_GetGunPosition(vecSrc);
+	EV_GetGunAim(forward, right, up, angles);
 
 	VectorMA(vecSrc, 8192, forward, vecEnd);
 
@@ -1308,6 +1315,11 @@ void EV_EgonFire(event_args_t* args)
 	Vector origin;
 
 	idx = args->entindex;
+
+	// BSVR start
+	EV_GetGunPosition(origin);
+	// BSVR end
+
 	VectorCopy(args->origin, origin);
 	iFireMode = args->iparam2;
 	bool iStartup = 0 != args->bparam1;
@@ -1351,7 +1363,7 @@ void EV_EgonFire(event_args_t* args)
 
 			AngleVectors(angles, forward, right, up);
 
-			EV_GetGunPosition(args, vecSrc, pl->origin);
+			EV_GetGunPosition(vecSrc);
 
 			VectorMA(vecSrc, 2048, forward, vecEnd);
 
@@ -1392,12 +1404,38 @@ void EV_EgonFire(event_args_t* args)
 	}
 }
 
+// BSVR start
+void EV_UpdateEgon(const Vector& beamStartPos, const Vector& beamEndPos)
+{
+	// we override the positions sent from the server with the local "live"
+	// position we have from the VR controller (fixes "lag")
+	Vector gunpos;
+	EV_GetGunPosition(gunpos);
+	Vector delta = gunpos - beamStartPos;
+	if (pBeam)
+	{
+		pBeam->source = beamStartPos + delta;
+		pBeam->target = beamEndPos + delta;
+		pBeam->delta = beamEndPos - beamStartPos;
+	}
+	if (pBeam2)
+	{
+		pBeam2->source = beamStartPos + delta;
+		pBeam2->target = beamEndPos + delta;
+		pBeam2->delta = beamEndPos - beamStartPos;
+	}
+}
+// BSVR end
+
 void EV_EgonStop(event_args_t* args)
 {
 	int idx;
 	Vector origin;
 
 	idx = args->entindex;
+
+	EV_GetGunPosition(origin);
+
 	VectorCopy(args->origin, origin);
 
 	gEngfuncs.pEventAPI->EV_StopSound(idx, CHAN_STATIC, EGON_SOUND_RUN);

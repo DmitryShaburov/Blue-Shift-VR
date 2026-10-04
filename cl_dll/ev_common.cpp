@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -100,30 +100,52 @@ EV_GetGunPosition
 Figure out the height of the gun
 =================
 */
-void EV_GetGunPosition(event_args_t* args, float* pos, float* origin)
+// BSVR start - migrate to VR guns
+// void EV_GetGunPosition(event_args_t* args, float* pos, float* origin)
+// {
+// 	int idx;
+
+// 	idx = args->entindex;
+
+// 	Vector view_ofs = VEC_VIEW;
+
+// 	if (EV_IsPlayer(idx))
+// 	{
+// 		// in spec mode use entity viewheigh, not own
+// 		if (EV_IsLocal(idx) && !IS_FIRSTPERSON_SPEC)
+// 		{
+// 			// Grab predicted result for local player
+// 			gEngfuncs.pEventAPI->EV_LocalPlayerViewheight(view_ofs);
+// 		}
+// 		else if (args->ducking == 1)
+// 		{
+// 			view_ofs = VEC_DUCK_VIEW;
+// 		}
+// 	}
+
+// 	VectorAdd(origin, view_ofs, pos);
+// }
+
+// Gun position and aim vector in VR is given by special model attachments - Max Makes Mods, 2019-03-30 / 2019-04-07
+void EV_GetGunPosition(float* pos)
 {
-	int idx;
-
-	idx = args->entindex;
-
-	Vector view_ofs = VEC_VIEW;
-
-	if (EV_IsPlayer(idx))
-	{
-		// in spec mode use entity viewheigh, not own
-		if (EV_IsLocal(idx) && !IS_FIRSTPERSON_SPEC)
-		{
-			// Grab predicted result for local player
-			gEngfuncs.pEventAPI->EV_LocalPlayerViewheight(view_ofs);
-		}
-		else if (args->ducking == 1)
-		{
-			view_ofs = VEC_DUCK_VIEW;
-		}
-	}
-
-	VectorAdd(origin, view_ofs, pos);
+	// we are in include hell, so just use an external global function here :/
+	extern Vector VRGlobalGetGunPosition();
+	VRGlobalGetGunPosition().CopyToArray(pos);
 }
+
+void EV_GetGunAim(float* forward, float* right, float* up, float* angles)
+{
+	// we are in include hell, so just use an external global function here :/
+	Vector f, r, u, a;
+	extern void VRGlobalGetGunAim(Vector&, Vector&, Vector&, Vector&);
+	VRGlobalGetGunAim(f, r, u, a);
+	f.CopyToArray(forward);
+	r.CopyToArray(right);
+	u.CopyToArray(up);
+	a.CopyToArray(angles);
+}
+// BSVR end
 
 /*
 =================

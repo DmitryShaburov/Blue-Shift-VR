@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -30,6 +30,14 @@
 // Values for flags parameter of PM_TraceLine
 #define PM_TRACELINE_PHYSENTSONLY 0
 #define PM_TRACELINE_ANYVISIBLE 1
+
+// BSVR start
+constexpr const int VR_LADDER_MODE_COMBINED = 0;
+constexpr const int VR_LADDER_MODE_IMMERSIVE_ONLY = 1;
+constexpr const int VR_LADDER_MODE_LEGACY_ONLY = 2;
+
+extern int VRGetLadderMode();
+// BSVR end
 
 
 #include "pm_info.h"

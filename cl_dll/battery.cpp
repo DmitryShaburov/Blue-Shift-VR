@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include "vr/VRRenderer.h" // BSVR: VR HUD rendering (VRHUDDrawBegin / VRHUDDrawFinished)
 
 DECLARE_MESSAGE(m_Battery, Battery)
 
@@ -121,6 +122,8 @@ bool CHudBattery::Draw(float flTime)
 	if (0 == m_hSprite2)
 		m_hSprite2 = gHUD.GetSprite(gHUD.GetSpriteIndex("suit_full"));
 
+	gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::BATTERY); // BSVR
+
 	SPR_Set(m_hSprite1, r, g, b);
 	SPR_DrawAdditive(0, x, y - iOffset, m_prc1);
 
@@ -132,6 +135,8 @@ bool CHudBattery::Draw(float flTime)
 
 	x += (m_prc1->right - m_prc1->left);
 	x = gHUD.DrawHudNumber(x, y, DHN_3DIGITS | DHN_DRAWZERO, m_iBat, r, g, b);
+
+	gVRRenderer.VRHUDDrawFinished(); // BSVR
 
 	return true;
 }

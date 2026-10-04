@@ -55,4 +55,20 @@ inline int gmsgStatusValue = 0;
 
 inline int gmsgWeapons = 0;
 
+// BSVR start - VR user messages (defined in player.cpp upstream, kept with the other gmsg* here)
+inline int gmsgVRRestoreYaw = 0;
+inline int gmsgVRGroundEntity = 0;
+inline int gmsgVRSetSpawnYaw = 0;
+inline int gmsgVRControllerEnt = 0;
+inline int gmsgVRTrainControls = 0;
+inline int gmsgVRGrabbedLadder = 0;
+inline int gmsgVRPullingLedge = 0;
+inline int gmsgVRUpdateEgon = 0;
+inline int gmsgVRScreenShake = 0;
+inline int gmsgVRTouch = 0;
+inline int gmsgVRWalkedIntoWall = 0;
+inline int gmsgVRLevelChange = 0;
+inline int gmsgVRAchievement = 0;
+// BSVR end
+
 void LinkUserMessages();

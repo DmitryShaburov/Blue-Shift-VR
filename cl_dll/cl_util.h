@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -39,12 +39,34 @@
 		gHUD.y.UserCmd_##x(); \
 	}
 
-inline float CVAR_GET_FLOAT(const char* x) { return gEngfuncs.pfnGetCvarFloat((char*)x); }
-inline const char* CVAR_GET_STRING(const char* x) { return gEngfuncs.pfnGetCvarString((char*)x); }
+// BSVR start
+// inline float CVAR_GET_FLOAT(const char* x) { return gEngfuncs.pfnGetCvarFloat((char*)x); }
+// inline const char* CVAR_GET_STRING(const char* x) { return gEngfuncs.pfnGetCvarString((char*)x); }
 inline struct cvar_s* CVAR_CREATE(const char* cv, const char* val, const int flags) { return gEngfuncs.pfnRegisterVariable((char*)cv, (char*)val, flags); }
 
+float CVAR_GET_FLOAT(const char* x);
+const char* CVAR_GET_STRING(const char* x);
+void* GET_MODEL_PTR(edict_t* pent);
+// BSVR end
+
+// BSVR start - Intercepter functions for VR HUD rendering - Max Makes Mods, 2018-01-07
+// HUD code calls SPR_Set / SPR_DrawAdditive; the VR renderer captures them between VRHUDDrawBegin / VRHUDDrawFinished
+// and draws the sprites in 3D space (implemented in vr/VRHUDRenderer.cpp).
+inline void SPR_Set(HSPRITE hPic, int r, int g, int b)
+{
+	extern void InterceptSPR_Set(HSPRITE hPic, int r, int g, int b);
+	InterceptSPR_Set(hPic, r, g, b);
+}
+
+inline void SPR_DrawAdditive(int frame, int x, int y, const Rect* prc)
+{
+	extern void InterceptSPR_DrawAdditive(int frame, int x, int y, const Rect* prc);
+	InterceptSPR_DrawAdditive(frame, x, y, prc);
+}
+// BSVR end
+
 #define SPR_Load (*gEngfuncs.pfnSPR_Load)
-#define SPR_Set (*gEngfuncs.pfnSPR_Set)
+// #define SPR_Set (*gEngfuncs.pfnSPR_Set) // BSVR: intercepted for VR HUD rendering, see inline wrapper above
 #define SPR_Frames (*gEngfuncs.pfnSPR_Frames)
 #define SPR_GetList (*gEngfuncs.pfnSPR_GetList)
 
@@ -53,7 +75,7 @@ inline struct cvar_s* CVAR_CREATE(const char* cv, const char* val, const int fla
 // SPR_DrawHoles  draws the current sprites,  with color index255 not drawn (transparent)
 #define SPR_DrawHoles (*gEngfuncs.pfnSPR_DrawHoles)
 // SPR_DrawAdditive  adds the sprites RGB values to the background  (additive transulency)
-#define SPR_DrawAdditive (*gEngfuncs.pfnSPR_DrawAdditive)
+// #define SPR_DrawAdditive (*gEngfuncs.pfnSPR_DrawAdditive) // BSVR: intercepted for VR HUD rendering, see inline wrapper above
 
 // SPR_EnableScissor  sets a clipping rect for HUD sprites.  (0,0) is the top-left hand corner of the screen.
 #define SPR_EnableScissor (*gEngfuncs.pfnSPR_EnableScissor)
@@ -181,3 +203,11 @@ inline void UnpackRGB(int& r, int& g, int& b, unsigned long ulRGB)
 }
 
 HSPRITE LoadSprite(const char* pszName);
+
+// BSVR start
+#ifndef BSVR_EPSILON_DEFINED
+#define BSVR_EPSILON_DEFINED
+constexpr const float EPSILON = 0.000001f;
+constexpr const double EPSILON_D = 0.000001;
+#endif
+// BSVR end

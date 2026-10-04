@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -63,7 +63,7 @@ public:
 	bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType) override;
 	int Classify() override;
 
-	int BloodColor() override { return DONT_BLEED; }
+	int BloodColor() { return DONT_BLEED; }
 	void GibMonster() override {} // UNDONE: Throw turret gibs?
 
 	// Think functions
@@ -530,7 +530,7 @@ void CBaseTurret::ActiveThink()
 	UTIL_MakeAimVectors(m_vecCurAngles);
 
 	/*
-	ALERT( at_console, "%.0f %.0f : %.2f %.2f %.2f\n", 
+	ALERT( at_console, "%.0f %.0f : %.2f %.2f %.2f\n",
 		m_vecCurAngles.x, m_vecCurAngles.y,
 		gpGlobals->v_forward.x, gpGlobals->v_forward.y, gpGlobals->v_forward.z );
 	*/

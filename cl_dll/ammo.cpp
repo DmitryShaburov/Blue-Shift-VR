@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -28,6 +28,7 @@
 
 #include "ammohistory.h"
 #include "vgui_TeamFortressViewport.h"
+#include "vr/VRRenderer.h" // BSVR: VR HUD rendering (VRHUDDrawBegin / VRHUDDrawFinished)
 
 WEAPON* gpActiveSel; // NULL means off, 1 means just the menu bar, otherwise
 					 // this points to the active weapon menu item
@@ -892,6 +893,8 @@ bool CHudAmmo::Draw(float flTime)
 	// Does this weapon have a clip?
 	y = ScreenHeight - gHUD.m_iFontHeight - gHUD.m_iFontHeight / 2;
 
+	gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::AMMO); // BSVR
+
 	// Does weapon have any ammo at all?
 	if (m_pWeapon->iAmmoType > 0)
 	{
@@ -956,6 +959,8 @@ bool CHudAmmo::Draw(float flTime)
 			SPR_DrawAdditive(0, x, y - iOffset, &m_pWeapon->rcAmmo2);
 		}
 	}
+	gVRRenderer.VRHUDDrawFinished(); // BSVR
+
 	return true;
 }
 
@@ -1190,7 +1195,7 @@ bool CHudAmmo::DrawWList(float flTime)
 /* =================================
 	GetSpriteList
 
-Finds and returns the matching 
+Finds and returns the matching
 sprite name 'psz' and resolution 'iRes'
 in the given sprite list 'pList'
 iCount is the number of items in the pList
@@ -1212,3 +1217,65 @@ client_sprite_t* GetSpriteList(client_sprite_t* pList, const char* psz, int iRes
 
 	return NULL;
 }
+
+// BSVR start
+int CHudAmmo::FirstSlotWithWeapon()
+{
+	for (int slot = 0; slot < MAX_WEAPON_SLOTS; slot++)
+	{
+		if (FirstSlotPosWithWeapon(slot) >= 0)
+		{
+			return slot;
+		}
+	}
+	return -1;
+}
+
+int CHudAmmo::FirstSlotPosWithWeapon(const int slot)
+{
+	for (int pos = 0; pos < MAX_WEAPON_POSITIONS; pos++)
+	{
+		WEAPON* wsp = gWR.GetWeaponSlot(slot, pos);
+		if (wsp && gWR.HasAmmo(wsp))
+		{
+			return pos;
+		}
+	}
+	return -1;
+}
+
+int CHudAmmo::LastSlotWithWeapon()
+{
+	for (int slot = MAX_WEAPON_SLOTS - 1; slot >= 0; slot--)
+	{
+		if (FirstSlotPosWithWeapon(slot) >= 0)
+		{
+			return slot;
+		}
+	}
+	return -1;
+}
+
+int CHudAmmo::LastSlotPosWithWeapon(const int slot)
+{
+	for (int pos = MAX_WEAPON_POSITIONS - 1; pos >= 0; pos--)
+	{
+		WEAPON* wsp = gWR.GetWeaponSlot(slot, pos);
+		if (wsp && gWR.HasAmmo(wsp))
+		{
+			return pos;
+		}
+	}
+	return -1;
+}
+
+bool CHudAmmo::IsCurrentWeaponFirstWeapon()
+{
+	return m_pWeapon != nullptr && m_pWeapon->iSlot <= FirstSlotWithWeapon() && m_pWeapon->iSlotPos <= FirstSlotPosWithWeapon(m_pWeapon->iSlot);
+}
+
+bool CHudAmmo::IsCurrentWeaponLastWeapon()
+{
+	return m_pWeapon != nullptr && m_pWeapon->iSlot >= LastSlotWithWeapon() && m_pWeapon->iSlotPos >= LastSlotPosWithWeapon(m_pWeapon->iSlot);
+}
+// BSVR end

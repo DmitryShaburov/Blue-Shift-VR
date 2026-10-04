@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -124,6 +124,13 @@ public:
 	inline void SetFlags(int flags) { pev->rendermode = (pev->rendermode & 0x0F) | (flags & 0xF0); }
 	inline void SetStartPos(const Vector& pos) { pev->origin = pos; }
 	inline void SetEndPos(const Vector& pos) { pev->angles = pos; }
+	// BSVR start
+	inline void SetStartAndEndPos(const Vector& start, const Vector& end)
+	{
+		SetStartPos(start);
+		SetEndPos(end);
+	}
+	// BSVR end
 	void SetStartEntity(int entityIndex);
 	void SetEndEntity(int entityIndex);
 

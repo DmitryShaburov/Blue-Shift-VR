@@ -27,6 +27,39 @@ public:
 	// Public Interfaces
 	virtual bool StudioDrawModel(int flags);
 	virtual bool StudioDrawPlayer(int flags, struct entity_state_s* pplayer);
+	// BSVR start
+	virtual void StudioDrawVRHand(const ControllerModelData& controllerModelData, const Vector& origin, const Vector& angles, bool mirrored, int* out_numattachments, float out_attachments[4][3]);
+	// BSVR end
+
+// BSVR start
+private:
+	bool DrawVREntity(
+		const char* modelname,
+		const Vector& origin, const Vector& angles,
+		int body, int skin, float scale,
+		float frame, float framerate,
+		float animtime, int sequence,
+		int effects,
+		int rendermode, int renderamt, int renderfx, color24 rendercolor,
+		bool isController, bool mirrored);
+
+	// Calculates bones for given matrices, leaving m_pbonetransform and m_plighttransform intact
+	// Max Makes Mods, 2019-10-23
+	void StudioSetupBonesInline(float bonetransform[MAXSTUDIOBONES][3][4], float lighttransform[MAXSTUDIOBONES][3][4], float* overrideFrame = nullptr);
+
+	// engine gives times as double, but all operations and all entity fields are float, so we store times as floats now and convert them here:
+	void GetTimes()
+	{
+		double time, oldtime;
+		extern engine_studio_api_t IEngineStudio;
+		IEngineStudio.GetTimes(&m_nFrameCount, &time, &oldtime);
+		m_clTime = static_cast<float>(time);
+		m_clOldTime = static_cast<float>(oldtime);
+	}
+
+protected:
+	bool m_isCurrentModelMirrored = false;
+// BSVR end
 
 public:
 	// Local interfaces

@@ -23,6 +23,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "parsemsg.h"
+#include "vr/VRRenderer.h" // BSVR: VR HUD rendering (VRHUDDrawBegin / VRHUDDrawFinished)
 
 DECLARE_MESSAGE(m_Train, Train)
 
@@ -61,7 +62,11 @@ bool CHudTrain::Draw(float fTime)
 		y = ScreenHeight - SPR_Height(m_hSprite, 0) - gHUD.m_iFontHeight;
 		x = ScreenWidth / 3 + SPR_Width(m_hSprite, 0) / 4;
 
+		gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::TRAINCONTROLS); // BSVR
+
 		SPR_DrawAdditive(m_iPos - 1, x, y, NULL);
+
+		gVRRenderer.VRHUDDrawFinished(); // BSVR
 	}
 
 	return true;

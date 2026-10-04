@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -29,6 +29,10 @@
 #include "demo.h"
 #include "demo_api.h"
 #include "vgui_ScorePanel.h"
+
+// BSVR start
+#include "vr/VRRenderer.h"
+// BSVR end
 
 hud_player_info_t g_PlayerInfoList[MAX_PLAYERS_HUD + 1];	// player info from the engine
 extra_player_info_t g_PlayerExtraInfo[MAX_PLAYERS_HUD + 1]; // additional player info sent directly to the client dll
@@ -280,6 +284,104 @@ int __MsgFunc_AllowSpec(const char* pszName, int iSize, void* pbuf)
 	return 0;
 }
 
+// BSVR start
+int __MsgFunc_VRRstrYaw(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	// a bit hacky, but oh well
+	extern float g_vrRestoreYaw_PrevYaw;
+	extern float g_vrRestoreYaw_CurrentYaw;
+	extern bool g_vrRestoreYaw_HasData;
+	g_vrRestoreYaw_PrevYaw = READ_ANGLE();
+	g_vrRestoreYaw_CurrentYaw = READ_ANGLE();
+	g_vrRestoreYaw_HasData = true;
+	return 0;
+}
+
+// Sends index of current grund entity
+int __MsgFunc_GroundEnt(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_GroundEnt(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_VRCtrlEnt(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_VRCtrlEnt(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_VRSpawnYaw(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	// a bit hacky, but oh well
+	extern float g_vrSpawnYaw;
+	extern bool g_vrSpawnYaw_HasData;
+	g_vrSpawnYaw = READ_ANGLE();
+	g_vrSpawnYaw_HasData = true;
+	return 0;
+}
+
+int __MsgFunc_TrainCtrl(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_TrainCtrl(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_VRScrnShke(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_VRScrnShke(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_GrbdLddr(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_GrbdLddr(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_PullLdg(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_PullLdg(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_VRUpdEgon(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	Vector beamStartPos{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
+	Vector beamEndPos{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
+
+	extern void EV_UpdateEgon(const Vector & beamStartPos, const Vector & beamEndPos);
+	EV_UpdateEgon(beamStartPos, beamEndPos);
+
+	return 0;
+}
+
+int __MsgFunc_VRTouch(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_VRTouch(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_VRWlkWl(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	extern double g_vrWalkedIntoWall;
+	g_vrWalkedIntoWall = gVRRenderer.m_clientTime;
+	return 0;
+}
+
+int __MsgFunc_VRLvlChng(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	extern double gVR_LastLevelChangeTime;
+	gVR_LastLevelChangeTime = gVRRenderer.m_clientTime;
+	return 0;
+}
+
+int __MsgFunc_VRAchvmnt(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	int achievement = READ_LONG();
+	// VRSteamworksManager::GiveAchievement((VRAchievement)achievement);
+	return 0;
+}
+// BSVR end
+
 // This is called every time the DLL is loaded
 void CHud::Init()
 {
@@ -318,6 +420,23 @@ void CHud::Init()
 
 	// VGUI Menus
 	HOOK_MESSAGE(VGUIMenu);
+
+	// BSVR start
+	// Messages for VR
+	HOOK_MESSAGE(VRRstrYaw);
+	HOOK_MESSAGE(GroundEnt);
+	HOOK_MESSAGE(VRCtrlEnt);
+	HOOK_MESSAGE(VRSpawnYaw);
+	HOOK_MESSAGE(TrainCtrl);
+	HOOK_MESSAGE(VRScrnShke);
+	HOOK_MESSAGE(GrbdLddr);
+	HOOK_MESSAGE(PullLdg);
+	HOOK_MESSAGE(VRUpdEgon);
+	HOOK_MESSAGE(VRTouch);
+	HOOK_MESSAGE(VRWlkWl);
+	HOOK_MESSAGE(VRLvlChng);
+	HOOK_MESSAGE(VRAchvmnt);
+	// BSVR end
 
 	CVAR_CREATE("hud_classautokill", "1", FCVAR_ARCHIVE | FCVAR_USERINFO); // controls whether or not to suicide immediately on TF class switch
 	CVAR_CREATE("hud_takesshots", "0", FCVAR_ARCHIVE);					   // controls whether or not to automatically take screenshots at the end of a round
@@ -520,6 +639,10 @@ void CHud::VidInit()
 	m_TextMessage.VidInit();
 	m_StatusIcons.VidInit();
 	GetClientVoiceMgr()->VidInit();
+
+	// BSVR start
+	gVRRenderer.VidInit();
+	// BSVR end
 }
 
 bool CHud::MsgFunc_Logo(const char* pszName, int iSize, void* pbuf)
@@ -703,3 +826,38 @@ float CHud::GetSensitivity()
 {
 	return m_flMouseSensitivity;
 }
+
+// BSVR start
+// Ground entity for rotating with them in VR (since player rotation is done client side completely) - Max Makes Mods, 2019-04-09
+cl_entity_t* CHud::GetGroundEntity()
+{
+	if (m_iGroundEntIndex > 0)
+	{
+		return gEngfuncs.GetEntityByIndex(m_iGroundEntIndex);
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+bool CHud::GetTrainControlsOriginAndOrientation(Vector& origin, Vector& angles)
+{
+	if (m_Train.m_iPos)
+	{
+		origin = m_trainControlPosition;
+		angles.x = -20.f;
+		angles.y = m_trainControlYaw;
+		angles.z = 0.f;
+		return true;
+	}
+	return false;
+}
+
+
+// Used by hl_weapons.cpp and view.cpp when switching to hand model
+bool PlayerHasSuit()
+{
+	return gHUD.m_iWeaponBits & (1 << (WEAPON_SUIT));
+}
+// BSVR end

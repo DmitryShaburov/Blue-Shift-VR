@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -120,6 +120,14 @@ public:
 	float m_flBank;
 	float m_oldSpeed;
 
+	// BSVR start
+	Vector2D GetVRControlsOffset();
+	// BSVR end
+
 private:
 	unsigned short m_usAdjustPitch;
+
+	// BSVR start
+	Vector2D m_vrControlsOffset;
+	// BSVR end
 };

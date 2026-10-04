@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include "vr/VRRenderer.h" // BSVR: VR HUD rendering (VRHUDDrawBegin / VRHUDDrawFinished)
 
 
 
@@ -120,6 +121,8 @@ bool CHudFlashlight::Draw(float flTime)
 	y = (m_prc1->bottom - m_prc2->top) / 2;
 	x = ScreenWidth - m_iWidth - m_iWidth / 2;
 
+	gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::FLASHLIGHT); // BSVR
+
 	// Draw the flashlight casing
 	SPR_Set(m_hSprite1, r, g, b);
 	SPR_DrawAdditive(0, x, y, m_prc1);
@@ -144,6 +147,8 @@ bool CHudFlashlight::Draw(float flTime)
 		SPR_DrawAdditive(0, x + iOffset, y, &rc);
 	}
 
+
+	gVRRenderer.VRHUDDrawFinished(); // BSVR
 
 	return true;
 }

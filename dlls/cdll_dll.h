@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -171,5 +171,8 @@ constexpr Vector VEC_VIEW(0, 0, 28);
 constexpr Vector VEC_DUCK_HULL_MIN(-16, -16, -18);
 constexpr Vector VEC_DUCK_HULL_MAX(16, 16, 18);
 constexpr Vector VEC_DUCK_VIEW(0, 0, 12);
+// BSVR start
+constexpr int    VEC_DUCK_HEIGHT = 36;
+// BSVR end
 
 constexpr Vector VEC_DEAD_VIEW(0, 0, -8);

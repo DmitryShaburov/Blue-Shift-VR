@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -184,7 +184,21 @@ void CBarnacle::BarnacleThink()
 			m_flAltitude -= BARNACLE_PULL_SPEED;
 			vecNewEnemyOrigin.z += BARNACLE_PULL_SPEED;
 
-			if (fabs(pev->origin.z - (vecNewEnemyOrigin.z + m_hEnemy->pev->view_ofs.z - 8)) < BARNACLE_BODY_HEIGHT)
+			// BSVR start
+			float eyeHeightOffset = 0.f;
+			if (m_hEnemy->IsPlayer())
+			{
+				// RL crouching/ducking/lying down can put view offset so far down that barnacle doesn't detect the player correctly.
+				// So instead we simply use the player's bbox values, as they are aligned with the VR headset. - Max Makes Mods, 2019-05-26
+				eyeHeightOffset = m_hEnemy->pev->maxs.z;
+			}
+			else
+			{
+				eyeHeightOffset = m_hEnemy->pev->view_ofs.z - 8;
+			}
+			// BSVR end
+
+			if (fabs(pev->origin.z - (vecNewEnemyOrigin.z + eyeHeightOffset)) < BARNACLE_BODY_HEIGHT) // BSVR fix
 			{
 				// prey has just been lifted into position ( if the victim origin + eye height + 8 is higher than the bottom of the barnacle, it is assumed that the head is within barnacle's body )
 				m_fLiftingPrey = false;

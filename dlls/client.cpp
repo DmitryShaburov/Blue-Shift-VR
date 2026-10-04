@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -47,6 +47,12 @@
 #include "pm_shared.h"
 #include "pm_defs.h"
 #include "UserMessages.h"
+
+// BSVR start
+#include "vr/VRPhysicsHelper.h"
+// #include "VRNetworkManager.h"
+#include "vr/VRShared.h"
+// BSVR end
 
 DLL_GLOBAL unsigned int g_ulFrameCount;
 
@@ -591,6 +597,117 @@ void ClientCommand(edict_t* pEntity)
 		if (player->IsObserver())
 			player->Observer_FindNextPlayer(atoi(CMD_ARGV(1)) != 0);
 	}
+	// BSVR start - added VR related commands
+	else if (FStrEq(pcmd, "vr_flashlight"))
+	{
+		if (atoi(CMD_ARGV(1)))
+		{
+			Vector offset(atof(CMD_ARGV(2)), atof(CMD_ARGV(3)), atof(CMD_ARGV(4)));
+			Vector angles(atof(CMD_ARGV(5)), atof(CMD_ARGV(6)), atof(CMD_ARGV(7)));
+			player->SetFlashlightPose(offset, angles);
+		}
+		else
+		{
+			player->ClearFlashlightPose();
+		}
+	}
+	else if (FStrEq(pcmd, "vr_teleporter"))
+	{
+		if (atoi(CMD_ARGV(1)))
+		{
+			Vector offset(atof(CMD_ARGV(2)), atof(CMD_ARGV(3)), atof(CMD_ARGV(4)));
+			Vector angles(atof(CMD_ARGV(5)), atof(CMD_ARGV(6)), atof(CMD_ARGV(7)));
+			player->SetTeleporterPose(offset, angles);
+		}
+		else
+		{
+			player->ClearTeleporterPose();
+		}
+	}
+	else if (FStrEq(pcmd, "vr_anlgfire"))
+	{
+		player->SetAnalogFire(atof(CMD_ARGV(1)));
+	}
+	else if (FStrEq(pcmd, "vr_lngjump"))
+	{
+		player->DoLongJump(true, false);
+	}
+	else if (FStrEq(pcmd, "vr_restartmap"))
+	{
+		player->RestartCurrentMap();
+	}
+	else if (FStrEq(pcmd, "vr_wpnanim"))  // Client side weapon animations are now sent to the server - Max Makes Mods, 2019-04-13
+	{
+		int sequence = atoi(CMD_ARGV(1));
+		int body = atoi(CMD_ARGV(2));
+		player->PlayVRWeaponAnimation(sequence, body);
+	}
+	else if (FStrEq(pcmd, "vr_muzzleflash"))  // Client side weapon animations are now sent to the server - Max Makes Mods, 2019-04-13
+	{
+		player->PlayVRWeaponMuzzleflash();
+	}
+	else if (FStrEq(pcmd, "vrupd_hmd"))  // Client sends update for VR related data - Max Makes Mods, 2017-08-18
+	{
+		int size = CMD_ARGC();
+		if (size == 14)
+		{
+			int timestamp = atoi(CMD_ARGV(1));
+			Vector2D offset(atof(CMD_ARGV(2)), atof(CMD_ARGV(3)));
+			float offsetZ = atof(CMD_ARGV(4));
+			Vector forward(atof(CMD_ARGV(5)), atof(CMD_ARGV(6)), atof(CMD_ARGV(7)));
+			Vector2D yawOffsetDelta(atof(CMD_ARGV(8)), atof(CMD_ARGV(9)));
+			float prevYaw = atof(CMD_ARGV(10));
+			float currentYaw = atof(CMD_ARGV(11));
+			bool hasReceivedRestoreYawMsg = atoi(CMD_ARGV(12)) != 0;
+			bool hasReceivedSpawnYaw = atoi(CMD_ARGV(13)) != 0;
+			player->UpdateVRHeadset(timestamp, offset, offsetZ, forward, yawOffsetDelta, prevYaw, currentYaw, hasReceivedRestoreYawMsg, hasReceivedSpawnYaw);
+		}
+		else
+		{
+			char errormsg[1024] = { 0 };
+			snprintf(errormsg, sizeof(errormsg), "Invalid vr update (%i): %s %s!\n", size, pcmd, CMD_ARGS()); // BSVR: sprintf_s -> snprintf for Linux
+			ClientPrint(&pEntity->v, HUD_PRINTCONSOLE, errormsg);
+		}
+	}
+	else if (FStrEq(pcmd, "vrupdctrl"))  // Client sends update for VR related data - Max Makes Mods, 2017-08-18
+	{
+		int size = CMD_ARGC();
+		if (size == 16)
+		{
+			int timestamp = atoi(CMD_ARGV(1));
+			bool isValid = atoi(CMD_ARGV(2)) != 0;
+			VRControllerID id = VRControllerID(atoi(CMD_ARGV(3)));
+			bool isMirrored = atoi(CMD_ARGV(4)) != 0;
+			Vector offset(atof(CMD_ARGV(5)), atof(CMD_ARGV(6)), atof(CMD_ARGV(7)));
+			Vector angles(atof(CMD_ARGV(8)), atof(CMD_ARGV(9)), atof(CMD_ARGV(10)));
+			Vector velocity(atof(CMD_ARGV(11)), atof(CMD_ARGV(12)), atof(CMD_ARGV(13)));
+			bool isDragging = atoi(CMD_ARGV(14)) != 0;
+			bool isFiring = atoi(CMD_ARGV(15)) != 0;
+			player->UpdateVRController(id, timestamp, isValid, isMirrored, offset, angles, velocity, isDragging, isFiring);
+		}
+		else
+		{
+			char errormsg[1024] = { 0 };
+			snprintf(errormsg, sizeof(errormsg), "Invalid vr update (%i): %s %s!\n", size, pcmd, CMD_ARGS()); // BSVR: sprintf_s -> snprintf for Linux
+			ClientPrint(&pEntity->v, HUD_PRINTCONSOLE, errormsg);
+		}
+	}
+	else if (FStrEq(pcmd, "vrtele"))
+	{
+		if (atoi(CMD_ARGV(1)))
+		{
+			player->StartVRTele();
+		}
+		else
+		{
+			player->StopVRTele();
+		}
+	}
+	else if (FStrEq(pcmd, "vrspeech"))
+	{
+		player->HandleSpeechCommand(VRSpeechCommand(atoi(CMD_ARGV(1))));
+	}
+	// BSVR end
 	else if (g_pGameRules->ClientCommand(player, pcmd))
 	{
 		// MenuSelect returns true only if the command is properly handled,  so don't print a warning
@@ -701,12 +818,27 @@ void ServerDeactivate()
 
 	// Peform any shutdown operations here...
 	//
+
+	// BSVR start
+	VRPhysicsHelper::DestroyInstance();
+	// BSVR end
 }
 
 void ServerActivate(edict_t* pEdictList, int edictCount, int clientMax)
 {
 	int i;
 	CBaseEntity* pClass;
+
+	// BSVR start
+	// Don't activate the server if we loaded from invalid savegame (see world.cpp RestoreGlobalState)
+	// extern bool g_didRestoreSaveGameFail;
+	// if (g_didRestoreSaveGameFail)
+	// 	return;
+
+	// VRNetworkManager::InitNetwork();
+
+	VRPhysicsHelper::CreateInstance();
+	// BSVR end
 
 	// Every call to ServerActivate should be matched by a call to ServerDeactivate
 	g_serveractive = 1;
@@ -888,6 +1020,30 @@ static bool g_LastAllowBunnyHoppingState = false;
 //
 void StartFrame()
 {
+	// BSVR start
+	extern void VRClearCvarCache();
+	VRClearCvarCache();
+
+	// Don't think in game loaded from invalid savegame (see world.cpp RestoreGlobalState)
+	// extern bool g_didRestoreSaveGameFail;
+	// if (g_didRestoreSaveGameFail)
+	// {
+	// 	// We cannot shut down a server, but we can switch to crossfire
+	// 	extern bool g_didRestoreSaveGameFail_MapChangedToSafety;
+	// 	if (!g_didRestoreSaveGameFail_MapChangedToSafety)
+	// 	{
+	// 		CHANGE_LEVEL("crossfire", nullptr);
+	// 		g_didRestoreSaveGameFail_MapChangedToSafety = true;
+	// 	}
+	// 	return;
+	// }
+
+	UTIL_UpdateSDModels();
+
+	VRPhysicsHelper::Instance().StartFrame();
+
+	// BSVR end
+
 	if (g_pGameRules)
 		g_pGameRules->Think();
 
@@ -1220,7 +1376,7 @@ we could also use the pas/ pvs that we set in SetupVisibility, if we wanted to. 
 */
 int AddToFullPack(struct entity_state_s* state, int e, edict_t* ent, edict_t* host, int hostflags, int player, unsigned char* pSet)
 {
-	// Entities with an index greater than this will corrupt the client's heap because 
+	// Entities with an index greater than this will corrupt the client's heap because
 	// the index is sent with only 11 bits of precision (2^11 == 2048).
 	// So we don't send them, just like having too many entities would result
 	// in the entity not being sent.
@@ -1517,7 +1673,7 @@ void Entity_FieldInit(struct delta_s* pFields)
 ==================
 Entity_Encode
 
-Callback for sending entity_state_t info over network. 
+Callback for sending entity_state_t info over network.
 FIXME:  Move to script
 ==================
 */
@@ -1588,7 +1744,7 @@ void Player_FieldInit(struct delta_s* pFields)
 ==================
 Player_Encode
 
-Callback for sending entity_state_t for players info over network. 
+Callback for sending entity_state_t for players info over network.
 ==================
 */
 void Player_Encode(struct delta_s* pFields, const unsigned char* from, const unsigned char* to)
@@ -1669,7 +1825,7 @@ void Custom_Entity_FieldInit(struct delta_s* pFields)
 ==================
 Custom_Encode
 
-Callback for sending entity_state_t info ( for custom entities ) over network. 
+Callback for sending entity_state_t info ( for custom entities ) over network.
 FIXME:  Move to script
 ==================
 */
@@ -1834,9 +1990,21 @@ void UpdateClientData(const edict_t* ent, int sendweapons, struct clientdata_s* 
 	cd->weapons = pev->weapons;
 
 	// Vectors
-	cd->origin = pev->origin;
+	// BSVR start
+	if (pl != nullptr)
+	{
+		cd->origin = pl->GetClientOrigin();
+		cd->view_ofs = pl->GetClientViewOfs();
+	}
+	else
+	{
+		cd->origin = ent->v.origin;
+		cd->view_ofs = ent->v.view_ofs;
+	}
+	// cd->origin = pev->origin;
+	// cd->view_ofs = pev->view_ofs;
+	// BSVR end
 	cd->velocity = pev->velocity;
-	cd->view_ofs = pev->view_ofs;
 	cd->punchangle = pev->punchangle;
 
 	cd->bInDuck = pev->bInDuck;
@@ -2042,7 +2210,7 @@ AllowLagCompensation
  The game .dll should return 1 if lag compensation should be allowed ( could also just set
   the sv_unlag cvar.
  Most games right now should return 0, until client-side weapon prediction code is written
-  and tested for them ( note you can predict weapons, but not do lag compensation, too, 
+  and tested for them ( note you can predict weapons, but not do lag compensation, too,
   if you want.
 ================================
 */

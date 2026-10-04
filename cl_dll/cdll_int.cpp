@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1999, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -37,6 +37,8 @@
 #include "tri.h"
 #include "vgui_TeamFortressViewport.h"
 #include "filesystem_utils.h"
+
+#include "vr/VRRenderer.h"
 
 cl_enginefunc_t gEngfuncs;
 CHud gHUD;
@@ -181,7 +183,7 @@ int DLLEXPORT HUD_VidInit()
 	HUD_Init
 
 Called whenever the client connects
-to a server.  Reinitializes all 
+to a server.  Reinitializes all
 the hud variables.
 ==========================
 */
@@ -208,7 +210,11 @@ int DLLEXPORT HUD_Redraw(float time, int intermission)
 {
 	//	RecClHudRedraw(time, intermission);
 
-	gHUD.Redraw(time, 0 != intermission);
+	// BSVR start
+	gVRRenderer.InterceptHUDRedraw(time, intermission);
+
+	// gHUD.Redraw(time, 0 != intermission);
+	// BSVR end
 
 	return 1;
 }
@@ -264,6 +270,10 @@ void DLLEXPORT HUD_Frame(double time)
 	//	RecClHudFrame(time);
 
 	GetClientVoiceMgr()->Frame(time);
+
+    // BSVR start
+	gVRRenderer.Frame(time);
+	// BSVR end
 }
 
 

@@ -21,6 +21,11 @@
 #include "vgui_TeamFortressViewport.h"
 #include "filesystem_utils.h"
 
+// BSVR start
+#include "vr/VRInput.h"
+#include "vr/VRRenderer.h"
+// BSVR end
+
 
 extern bool g_iAlive;
 
@@ -695,6 +700,18 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 			cmd->upmove *= cl_movespeedkey->value;
 		}
 
+		// BSVR start
+		// Add in analog VR input - Max Makes Mods, 2019-04-11
+		if (g_vrInput.analogforward > EPSILON)
+			cmd->forwardmove += g_vrInput.analogforward * cl_forwardspeed->value;
+		if (g_vrInput.analogforward < -EPSILON)
+			cmd->forwardmove += g_vrInput.analogforward * cl_backspeed->value;
+		if (fabs(g_vrInput.analogsidemove) > EPSILON)
+			cmd->sidemove += g_vrInput.analogsidemove * cl_sidespeed->value;
+		if (fabs(g_vrInput.analogupmove) > EPSILON)
+			cmd->upmove += g_vrInput.analogupmove * cl_upspeed->value;
+		// BSVR end
+
 		// clip to maxspeed
 		spd = gEngfuncs.GetClientMaxspeed();
 		if (spd != 0.0)
@@ -725,6 +742,42 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 	//
 	cmd->buttons = CL_ButtonBits(true);
 
+	// BSVR start
+	if (g_vrInput.m_crouchState)
+	{
+		cmd->buttons |= IN_DUCK;
+	}
+
+	cmd->buttons_ex = 0;
+	if (g_vrInput.analogforward > EPSILON)
+		cmd->buttons |= IN_FORWARD;
+	if (g_vrInput.analogforward < -EPSILON)
+		cmd->buttons |= IN_BACK;
+	if (g_vrInput.analogsidemove > EPSILON)
+		cmd->buttons |= IN_MOVERIGHT;
+	if (g_vrInput.analogsidemove < -EPSILON)
+		cmd->buttons |= IN_MOVELEFT;
+	if (g_vrInput.analogupmove > EPSILON)
+		cmd->buttons_ex |= X_IN_UP;
+	if (g_vrInput.analogupmove < -EPSILON)
+		cmd->buttons_ex |= X_IN_DOWN;
+	if (g_vrInput.analogupmove > EPSILON)
+		cmd->buttons_ex |= X_IN_UP;
+	if (g_vrInput.analogupmove < -EPSILON)
+		cmd->buttons_ex |= X_IN_DOWN;
+	if (g_vrInput.IsVRDucking())
+		cmd->buttons_ex |= X_IN_VRDUCK;
+	if (g_vrInput.ShouldLetGoOffLadder())
+		cmd->buttons_ex |= X_IN_LETLADDERGO;
+
+	if (in_up.state & 3)
+		cmd->buttons_ex |= X_IN_UP;
+	if (in_down.state & 3)
+		cmd->buttons_ex |= X_IN_DOWN;
+	in_up.state &= ~2;
+	in_down.state &= ~2;
+	// BSVR end
+
 	// If they're in a modal dialog, ignore the attack button.
 	if (GetClientVoiceMgr()->IsInSquelchMode())
 		cmd->buttons &= ~IN_ATTACK;
@@ -742,6 +795,10 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 		}
 	}
 
+
+	// BSVR start
+	gVRRenderer.GetViewAngles((float*)viewangles);
+	// BSVR end
 	gEngfuncs.GetViewAngles((float*)viewangles);
 	// Set current view angles.
 
@@ -754,6 +811,19 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 	{
 		VectorCopy(oldangles, cmd->viewangles);
 	}
+
+	// BSVR start
+	// Hackhack - Use movement angles to set "viewangles",
+	// as these are actually used to determine movement direction
+	// (see line 2937 in pm_shared.cpp)
+	// - Max Makes Mods, 2019-04-11
+	VectorCopy(gVRRenderer.GetMovementAngles(), cmd->viewangles);
+
+	// Clear analog VR input data
+	g_vrInput.analogforward = 0.f;
+	g_vrInput.analogsidemove = 0.f;
+	g_vrInput.analogupmove = 0.f;
+	// BSVR end
 }
 
 /*
@@ -1024,3 +1094,51 @@ void DLLEXPORT HUD_Shutdown()
 	FileSystem_FreeFileSystem();
 	CL_UnloadParticleMan();
 }
+
+// BSVR start
+// Called when player is dead ingame (fixes weapons firing after respawn due to button states not being properly reset)
+void ClearInputForDeath()
+{
+	in_attack.down[0] = in_attack.down[1] = 0;
+	in_attack.state = 4;
+
+	in_duck.down[0] = in_duck.down[1] = 0;
+	in_duck.state = 4;
+
+	in_jump.down[0] = in_jump.down[1] = 0;
+	in_jump.state = 4;
+
+	in_forward.down[0] = in_forward.down[1] = 0;
+	in_forward.state = 4;
+
+	in_back.down[0] = in_back.down[1] = 0;
+	in_back.state = 4;
+
+	in_use.down[0] = in_use.down[1] = 0;
+	in_use.state = 4;
+
+	in_left.down[0] = in_left.down[1] = 0;
+	in_left.state = 4;
+
+	in_right.down[0] = in_right.down[1] = 0;
+	in_right.state = 4;
+
+	in_moveleft.down[0] = in_moveleft.down[1] = 0;
+	in_moveleft.state = 4;
+
+	in_moveright.down[0] = in_moveright.down[1] = 0;
+	in_moveright.state = 4;
+
+	in_attack2.down[0] = in_attack2.down[1] = 0;
+	in_attack2.state = 4;
+
+	in_reload.down[0] = in_reload.down[1] = 0;
+	in_reload.state = 4;
+
+	in_alt1.down[0] = in_alt1.down[1] = 0;
+	in_alt1.state = 4;
+
+	in_score.down[0] = in_score.down[1] = 0;
+	in_score.state = 4;
+}
+// BSVR end

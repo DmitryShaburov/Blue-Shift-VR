@@ -27,6 +27,11 @@
 #include "GameStudioModelRenderer.h"
 #include "Exports.h"
 
+// BSVR start
+#include "vr/VRRenderer.h"
+#include <unordered_set>
+// BSVR end
+
 //
 // Override the StudioModelRender virtual member functions here to implement custom bone
 // setup, blending, etc.
@@ -34,6 +39,9 @@
 
 // Global engine <-> studio model rendering code interface
 extern engine_studio_api_t IEngineStudio;
+
+studiohdr_t* Mod_Extradata(const char* callerInfo, cl_entity_t* ent, model_t* mod);
+
 
 // The renderer object, created on the stack.
 CGameStudioModelRenderer g_StudioRenderer;
@@ -82,6 +90,10 @@ R_StudioInit
 void R_StudioInit()
 {
 	g_StudioRenderer.Init();
+
+	// BSVR start
+	gVRRenderer.Init();
+	// BSVR end
 }
 
 // The simple drawing interface we'll pass back to the engine

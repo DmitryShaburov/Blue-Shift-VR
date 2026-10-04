@@ -12,8 +12,10 @@ typedef struct engine_studio_api_s
 	void (*LoadCacheFile)(char* path, struct cache_user_s* cu);
 	// Retrieve model pointer for the named model
 	struct model_s* (*Mod_ForName)(const char* name, int crash_if_missing);
+	// BSVR start
 	// Retrieve pointer to studio model data block from a model
-	void* (*Mod_Extradata)(struct model_s* mod);
+	void* (*DONOTUSEMod_ExtradataDONOTUSE)(struct model_s* mod);
+	// BSVR end
 	// Retrieve indexed model from client side model precache list
 	struct model_s* (*GetModelByIndex)(int index);
 	// Get entity that is set for rendering

@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -16,6 +16,16 @@
 #pragma once
 
 #include "pm_materials.h"
+
+// BSVR start
+#include "vr/VRCommons.h"
+#include "vr/VRPhysicsHelper.h"
+#include "vr/VRController.h"
+#include "vr/VRControllerInteractionManager.h"
+#include "vr/VRControllerTeleporter.h"
+#include "vr/VRGroundEntityHandler.h"
+#include "vr/VRShared.h"
+// BSVR end
 
 
 #define PLAYER_FATAL_FALL_SPEED 1024															  // approx 60 feet
@@ -160,6 +170,9 @@ public:
 	bool m_fInitHUD;	 // True when deferred HUD restart msg needs to be sent
 	bool m_fGameHUDInitialized;
 	int m_iTrain;	// Train control position
+	// BSVR start
+	EHandleT<CBaseEntity> m_hLastTrain;
+	// BSVR end
 	bool m_fWeapon; // Set this to false to force a reset of the current weapon HUD info
 
 	EHANDLE m_pTank;		 // the tank which the player is currently controlling,  NULL if no tank
@@ -319,7 +332,10 @@ public:
 	int Illumination() override;
 
 	void ResetAutoaim();
-	Vector GetAutoaimVector(float flDelta);
+	// BSVR start
+	// Vector GetAutoaimVector(float flDelta);
+	Vector GetAutoaimVector(float flDelta = 0.f);
+	// BSVR end
 	Vector AutoaimDeflection(Vector& vecSrc, float flDist, float flDelta);
 
 	void ForceClientDllUpdate(); // Forces all client .dll specific data to be resent to client.
@@ -330,6 +346,10 @@ public:
 	int GetCustomDecalFrames();
 
 	void TabulateAmmo();
+
+	// BSVR start
+	bool IsUsableTrackTrain(CBaseEntity* pTrain);
+	// BSVR end
 
 	float m_flStartCharge;
 	float m_flAmmoStartCharge;
@@ -355,6 +375,208 @@ public:
 
 	//True if the player is currently spawning.
 	bool m_bIsSpawning = false;
+
+// BSVR start
+
+/*
+*  Methods and members for VR stuff - Max Makes Mods, 2017-08-18
+*/
+
+// private VR members:
+private:
+	// for immersive ladder climbing
+	struct VRLadderGrabbingController
+	{
+		VRControllerID controller;
+		// BSVR changes
+		EHANDLE ladder;
+		// BSVR end
+	};
+
+	Vector vr_lastHMDOffset;
+	int vr_hmdLastUpdateClienttime = 0;
+	float vr_hmdLastUpdateServertime = 0;
+
+	Vector vr_hmdForward{ 1.f, 0.f, 0.f };
+
+	Vector vr_ClientOriginOffset;  // Must be Vector instead of Vector2D for save/restore. z is not used.
+
+	EHandleT<CBaseEntity> hFlashLight;
+	EHandleT<CBaseEntity> hFlashlightMonster;
+	bool fFlashlightIsOn = false;
+
+	EHandleT<CBaseEntity> m_vrHRetinaScanner;
+	float m_vrRetinaScannerLookTime = 0;
+	bool m_vrRetinaScannerUsed = false;
+
+	// for save/restore
+	// client sends these every frame
+	// server sends these when loading/restoring
+	float vr_prevYaw = 0.f;
+	float vr_currentYaw = 0.f;
+	bool vr_needsToSendRestoreYawMsgToClient = false;
+	bool vr_hasSentRestoreYawMsgToClient = false;
+	bool vr_hasSentSpawnYawToClient = false;
+
+	std::unordered_set<EHandleT<CBaseEntity>, EHandleT<CBaseEntity>::Hash, EHandleT<CBaseEntity>::Equal> m_vrInUseButtons;
+	std::unordered_set<EHandleT<CBaseEntity>, EHandleT<CBaseEntity>::Hash, EHandleT<CBaseEntity>::Equal> m_vrLeftMeleeEntities;
+	std::unordered_set<EHandleT<CBaseEntity>, EHandleT<CBaseEntity>::Hash, EHandleT<CBaseEntity>::Equal> m_vrRightMeleeEntities;
+
+	std::unordered_map<VRControllerID, VRController> m_vrControllers;
+
+	VRControllerTeleporter m_vrControllerTeleporter;
+	VRControllerInteractionManager m_vrControllerInteractionManager;
+	std::unique_ptr<VRGroundEntityHandler> m_vrGroundEntityHandler;
+
+	bool m_vrHasTeleporterPose{ false };
+	Vector m_vrTeleporterOffset;
+	Vector m_vrTeleporterAngles;
+
+	bool m_vrHasFlashlightPose{ false };
+	Vector m_vrFlashlightOffset;
+	Vector m_vrFlashlightAngles;
+
+	EHANDLE m_hCurrentUpwardsTriggerPush;
+
+	float vr_analogFire{ 0.f };
+
+	// For VR suitable display of train controls
+	Vector vr_trainControlPosition;
+	float vr_trainControlYaw = 0.f;
+
+	std::vector<VRLadderGrabbingController> m_ladderGrabbingControllers;
+
+	bool m_vrIsUsingTankWithVRControllers{ false };
+	Vector m_vrTankVRControllerAngles;
+
+	mutable EHandleT<CLaserSpot> m_hLaserSpot;
+
+// public VR members:
+public:
+	float vr_spawnYaw{ 0.f };
+	bool vr_IsJustSpawned{ false };
+	bool vr_IsJustRestored{ false };
+
+	Vector m_vrLedgeTargetPosition;
+	Vector m_vrLedgePullStartPosition;
+	float m_vrLedgePullSpeed{ 0.f };
+	float m_vrLedgePullStartTime{ 0.f };
+	bool m_vrIsPullingOnLedge{ false };
+	bool m_vrWasPullingOnLedge{ false };
+
+	VRController& GetController(VRControllerID id) { return m_vrControllers[id]; }
+
+// 	bool IsAnyControllerFiringAndHoldingThisTank(CBaseEntity* pTank);
+
+
+// private VR methods:
+private:
+
+	bool CheckVRTRainButtonTouched(const Vector& buttonLeftPos, const Vector& buttonRightPos);
+
+	void GetTeleporterPose(Vector& position, Vector& dir);
+	void GetFlashlightPose(Vector& position, Vector& dir);
+
+	void UpdateFlashlight();
+	void UpdateVRTele();
+	void UpdateVRLaserSpot();
+
+	void ClearLadderGrabbingControllers();
+
+	// Called by PostThink()
+	void VRUseOrUnuseTank();
+	bool IsTankVRControlled(entvars_t* pevTank);
+	CBaseEntity* VRFindTank(const char* func_tank_classname);
+
+	VRGroundEntityHandler& GetGroundEntityHandler()
+	{
+		if (!m_vrGroundEntityHandler)
+		{
+			m_vrGroundEntityHandler = std::make_unique<VRGroundEntityHandler>(this);
+		}
+		return *m_vrGroundEntityHandler;
+	}
+
+	void VRHandleRetinaScanners();
+
+// public VR methods:
+public:
+	void StartVRTele();
+	void StopVRTele();
+
+	const Vector GetWeaponPosition();
+	const Vector GetWeaponAngles();
+	const Vector GetWeaponViewAngles();
+// 	const Vector GetWeaponVelocity();
+	const Vector GetClientOrigin();   // Used by UpdateClientData to send player origin to client
+	const Vector GetClientViewOfs();  // Used by UpdateClientData to send player view_ofs to client
+// 	bool IsWeaponUnderWater();
+// 	bool IsWeaponPositionValid();
+
+	void UpdateVRHeadset(const int timestamp, const Vector2D& hmdOffset, const float offsetZ, const Vector& forward, const Vector2D& hmdYawOffsetDelta, float prevYaw, float currentYaw, bool hasReceivedRestoreYawMsg, bool hasReceivedSpawnYaw);
+	void UpdateVRController(const VRControllerID vrControllerID, const int timestamp, const bool isValid, const bool isMirrored, const Vector& offset, const Vector& angles, const Vector& velocity, bool isDragging, bool isFiring);
+
+	void StoreVROffsetsForLevelchange();
+
+	void PlayMeleeSmackSound(CBaseEntity* pSmackedEntity, const int weaponId, const Vector& pos, const Vector& velocity);
+
+	void PlayVRWeaponAnimation(int iAnim, int body);
+	void PlayVRWeaponMuzzleflash();
+
+	void SetCurrentUpwardsTriggerPush(CBaseEntity* pEntity);
+	CBaseEntity* GetCurrentUpwardsTriggerPush();
+
+	void SetFlashlightPose(const Vector& offset, const Vector& angles);
+	void ClearFlashlightPose();
+
+	void SetTeleporterPose(const Vector& offset, const Vector& angles);
+	void ClearTeleporterPose();
+
+	void DoLongJump(bool playStepSound, bool force);
+	void RestartCurrentMap();
+
+	void HolsterWeapon(bool force);
+
+	float GetAnalogFire();
+	void SetAnalogFire(float analogfire);
+
+	// Used by CChangeLevel::InTransitionVolume
+	// Set by VRControllerTeleporter
+	bool vr_didJustTeleportThroughChangeLevel{ false };
+
+// 	bool HasSuit();
+
+	// for immersive ladder climbing
+	void SetLadderGrabbingController(VRControllerID controller, CBaseEntity* pLadder);
+	void ClearLadderGrabbingController(VRControllerID controller);
+	bool IsLadderGrabbingController(VRControllerID controller, CBaseEntity* pLadder);
+	int GetGrabbedLadderEntIndex();
+
+	void StartPullingLedge(const Vector& ledgeTargetPosition, float speed);
+	void StopPullingLedge();
+
+	void HandleSpeechCommand(VRSpeechCommand command);
+
+// 	// For tanks (used in CFuncTank::TrackTarget())
+// 	Vector GetTankControlAngles();
+
+	// Checks if the weapon can be fired (prevents shooting when controller is pointed through walls)
+	bool VRCanAttack();
+
+	void VRJustTeleported(const Vector& fromOrigin, const Vector& fromAngles);
+
+// 	// for achievement "Perfect Landing"
+// 	inline void VRJustGotYeetedByBPTrain() { m_vrJustGotYeetedByBPTrain = true; }
+
+// 	CVRAchievementsAndStatsData m_vrAchievementsAndStatsData;
+// 	inline CVRAchievementsAndStatsData& GetAchievementsAndStatsData() { return m_vrAchievementsAndStatsData; }
+
+private:
+	bool m_vrHasSurfacedInThatMapWithTheTank{ false };
+	bool m_vrJustGotYeetedByBPTrain{ false };
+
+// 	float m_vrLastJumpTime{ 0.f };
+// BSVR end
 };
 
 inline void CBasePlayer::SetWeaponBit(int id)

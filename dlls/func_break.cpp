@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -803,36 +803,9 @@ int CBreakable::DamageDecal(int bitsDamageType)
 }
 
 
-class CPushable : public CBreakable
-{
-public:
-	void Spawn() override;
-	void Precache() override;
-	void Touch(CBaseEntity* pOther) override;
-	void Move(CBaseEntity* pMover, bool push);
-	bool KeyValue(KeyValueData* pkvd) override;
-	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value) override;
-	void EXPORT StopSound();
-	//	virtual void	SetActivator( CBaseEntity *pActivator ) { m_pPusher = pActivator; }
-
-	int ObjectCaps() override { return (CBaseEntity::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | FCAP_CONTINUOUS_USE; }
-	bool Save(CSave& save) override;
-	bool Restore(CRestore& restore) override;
-
-	inline float MaxSpeed() { return m_maxSpeed; }
-
-	// breakables use an overridden takedamage
-	bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType) override;
-
-	int DamageDecal(int bitsDamageType) override;
-
-	static TYPEDESCRIPTION m_SaveData[];
-
-	static const char* m_soundNames[3];
-	int m_lastSound; // no need to save/restore, just keeps the same sound from playing twice in a row
-	float m_maxSpeed;
-	float m_soundTime;
-};
+// BSVR start
+// CPushable class declaration moved to func_break.h so VR controller code can dynamic_cast to it
+// BSVR end
 
 TYPEDESCRIPTION CPushable::m_SaveData[] =
 	{
@@ -1023,21 +996,28 @@ void CPushable::Move(CBaseEntity* pOther, bool push)
 			pevToucher->velocity.y = pev->velocity.y;
 		}
 
-		if ((gpGlobals->time - m_soundTime) > 0.7)
-		{
-			m_soundTime = gpGlobals->time;
-			if (length > 0 && FBitSet(pev->flags, FL_ONGROUND))
-			{
-				m_lastSound = RANDOM_LONG(0, 2);
-				EMIT_SOUND(ENT(pev), CHAN_WEAPON, m_soundNames[m_lastSound], 0.5, ATTN_NORM);
-				//			SetThink( StopSound );
-				//			pev->nextthink = pev->ltime + 0.1;
-			}
-			else
-				STOP_SOUND(ENT(pev), CHAN_WEAPON, m_soundNames[m_lastSound]);
-		}
+		// BSVR start
+		EmitPushSound(length);
+		// BSVR end
 	}
 }
+
+// BSVR start - extracted from CPushable::Move so VR controller code can play push sounds
+void CPushable::EmitPushSound(float length)
+{
+	if ((gpGlobals->time - m_soundTime) > 0.7f)
+	{
+		m_soundTime = gpGlobals->time;
+		if (length > 0 && FBitSet(pev->flags, FL_ONGROUND))
+		{
+			m_lastSound = RANDOM_LONG(0, 2);
+			EMIT_SOUND(ENT(pev), CHAN_WEAPON, m_soundNames[m_lastSound], 0.5, ATTN_NORM);
+		}
+		else
+			STOP_SOUND(ENT(pev), CHAN_WEAPON, m_soundNames[m_lastSound]);
+	}
+}
+// BSVR end
 
 #if 0
 void CPushable::StopSound()

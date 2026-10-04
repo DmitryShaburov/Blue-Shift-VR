@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -142,6 +142,9 @@ public:
 	// For following
 	bool CanFollow();
 	bool IsFollowing() { return m_hTargetEnt != NULL && m_hTargetEnt->IsPlayer(); }
+	// BSVR start
+	bool IsFollowing(CBaseEntity* pPlayer) { return pPlayer != nullptr && IsFollowing() && m_hTargetEnt->pev == pPlayer->pev; }
+	// BSVR end
 	void StopFollowing(bool clearSchedule) override;
 	void StartFollowing(CBaseEntity* pLeader);
 	virtual void DeclineFollowing() {}

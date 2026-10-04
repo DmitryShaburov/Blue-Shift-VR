@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -58,13 +58,20 @@ public:
 	float m_fAttackFront, m_fAttackRear, m_fAttackLeft, m_fAttackRight;
 	void GetPainColor(int& r, int& g, int& b);
 	float m_fFade;
+	// BSVR start - moved to public for mod
+	bool m_healthLost = false;
+	bool m_healthGained = false;
+	int m_bitsDamage;
+	// BSVR end
 
 private:
 	HSPRITE m_hSprite;
 	HSPRITE m_hDamage;
 
 	DAMAGE_IMAGE m_dmg[NUM_DMG_TYPES];
-	int m_bitsDamage;
+	// BSVR start - moved to public for mod
+	// int m_bitsDamage;
+	// BSVR end
 	bool DrawPain(float fTime);
 	bool DrawDamage(float fTime);
 	void CalcDamageDirection(Vector vecFrom);
