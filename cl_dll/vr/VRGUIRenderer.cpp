@@ -436,7 +436,7 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
                 nk_label(&ctx, " ", NK_TEXT_LEFT);
 
                 nk_layout_row_push(&ctx, 855 * m_guiScaleW);
-                if (nk_button_label(&ctx, "Straight to Black Mesa Inbound"))
+                if (nk_button_label(&ctx, "Straight to Insecurity"))
                 {
                     VRGameFunctions::StartNewGame(true);
                     isInNewGameMenu = false;

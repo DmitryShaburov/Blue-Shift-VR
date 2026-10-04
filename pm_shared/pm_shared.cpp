@@ -3351,7 +3351,7 @@ void PM_YesClip(physent_t* pLadder)
 	// No gravity in water - Max Makes Mods, 2018-02-11
 	if (IsInWaterAndIsGravityDisabled() || (pmove->flags & FL_BARNACLED) || VRIsInUpwardsTriggerPush(pmove->player_index))
 	{
-		pmove->velocity[2] = std::max(0.f, pmove->velocity[2]);
+		pmove->velocity[2] = std::fmax(0.f, pmove->velocity[2]);
 	}
 
 	if (!PM_InWater() && !(pmove->flags & FL_BARNACLED) && !VRIsInUpwardsTriggerPush(pmove->player_index))
@@ -3464,7 +3464,7 @@ void PM_YesClip(physent_t* pLadder)
 
 	if (IsInWaterAndIsGravityDisabled() || (pmove->flags & FL_BARNACLED) || VRIsInUpwardsTriggerPush(pmove->player_index))
 	{
-		pmove->velocity[2] = std::max(0.f, pmove->velocity[2]);
+		pmove->velocity[2] = std::fmax(0.f, pmove->velocity[2]);
 	}
 
 	// Did we enter or leave the water?

@@ -133,12 +133,12 @@ void VRGameFunctions::SetVolume(float volume)
 
 void VRGameFunctions::StartNewGame(bool skipTrainRide)
 {
-	gEngfuncs.pfnClientCmd(skipTrainRide ? "map c1a0" : "map c0a0");
+	gEngfuncs.pfnClientCmd(skipTrainRide ? "map ba_security1" : "map ba_tram1");
 }
 
 void VRGameFunctions::StartHazardCourse()
 {
-	gEngfuncs.pfnClientCmd("map t0a0");
+	gEngfuncs.pfnClientCmd("map ba_hazard1");
 }
 
 void VRGameFunctions::OpenMenu()

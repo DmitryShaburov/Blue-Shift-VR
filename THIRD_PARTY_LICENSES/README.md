@@ -6,9 +6,9 @@ It includes the following third-party code. Full license texts are in this folde
 | Component | Location | Copyright | License |
 |---|---|---|---|
 | Half-Life 1 SDK | all SDK code | Valve Corporation; portions (c) 1996 Id Software, Inc. | Half-Life 1 SDK License, `../LICENSE` |
-| Half-Life: Blue Shift Updated | SDK code and Blue Shift game code | TWHL community, Sam Vanheer and contributors | Half-Life 1 SDK License |
+| Half-Life: Blue Shift Updated | SDK code and Blue Shift game code; `installer/payload` icons and `maps/ba_yard4a.ent` from its release | TWHL community, Sam Vanheer and contributors | Half-Life 1 SDK License |
 | Half-Life: VR | `dlls/vr`, `cl_dll/vr`, `game_shared/vr`, `BSVR` sections | (c) 2017-2022 Max Makes Mods | Half-Life 1 SDK License; reused with the authors' written permission |
-| OpenVR 2.15.6 | `cl_dll/vr/openvr.h`, `lib/public/openvr_api.lib` | (c) 2015 Valve Corporation | BSD-3-Clause, `OpenVR.txt` |
+| OpenVR 2.15.6 | `cl_dll/vr/openvr.h`, `lib/public/openvr_api.lib`, `lib/public/openvr_api.dll` | (c) 2015 Valve Corporation | BSD-3-Clause, `OpenVR.txt` |
 | Vector and matrix classes | `cl_dll/vr/Matrices.*`, `cl_dll/vr/Vectors.h` | (C) 2005-2013 Song Ho Ahn; as distributed in the OpenVR SDK samples | BSD-3-Clause, `OpenVR.txt` |
 | EasyHook 2.7.7097.0 | `cl_dll/EasyHook` | (c) 2009 Christoph Husse, (c) 2015 Justin Stenning | MIT, `EasyHook.txt` |
 | ReactPhysics3D 0.7.1 | `external/reactphysics3d` | (c) 2010-2019 Daniel Chappuis | zlib, `ReactPhysics3D.txt` |

@@ -49,7 +49,7 @@ void VRSettings::Init()
 	RegisterCVAR("vr_speech_language_id", "1400");
 	RegisterCVAR("vr_flashlight_attachment", "0");
 	RegisterCVAR("vr_flashlight_toggle", "1");
-	RegisterCVAR("vr_movement_attachment", "0");
+	RegisterCVAR("vr_movement_attachment", "2");
 	RegisterCVAR("vr_force_introtrainride", "1");
 	RegisterCVAR("vr_gauss_scale", "1");
 	RegisterCVAR("vr_gordon_hand_scale", "1");

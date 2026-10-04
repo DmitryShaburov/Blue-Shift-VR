@@ -7,3 +7,8 @@
 # Never commit
 steam_appid.txt
 *.pdb
+# Installer (payload DLLs come from the mod build; liblist.gam stays tracked)
+installer/bin/
+installer/obj/
+installer/payload/dlls/
+installer/payload/cl_dlls/
