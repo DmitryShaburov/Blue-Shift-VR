@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -88,10 +88,12 @@ void HUD_SendWeaponAnim(int iAnim, int body, bool force)
 	if (!g_runfuncs && !force)
 		return;
 
-	g_currentanim = iAnim;
+	// BSVR start - upstream code commented out
+	// g_currentanim = iAnim;
 
 	// Tell animation system new info
-	gEngfuncs.pfnWeaponAnim(iAnim, body);
+	// gEngfuncs.pfnWeaponAnim(iAnim, body);
+	// BSVR end
 }
 
 /*

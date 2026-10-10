@@ -173,7 +173,42 @@ public:
 	int m_bloodColor;
 	int m_cBloodDecals;
 	int m_material;
-	float m_lifeTime;
+	// BSVR start
+	// float m_lifeTime; - original
+
+	virtual bool IsDraggable() override { return !(pev->effects & EF_NODRAW) && pev->rendermode != kRenderTransTexture; }
+	virtual void HandleDragStart() override
+	{
+		pev->movetype = MOVETYPE_NONE;
+		if (m_pfnTouch) sticky = m_pfnTouch == &CGib::StickyGibTouch;
+		SetThink(nullptr);
+		SetTouch(nullptr);
+		m_hThrower = m_vrDragger;	// set this here. once the player let's go we check in StickyGibTouch or BounceGibTouch if we hit an NPC
+
+		// if (m_vrDragger
+		// 	&& m_vrDragger->IsNetClient()
+		// 	&& (FStrEq(STRING(pev->model), "models/agibs.mdl") || FStrEq(STRING(pev->model), "models/SD/agibs.mdl")))
+		// {
+		// 	UTIL_VRGiveAchievement(m_vrDragger, VRAchievement::GEN_ALIENGIB);
+		// }
+	}
+	virtual void HandleDragStop() override
+	{
+		pev->movetype = MOVETYPE_BOUNCE;
+		SetThink(&CGib::WaitTillLand);
+		SetTouch(sticky ? &CGib::StickyGibTouch : &CGib::BounceGibTouch);
+	}
+
+	virtual void UpdateOnRemove() override;
+
+private:
+	bool sticky = false;
+
+	EHandleT<CBaseEntity> m_hThrower;
+
+	static void LimitNumberOfGibs();
+	static int m_numGibs;
+// BSVR end
 };
 
 

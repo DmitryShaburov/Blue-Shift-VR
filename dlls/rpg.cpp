@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -128,9 +128,14 @@ void CRpgRocket::Spawn()
 	SetThink(&CRpgRocket::IgniteThink);
 	SetTouch(&CRpgRocket::ExplodeTouch);
 
-	pev->angles.x -= 30;
-	UTIL_MakeVectors(pev->angles);
-	pev->angles.x = -(pev->angles.x + 30);
+	// BSVR start
+	// pev->angles.x -= 30; - original
+	// UTIL_MakeVectors(pev->angles); - original
+	// pev->angles.x = -(pev->angles.x + 30); - original
+	Vector vecAiming = pev->angles;
+	vecAiming.x = -vecAiming.x - 30;
+	UTIL_MakeVectors(vecAiming);
+	// BSVR end
 
 	pev->velocity = gpGlobals->v_forward * 250;
 	pev->gravity = 0.5;
@@ -144,6 +149,12 @@ void CRpgRocket::Spawn()
 //=========================================================
 void CRpgRocket::RocketTouch(CBaseEntity* pOther)
 {
+	// BSVR start
+	// don't collide with ourselves
+	if (!pOther || pOther->edict() == pev->owner)
+		return;
+	// BSVR end
+
 	STOP_SOUND(edict(), CHAN_VOICE, "weapons/rocket1.wav");
 	ExplodeTouch(pOther);
 }
@@ -428,13 +439,19 @@ void CRpg::PrimaryAttack()
 		// player "shoot" animation
 		m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
-		UTIL_MakeVectors(m_pPlayer->pev->v_angle);
-		Vector vecSrc = m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8;
+		// BSVR start
+		// UTIL_MakeVectors(m_pPlayer->pev->v_angle); - original
+		// Vector vecSrc = m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -8; - original
 
-		CRpgRocket* pRocket = CRpgRocket::CreateRpgRocket(vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this);
+		// CRpgRocket* pRocket = CRpgRocket::CreateRpgRocket(vecSrc, m_pPlayer->pev->v_angle, m_pPlayer, this); - original
 
-		UTIL_MakeVectors(m_pPlayer->pev->v_angle); // RpgRocket::Create stomps on globals, so remake.
-		pRocket->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct(m_pPlayer->pev->velocity, gpGlobals->v_forward);
+		// UTIL_MakeVectors(m_pPlayer->pev->v_angle); // RpgRocket::Create stomps on globals, so remake.
+		// pRocket->pev->velocity = pRocket->pev->velocity + gpGlobals->v_forward * DotProduct(m_pPlayer->pev->velocity, gpGlobals->v_forward); - original
+		UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
+		Vector vecSrc = m_pPlayer->GetGunPosition();
+
+		CRpgRocket* pRocket = CRpgRocket::CreateRpgRocket(vecSrc, m_pPlayer->GetAimAngles(), m_pPlayer, this);
+		// BSVR end
 #endif
 
 		// firing RPG no longer turns on the designator. ALT fire is a toggle switch for the LTD.
@@ -453,6 +470,12 @@ void CRpg::PrimaryAttack()
 
 		m_flNextPrimaryAttack = GetNextAttackDelay(1.5);
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1.5;
+
+// BSVR start
+#ifdef CLIENT_DLL
+		VRRegisterRecoil(1.f);
+#endif
+// BSVR end
 	}
 	else
 	{
@@ -541,9 +564,14 @@ void CRpg::UpdateSpot()
 			m_pSpot = CLaserSpot::CreateSpot();
 		}
 
-		UTIL_MakeVectors(m_pPlayer->pev->v_angle);
+		// BSVR start
+		// UTIL_MakeVectors(m_pPlayer->pev->v_angle); - original
+		// Vector vecSrc = m_pPlayer->GetGunPosition(); - original
+		// Vector vecAiming = gpGlobals->v_forward; - original
+		UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
 		Vector vecSrc = m_pPlayer->GetGunPosition();
-		Vector vecAiming = gpGlobals->v_forward;
+		Vector vecAiming = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
+		// BSVR end
 
 		TraceResult tr;
 		UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 8192, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);

@@ -12,10 +12,8 @@
 #define STUDIO_RENDER 1
 #define STUDIO_EVENTS 2
 
-#define MAX_EDICTS 2048
-
 // BSVR start
-#define SURF_PLANEBACK 2  // plane should be negated // Added from bspfile.h - Max Makes Mods, 2018-02-04
+#define MAX_EDICTS 3072
 // BSVR end
 
 #define MAX_MODEL_NAME 64
@@ -100,9 +98,6 @@ typedef struct texture_s
 	struct texture_s* alternate_anims; // bmodels in frame 1 use these
 	unsigned offsets[MIPLEVELS];	   // four mip maps stored
 	unsigned paloffset;
-	// BSVR start
-	int gl_texturenum = 0;
-	// BSVR end
 } texture_t;
 
 typedef struct
@@ -170,19 +165,6 @@ typedef struct mleaf_s
 	byte ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;
 
-// BSVR start
-#define VERTEXSIZE 7
-
-typedef struct glpoly_s
-{
-	struct glpoly_s* next;
-	struct glpoly_s* chain;
-	int numverts;
-	int flags; // for SURF_UNDERWATER
-	float verts[4][VERTEXSIZE]; // variable sized (xyz s1t1 s2t2)
-} glpoly_t;
-// BSVR end
-
 struct msurface_s
 {
 	int visframe; // should be drawn when node is crossed
@@ -204,10 +186,6 @@ struct msurface_s
 	short extents[2];	  // ?? s/t texture size, 1..256 for all non-sky surfaces
 
 	mtexinfo_t* texinfo;
-
-	// BSVR start
-	glpoly_t* polys; // multiple if warped
-	// BSVR end
 
 	// lighting info
 	byte styles[MAXLIGHTMAPS]; // index into d_lightstylevalue[] for animated lights

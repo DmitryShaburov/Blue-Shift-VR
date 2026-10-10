@@ -644,6 +644,14 @@ void CRosenberg::Spawn(void)
 	SET_MODEL(ENT(pev), "models/scientist.mdl");
 	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 
+	// BSVR start
+	pev->scale = CVAR_GET_FLOAT("vr_npcscale");
+	if (pev->scale <= 0.f)
+	{
+		pev->scale = 1.f;
+	}
+	// BSVR end
+
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
 	m_bloodColor = BLOOD_COLOR_RED;

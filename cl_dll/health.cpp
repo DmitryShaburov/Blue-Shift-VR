@@ -24,8 +24,12 @@
 #include "hud.h"
 #include "cl_util.h"
 #include "parsemsg.h"
+
+// BSVR start
+#include "vr/VRRenderer.h"
+// BSVR end
+
 #include <string.h>
-#include "vr/VRRenderer.h" // BSVR: VR HUD rendering (VRHUDDrawBegin / VRHUDDrawFinished)
 
 
 DECLARE_MESSAGE(m_Health, Health)
@@ -107,14 +111,17 @@ bool CHudHealth::MsgFunc_Health(const char* pszName, int iSize, void* pbuf)
 	// Only update the fade if we've changed health
 	if (x != m_iHealth)
 	{
-		// BSVR start
-		m_healthLost = x < m_iHealth;
-		m_healthGained = x > m_iHealth;
-		// BSVR end
 
 		m_fFade = FADE_TIME;
-		m_iHealth = x;
+		// m_iHealth = x; - original
 	}
+
+	// BSVR start
+	m_healthLost = x < m_iHealth;
+	m_healthGained = x > m_iHealth;
+
+	m_iHealth = x;
+	// BSVR end
 
 	return true;
 }
@@ -216,7 +223,9 @@ bool CHudHealth::Draw(float flTime)
 		y = ScreenHeight - gHUD.m_iFontHeight - gHUD.m_iFontHeight / 2;
 		x = CrossWidth / 2;
 
-		gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::HEALTH); // BSVR
+		// BSVR start
+		gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::HEALTH);
+		// BSVR end
 
 		SPR_Set(gHUD.GetSprite(m_HUD_cross), r, g, b);
 		SPR_DrawAdditive(0, x, y, &gHUD.GetSpriteRect(m_HUD_cross));
@@ -237,7 +246,9 @@ bool CHudHealth::Draw(float flTime)
 		UnpackRGB(r, g, b, RGB_YELLOWISH);
 		FillRGBA(x, y, iWidth, iHeight, r, g, b, a);
 
-		gVRRenderer.VRHUDDrawFinished(); // BSVR
+		// BSVR start
+		gVRRenderer.VRHUDDrawFinished();
+		// BSVR end
 	}
 
 	// BSVR start
@@ -248,8 +259,9 @@ bool CHudHealth::Draw(float flTime)
 	gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::PAIN);
 	bool painResult = DrawPain(flTime);
 	gVRRenderer.VRHUDDrawFinished();
-	return painResult;
 	// BSVR end
+
+	return painResult;
 }
 
 void CHudHealth::CalcDamageDirection(Vector vecFrom)

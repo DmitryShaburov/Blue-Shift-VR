@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -24,6 +24,25 @@
 #include "util.h"
 #include "cbase.h"
 #include "doors.h"
+
+
+// BSVR start
+// For retina scanners in VR - Max Makes Mods, 2018-04-02
+#include "pm_defs.h"
+#include "plane.h"
+#include "com_model.h"
+#include "vr/VRComModelHL25.h"
+#include <vector>
+#include <unordered_set>
+#include <unordered_map>
+#include <algorithm>
+#include <string>
+
+extern const model_t* VRGetBSPModel(CBaseEntity* pEntity);
+
+extern std::unordered_map<EHandleT<CBaseEntity>, EHandleT<CBaseEntity>, EHandleT<CBaseEntity>::Hash, EHandleT<CBaseEntity>::Equal> g_vrRetinaScanners;
+extern std::unordered_set<EHandleT<CBaseEntity>, EHandleT<CBaseEntity>::Hash, EHandleT<CBaseEntity>::Equal> g_vrRetinaScannerButtons;
+// BSVR end
 
 #define SF_BRUSH_ACCDCC 16		 // brush should accelerate and decelerate when toggled
 #define SF_BRUSH_HURT 32		 // rotating brush that inflicts pain based on rotation speed
@@ -56,13 +75,26 @@ public:
 
 	// Bmodels don't go across transitions
 	int ObjectCaps() override { return CBaseEntity::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+
+	// BSVR start
+	virtual bool CheckIsSpecialVREntity() override;
+	// BSVR end
 };
 
 LINK_ENTITY_TO_CLASS(func_wall, CFuncWall);
 
+// BSVR start
+#define SF_USEANGLES 2
+// BSVR end
+
 void CFuncWall::Spawn()
 {
-	pev->angles = g_vecZero;
+	// BSVR start moved into condition
+	if (!FBitSet(pev->spawnflags, SF_USEANGLES))
+	{
+		pev->angles = g_vecZero;
+	}
+	// BSVR end
 	pev->movetype = MOVETYPE_PUSH; // so it doesn't get pushed by anything
 	pev->solid = SOLID_BSP;
 	SET_MODEL(ENT(pev), STRING(pev->model));
@@ -71,6 +103,80 @@ void CFuncWall::Spawn()
 	pev->flags |= FL_WORLDBRUSH;
 }
 
+// BSVR start
+bool CFuncWall::CheckIsSpecialVREntity()
+{
+	const model_t* model = VRGetBSPModel(this);
+	if (model == nullptr)
+	{
+		// Repeat until GetBSPModel returns a value
+		return false;
+	}
+	else
+	{
+		SetThink(nullptr);
+
+		// If we are the coffee cup and flask in gordon's locker, replace us with the Worlds Smallest Cup (easter egg)
+		// see https://www.youtube.com/watch?v=M_AnIizeH1Q
+		if (strcmp(STRING(pev->model), "*67") == 0 && FStrEq(STRING(INDEXENT(0)->v.model), "maps/c1a0d.bsp"))
+		{
+			edict_t* pentCup = CREATE_NAMED_ENTITY(MAKE_STRING("vr_easteregg"));
+			if (!FNullEnt(pentCup))
+			{
+				pentCup->v.origin = (pev->absmin + pev->absmax) * 0.5f;
+				DispatchSpawn(pentCup);
+			}
+			SetThink(&CFuncWall::SUB_Remove);
+			pev->nextthink = gpGlobals->time;
+			return true;
+		}
+
+		for (int i = 0; i < model->nummodelsurfaces; ++i)
+		{
+			const msurface_hl25_t& surface = *VRGetSurface(model, model->firstmodelsurface + i);
+			if (surface.texinfo != nullptr && surface.texinfo->texture != nullptr && surface.texinfo->texture->name != nullptr)
+			{
+				std::string textureName = surface.texinfo->texture->name;
+				std::transform(textureName.begin(), textureName.end(), textureName.begin(), ::tolower);
+				if (textureName.find("generic_113") != std::string::npos)
+				{
+					// We are a retina scanner!
+
+					// Find our button! (func_button with rendermode kRenderTransTexture, renderamt 0 and model center not further away than 16 units away from our center)
+					Vector retinaScannerCenter = (pev->absmin + pev->absmax) / 2.f;
+					edict_t* pentButton = FIND_ENTITY_BY_CLASSNAME(nullptr, "func_button");
+					while (!FNullEnt(pentButton))
+					{
+						// Don't add broken retina scanner after resonance cascade to list,
+						// it must not react to eyes, but to use and controller touch
+						bool isBrokenRetinaScannerAfterResonanceCascade = FStrEq(STRING(pentButton->v.target), "broken_airlockmm") && FStrEq(STRING(INDEXENT(0)->v.model), "maps/c1a0c.bsp");
+						if (!isBrokenRetinaScannerAfterResonanceCascade)
+						{
+							// Add retina scanner and button to global list
+							if (pentButton->v.renderamt == 0 && pentButton->v.rendermode == kRenderTransTexture)
+							{
+								Vector buttonScannerCenter = (pentButton->v.absmin + pentButton->v.absmax) * 0.5f;
+								if ((buttonScannerCenter - retinaScannerCenter).Length() <= 16.f)
+								{
+									EHandleT<CBaseEntity> hButton = CBaseEntity::SafeInstance<CBaseEntity>(pentButton);
+									g_vrRetinaScanners[EHandleT<CBaseEntity>{ this }] = hButton;
+									g_vrRetinaScannerButtons.insert(hButton);
+									break;
+								}
+							}
+						}
+
+						pentButton = FIND_ENTITY_BY_CLASSNAME(pentButton, "func_button");
+					}
+					return true;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+// BSVR end
 
 void CFuncWall::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 {
@@ -344,9 +450,9 @@ bool CFuncRotating::KeyValue(KeyValueData* pkvd)
 }
 
 /*QUAKED func_rotating (0 .5 .8) ? START_ON REVERSE X_AXIS Y_AXIS
-You need to have an origin brush as part of this entity.  The  
+You need to have an origin brush as part of this entity.  The
 center of that brush will be
-the point around which it is rotated. It will rotate around the Z  
+the point around which it is rotated. It will rotate around the Z
 axis by default.  You can
 check either the X_AXIS or Y_AXIS box to change that.
 

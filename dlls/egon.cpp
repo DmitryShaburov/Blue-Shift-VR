@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -133,7 +133,10 @@ void CEgon::UseAmmo(int count)
 void CEgon::Attack()
 {
 	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
+	// BSVR start
+	// if (m_pPlayer->pev->waterlevel == 3) - original
+	if (m_pPlayer->IsWeaponUnderWater())
+	// BSVR end
 	{
 
 		if (m_fireState != FIRE_OFF || m_pBeam)
@@ -147,9 +150,12 @@ void CEgon::Attack()
 		return;
 	}
 
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
-	Vector vecAiming = gpGlobals->v_forward;
+	// BSVR start
+	// UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle); - original
+	// Vector vecAiming = gpGlobals->v_forward; - original
+	Vector vecAiming = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
 	Vector vecSrc = m_pPlayer->GetGunPosition();
+	// BSVR end
 
 	int flags;
 #if defined(CLIENT_WEAPONS)
@@ -218,7 +224,9 @@ void CEgon::Fire(const Vector& vecOrigSrc, const Vector& vecDir)
 	TraceResult tr;
 
 	pentIgnore = m_pPlayer->edict();
-	Vector tmpSrc = vecOrigSrc + gpGlobals->v_up * -8 + gpGlobals->v_right * 3;
+	// BSVR start
+	// Vector tmpSrc = vecOrigSrc + gpGlobals->v_up * -8 + gpGlobals->v_right * 3; - original
+	// BSVR end
 
 	// ALERT( at_console, "." );
 
@@ -258,12 +266,17 @@ void CEgon::Fire(const Vector& vecOrigSrc, const Vector& vecDir)
 		if (pev->dmgtime < gpGlobals->time)
 		{
 			// Narrow mode only does damage to the entity it hits
-			ClearMultiDamage();
-			if (0 != pEntity->pev->takedamage)
+			// BSVR start - wrapped in condition
+			if (pEntity)
 			{
-				pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgEgonNarrow, vecDir, &tr, DMG_ENERGYBEAM);
+				ClearMultiDamage();
+				if (0 != pEntity->pev->takedamage)
+				{
+					pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgEgonNarrow, vecDir, &tr, DMG_ENERGYBEAM);
+				}
+				ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 			}
-			ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
+			// BSVR end
 
 			if (g_pGameRules->IsMultiplayer())
 			{
@@ -294,13 +307,18 @@ void CEgon::Fire(const Vector& vecOrigSrc, const Vector& vecDir)
 #ifndef CLIENT_DLL
 		if (pev->dmgtime < gpGlobals->time)
 		{
-			// wide mode does damage to the ent, and radius damage
-			ClearMultiDamage();
-			if (0 != pEntity->pev->takedamage)
+			// Narrow mode only does damage to the entity it hits
+			// BSVR start - wrapped in condition
+			if (pEntity)
 			{
-				pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgEgonWide, vecDir, &tr, DMG_ENERGYBEAM | DMG_ALWAYSGIB);
+				// wide mode does damage to the ent, and radius damage
+				ClearMultiDamage();
+				if (0 != pEntity->pev->takedamage)
+				{
+					pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgEgonWide, vecDir, &tr, DMG_ENERGYBEAM | DMG_ALWAYSGIB);
+				}
+				ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 			}
-			ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 
 			if (g_pGameRules->IsMultiplayer())
 			{
@@ -348,7 +366,16 @@ void CEgon::Fire(const Vector& vecOrigSrc, const Vector& vecDir)
 		timedist = 1;
 	timedist = 1 - timedist;
 
-	UpdateEffect(tmpSrc, tr.vecEndPos, timedist);
+	// BSVR start
+	// UpdateEffect(tmpSrc, tr.vecEndPos, timedist); - original
+	UpdateEffect(vecOrigSrc, tr.vecEndPos, timedist);
+	// BSVR end
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.2f);
+#endif
+// BSVR end
 }
 
 
@@ -360,7 +387,11 @@ void CEgon::UpdateEffect(const Vector& startPoint, const Vector& endPoint, float
 		CreateEffect();
 	}
 
-	m_pBeam->SetStartPos(endPoint);
+	// BSVR start
+	// m_pBeam->SetStartPos(endPoint); - original
+	m_pBeam->SetStartPos(startPoint);
+	m_pBeam->SetEndPos(endPoint);
+	// BSVR end
 	m_pBeam->SetBrightness(255 - (timeBlend * 180));
 	m_pBeam->SetWidth(40 - (timeBlend * 20));
 
@@ -375,8 +406,17 @@ void CEgon::UpdateEffect(const Vector& startPoint, const Vector& endPoint, float
 	if (m_pSprite->pev->frame > m_pSprite->Frames())
 		m_pSprite->pev->frame = 0;
 
-	m_pNoise->SetStartPos(endPoint);
+	// BSVR start
+	// m_pNoise->SetStartPos(endPoint); - original
+	m_pNoise->SetStartPos(startPoint);
+	m_pNoise->SetEndPos(endPoint);
 
+	extern int gmsgVRUpdateEgon;
+	MESSAGE_BEGIN(MSG_ONE, gmsgVRUpdateEgon, nullptr, m_pPlayer->pev);
+	WRITE_PRECISE_VECTOR(startPoint);
+	WRITE_PRECISE_VECTOR(endPoint);
+	MESSAGE_END();
+	// BSVR end
 #endif
 }
 
@@ -387,7 +427,10 @@ void CEgon::CreateEffect()
 	DestroyEffect();
 
 	m_pBeam = CBeam::BeamCreate(EGON_BEAM_SPRITE, 40);
-	m_pBeam->PointEntInit(pev->origin, m_pPlayer->entindex());
+	// BSVR start
+	// m_pBeam->PointEntInit(pev->origin, m_pPlayer->entindex()); - original
+	m_pBeam->PointsInit(m_pPlayer->GetGunPosition(), m_pPlayer->GetGunPosition());
+	// BSVR end
 	m_pBeam->SetFlags(BEAM_FSINE);
 	m_pBeam->SetEndAttachment(1);
 	m_pBeam->pev->spawnflags |= SF_BEAM_TEMPORARY; // Flag these to be destroyed on save/restore or level transition
@@ -395,7 +438,10 @@ void CEgon::CreateEffect()
 	m_pBeam->pev->owner = m_pPlayer->edict();
 
 	m_pNoise = CBeam::BeamCreate(EGON_BEAM_SPRITE, 55);
-	m_pNoise->PointEntInit(pev->origin, m_pPlayer->entindex());
+	// BSVR start
+	// m_pNoise->PointEntInit(pev->origin, m_pPlayer->entindex()); - original
+	m_pNoise->PointsInit(m_pPlayer->GetGunPosition(), m_pPlayer->GetGunPosition());
+	// BSVR end
 	m_pNoise->SetScrollRate(25);
 	m_pNoise->SetBrightness(100);
 	m_pNoise->SetEndAttachment(1);
@@ -403,7 +449,10 @@ void CEgon::CreateEffect()
 	m_pNoise->pev->flags |= FL_SKIPLOCALHOST;
 	m_pNoise->pev->owner = m_pPlayer->edict();
 
-	m_pSprite = CSprite::SpriteCreate(EGON_FLARE_SPRITE, pev->origin, false);
+	// BSVR start
+	// m_pSprite = CSprite::SpriteCreate(EGON_FLARE_SPRITE, pev->origin, false); - original
+	m_pSprite = CSprite::SpriteCreate(EGON_FLARE_SPRITE, m_pPlayer->GetGunPosition(), false);
+	// BSVR end
 	m_pSprite->pev->scale = 1.0;
 	m_pSprite->SetTransparency(kRenderGlow, 255, 255, 255, 255, kRenderFxNoDissipation);
 	m_pSprite->pev->spawnflags |= SF_SPRITE_TEMPORARY;

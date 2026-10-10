@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -126,9 +126,61 @@ void FindHullIntersection(const Vector& vecSrc, TraceResult& tr, const Vector& m
 	}
 }
 
+// BSVR start
+void CCrowbar::ItemPostFrame()
+{
+#ifndef CLIENT_DLL
+	Vector weaponVelocity = m_pPlayer->GetWeaponVelocity();
+	float speed = weaponVelocity.Length();
+	if (speed >= GetMeleeSwingSpeed())
+	{
+		if (!playedWooshSound)
+		{
+			// prevent w-w-woo-woosh stutters when player waves crowbar around frantically
+			if (UTIL_WeaponTimeBase() > lastWooshSoundTime + 0.5f)
+			{
+				EMIT_SOUND_DYN(ENT(pev), CHAN_ITEM, "weapons/cbar_miss1.wav", 1, ATTN_NORM, 0, 98 + RANDOM_LONG(0, 3));
+				lastWooshSoundTime = UTIL_WeaponTimeBase();
+			}
+			playedWooshSound = true;
+		}
+	}
+	else
+	{
+		playedWooshSound = false;
+	}
+#endif
+
+	if (CVAR_GET_FLOAT("vr_crowbar_vanilla_attack_enabled") != 0.f
+		&& (m_pPlayer->pev->button & IN_ATTACK || m_pPlayer->GetAnalogFire() > 0.f))
+	{
+		// Blue Shift SDK has one shared ItemPostFrame/CanAttack in weapons_shared.cpp for both DLLs,
+		// so upstream's client-only CanAttack(float) from hl_weapons.cpp does not exist here.
+		// #ifdef CLIENT_DLL
+		// 		extern bool CanAttack(float flNextAttack);
+		// 		if (CanAttack(m_flNextPrimaryAttack))
+		// #else
+		extern bool CanAttack(CBasePlayer* pPlayer, float attack_time, float curtime, bool isPredicted);
+		if (CanAttack(m_pPlayer, m_flNextPrimaryAttack, gpGlobals->time, UseDecrement()))
+		// #endif
+		{
+			PrimaryAttack();
+		}
+	}
+}
+// BSVR end
+
 
 void CCrowbar::PrimaryAttack()
 {
+	// BSVR start
+	if (CVAR_GET_FLOAT("vr_crowbar_vanilla_attack_enabled") == 0.f)
+	{
+		SetThink(nullptr);
+		return;
+	}
+	// BSVR end
+
 	if (!Swing(true))
 	{
 		SetThink(&CCrowbar::SwingAgain);
@@ -139,25 +191,55 @@ void CCrowbar::PrimaryAttack()
 
 void CCrowbar::Smack()
 {
+	// BSVR start
+	if (CVAR_GET_FLOAT("vr_crowbar_vanilla_attack_enabled") == 0.f)
+	{
+		SetThink(nullptr);
+		return;
+	}
+	// BSVR end
+
 	DecalGunshot(&m_trHit, BULLET_PLAYER_CROWBAR);
 }
 
 
 void CCrowbar::SwingAgain()
 {
+	// BSVR start
+	if (CVAR_GET_FLOAT("vr_crowbar_vanilla_attack_enabled") == 0.f)
+	{
+		SetThink(nullptr);
+		return;
+	}
+	// BSVR end
+
 	Swing(false);
 }
 
 
 bool CCrowbar::Swing(bool fFirst)
 {
+	// BSVR start
+	if (CVAR_GET_FLOAT("vr_crowbar_vanilla_attack_enabled") == 0.f)
+	{
+		SetThink(nullptr);
+		return false;
+	}
+	// BSVR end
+
 	bool fDidHit = false;
 
 	TraceResult tr;
 
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
+	// BSVR start
+	// UTIL_MakeVectors(m_pPlayer->pev->v_angle); - original
+	// Vector vecSrc = m_pPlayer->GetGunPosition(); - original
+	// Vector vecEnd = vecSrc + gpGlobals->v_forward * 32; - original
+
 	Vector vecSrc = m_pPlayer->GetGunPosition();
-	Vector vecEnd = vecSrc + gpGlobals->v_forward * 32;
+	Vector vecDir = m_pPlayer->GetAutoaimVector();
+	Vector vecEnd = vecSrc + vecDir * 32;
+	// BSVR end
 
 	UTIL_TraceLine(vecSrc, vecEnd, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
 
@@ -227,12 +309,18 @@ bool CCrowbar::Swing(bool fFirst)
 		if ((m_flNextPrimaryAttack + 1.0f <= UTIL_WeaponTimeBase()) || g_pGameRules->IsMultiplayer())
 		{
 			// first swing does full damage
-			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar, gpGlobals->v_forward, &tr, DMG_CLUB);
+			// BSVR start
+			// pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar, gpGlobals->v_forward, &tr, DMG_CLUB); - original
+			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar, vecDir, &tr, DMG_CLUB);
+			// BSVR end
 		}
 		else
 		{
 			// subsequent swings do half
-			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar / 2, gpGlobals->v_forward, &tr, DMG_CLUB);
+			// BSVR start
+			// pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar / 2, gpGlobals->v_forward, &tr, DMG_CLUB); - original
+			pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgCrowbar / 2, vecDir, &tr, DMG_CLUB);
+			// BSVR end
 		}
 		ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 

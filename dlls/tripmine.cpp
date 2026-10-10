@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -91,7 +91,26 @@ void CTripmineGrenade::Spawn()
 	ResetSequenceInfo();
 	pev->framerate = 0;
 
-	UTIL_SetSize(pev, Vector(-8, -8, -8), Vector(8, 8, 8));
+	// BSVR start
+	UTIL_MakeAimVectors(pev->angles);
+
+	m_vecDir = gpGlobals->v_forward;
+	m_vecEnd = pev->origin + m_vecDir * 2048;
+
+	// UTIL_SetSize(pev, Vector(-8, -8, -8), Vector(8, 8, 8)); - original
+	UTIL_SetSize(pev, Vector(-8, -8, 0), Vector(8, 8, 16));
+
+	// Spawned by map, "fall" onto wall
+	if (!pev->owner)
+	{
+		TraceResult tr;
+		UTIL_TraceLine(pev->origin, pev->origin - m_vecDir * 64.f, dont_ignore_monsters, edict(), &tr);
+		if (!tr.fAllSolid && tr.flFraction > 0.f && !tr.fStartSolid && FNullEnt(tr.pHit))
+		{
+			pev->origin = tr.vecEndPos;
+		}
+	}
+	// BSVR end
 	UTIL_SetOrigin(pev, pev->origin);
 
 	//TODO: define constant
@@ -122,10 +141,12 @@ void CTripmineGrenade::Spawn()
 		m_pRealOwner = pev->owner; // see CTripmineGrenade for why.
 	}
 
-	UTIL_MakeAimVectors(pev->angles);
+	// BSVR start - original commented out
+	// UTIL_MakeAimVectors(pev->angles);
 
-	m_vecDir = gpGlobals->v_forward;
-	m_vecEnd = pev->origin + m_vecDir * 2048;
+	// m_vecDir = gpGlobals->v_forward;
+	// m_vecEnd = pev->origin + m_vecDir * 2048;
+	// BSVR end
 }
 
 
@@ -226,29 +247,47 @@ void CTripmineGrenade::KillBeam()
 
 void CTripmineGrenade::MakeBeam()
 {
+	// BSVR start
+	Vector vecBeamStart = pev->origin + m_vecDir * 2.f;
+	// BSVR end
+
 	TraceResult tr;
 
 	// ALERT( at_console, "serverflags %f\n", gpGlobals->serverflags );
 
-	UTIL_TraceLine(pev->origin, m_vecEnd, dont_ignore_monsters, ENT(pev), &tr);
+	// BSVR start
+	// UTIL_TraceLine(pev->origin, m_vecEnd, dont_ignore_monsters, ENT(pev), &tr); - original
+	UTIL_TraceLine(vecBeamStart, m_vecEnd, dont_ignore_monsters, ENT(pev), &tr);
+	// BSVR end
 
 	m_flBeamLength = tr.flFraction;
+
+	// BSVR start
+	CBeam* pBeam = CBeam::BeamCreate(g_pModelNameLaser, 6);
+	pBeam->PointsInit(vecBeamStart, tr.vecEndPos);
+	pBeam->SetColor(0, 214, 198);
+	pBeam->SetScrollRate(255);
+	pBeam->SetBrightness(64);
+	m_pBeam = pBeam;
+	// BSVR end
 
 	// set to follow laser spot
 	SetThink(&CTripmineGrenade::BeamBreakThink);
 	pev->nextthink = gpGlobals->time + 0.1;
 
-	Vector vecTmpEnd = pev->origin + m_vecDir * 2048 * m_flBeamLength;
+	// BSVR start - commented out originals
+	// Vector vecTmpEnd = pev->origin + m_vecDir * 2048 * m_flBeamLength;
 
-	m_pBeam = CBeam::BeamCreate(g_pModelNameLaser, 10);
-	//Mark as temporary so the beam will be recreated on save game load and level transitions.
+	// m_pBeam = CBeam::BeamCreate(g_pModelNameLaser, 10);
+	// //Mark as temporary so the beam will be recreated on save game load and level transitions.
 	m_pBeam->pev->spawnflags |= SF_BEAM_TEMPORARY;
-	//PointEntInit causes clients to use the position of whatever the previous entity to use this edict had until the server updates them.
-	//m_pBeam->PointEntInit(vecTmpEnd, entindex());
-	m_pBeam->PointsInit(pev->origin, vecTmpEnd);
-	m_pBeam->SetColor(0, 214, 198);
-	m_pBeam->SetScrollRate(255);
-	m_pBeam->SetBrightness(64);
+	// //PointEntInit causes clients to use the position of whatever the previous entity to use this edict had until the server updates them.
+	// //m_pBeam->PointEntInit(vecTmpEnd, entindex());
+	// m_pBeam->PointsInit(pev->origin, vecTmpEnd);
+	// m_pBeam->SetColor(0, 214, 198);
+	// m_pBeam->SetScrollRate(255);
+	// m_pBeam->SetBrightness(64);
+	// BSVR end
 }
 
 
@@ -256,11 +295,18 @@ void CTripmineGrenade::BeamBreakThink()
 {
 	bool bBlowup = false;
 
+	// BSVR start
+	Vector vecBeamStart = pev->origin + m_vecDir * 2.f;
+	// BSVR end
+
 	TraceResult tr;
 
 	// HACKHACK Set simple box using this really nice global!
 	gpGlobals->trace_flags = FTRACE_SIMPLEBOX;
-	UTIL_TraceLine(pev->origin, m_vecEnd, dont_ignore_monsters, ENT(pev), &tr);
+	// BSVR start
+	// UTIL_TraceLine(pev->origin, m_vecEnd, dont_ignore_monsters, ENT(pev), &tr); - original
+	UTIL_TraceLine(vecBeamStart, m_vecEnd, dont_ignore_monsters, ENT(pev), &tr);
+	// BSVR end
 
 	// ALERT( at_console, "%f : %f\n", tr.flFraction, m_flBeamLength );
 
@@ -364,6 +410,15 @@ void CTripmine::Spawn()
 	// ResetSequenceInfo( );
 	pev->framerate = 0;
 
+	// BSVR start
+	// CBasePlayerWeapon::KeyValue sets scale for all weapons to 0.7,
+	// but tripmine model was fixed already, so reset to 1 here.
+	// TODO: Once all weapon models are fixed, remove this code.
+	pev->scale = 1.f;
+
+	pev->dmg = gSkillData.plrDmgTripmine;
+	// BSVR end
+
 	FallInit(); // get ready to fall down
 
 	m_iDefaultAmmo = TRIPMINE_DEFAULT_GIVE;
@@ -418,6 +473,14 @@ bool CTripmine::Deploy()
 
 void CTripmine::Holster()
 {
+	// BSVR start
+#ifndef CLIENT_DLL
+	if (m_hGhost)
+	{
+		m_hGhost->pev->effects |= EF_NODRAW;
+	}
+#endif
+	// BSVR end
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
 
 	if (0 == m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType])
@@ -432,18 +495,24 @@ void CTripmine::Holster()
 	EMIT_SOUND(ENT(m_pPlayer->pev), CHAN_WEAPON, "common/null.wav", 1.0, ATTN_NORM);
 }
 
+// BSVR start
+constexpr const float VR_TRIPMINE_PLACEMENT_DISTANCE = 32.f;
+// BSVR end
+
 void CTripmine::PrimaryAttack()
 {
 	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		return;
 
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
-	Vector vecSrc = m_pPlayer->GetGunPosition();
-	Vector vecAiming = gpGlobals->v_forward;
+	// BSVR start - commented out original
+	// UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
+	// Vector vecSrc = m_pPlayer->GetGunPosition();
+	// Vector vecAiming = gpGlobals->v_forward;
 
-	TraceResult tr;
+	// TraceResult tr;
 
-	UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 128, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+	// UTIL_TraceLine(vecSrc, vecSrc + vecAiming * 128, dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+	// BSVR end
 
 	int flags;
 #ifdef CLIENT_WEAPONS
@@ -453,15 +522,41 @@ void CTripmine::PrimaryAttack()
 #endif
 
 	PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usTripFire, 0.0, g_vecZero, g_vecZero, 0.0, 0.0, 0, 0, 0, 0);
+	// BSVR start
+
+#ifndef CLIENT_DLL
+	Vector vecSrc = m_pPlayer->GetGunPosition();
+	Vector vecAiming = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
+
+	TraceResult tr;
+
+	float distance = 0.f;
+	if (CVAR_GET_FLOAT("vr_weapon_grenade_mode") != 0.f)
+	{
+		distance = 128.f;
+	}
+	else
+	{
+		distance = VR_TRIPMINE_PLACEMENT_DISTANCE;
+	}
+
+	UTIL_TraceLine(vecSrc, vecSrc + (vecAiming * distance), dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+	// BSVR end
 
 	if (tr.flFraction < 1.0)
 	{
 		CBaseEntity* pEntity = CBaseEntity::Instance(tr.pHit);
 		if (pEntity && (pEntity->pev->flags & FL_CONVEYOR) == 0)
 		{
+			// BSVR start
+			Vector origin = tr.vecEndPos;
+			// BSVR end
 			Vector angles = UTIL_VecToAngles(tr.vecPlaneNormal);
 
-			CBaseEntity* pEnt = CBaseEntity::Create("monster_tripmine", tr.vecEndPos + tr.vecPlaneNormal * 8, angles, m_pPlayer->edict());
+			// BSVR start
+			// CBaseEntity* pEnt = CBaseEntity::Create("monster_tripmine", tr.vecEndPos + tr.vecPlaneNormal * 8, angles, m_pPlayer->edict()); - original
+			CBaseEntity* pEnt = CBaseEntity::Create("monster_tripmine", origin, angles, m_pPlayer->edict());
+			// BSVR end
 
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 
@@ -483,13 +578,90 @@ void CTripmine::PrimaryAttack()
 	else
 	{
 	}
+// BSVR start
+#endif
+// BSVR end
 
 	m_flNextPrimaryAttack = GetNextAttackDelay(0.3);
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.1f);
+#endif
+// BSVR end
 }
+
+// BSVR start
+#ifndef CLIENT_DLL
+void CTripmine::UpdateGhost()
+{
+	if (m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+	{
+		if (m_hGhost)
+		{
+			UTIL_Remove(m_hGhost);
+		}
+		m_hGhost = nullptr;
+		return;
+	}
+
+	float distance = 0.f;
+	if (CVAR_GET_FLOAT("vr_weapon_grenade_mode") != 0.f)
+	{
+		distance = 128.f;
+	}
+	else
+	{
+		distance = VR_TRIPMINE_PLACEMENT_DISTANCE;
+	}
+
+	Vector vecSrc = m_pPlayer->GetGunPosition();
+	Vector vecAiming = m_pPlayer->GetAutoaimVector();
+
+	TraceResult tr;
+
+	UTIL_TraceLine(vecSrc, vecSrc + (vecAiming * distance), dont_ignore_monsters, ENT(m_pPlayer->pev), &tr);
+
+	bool hideGhost = true;
+	if (tr.flFraction < 1.0)
+	{
+		CBaseEntity* pEntity = CBaseEntity::SafeInstance<CBaseEntity>(tr.pHit);
+		if (pEntity && !(pEntity->pev->flags & FL_CONVEYOR))
+		{
+			Vector origin = tr.vecEndPos;
+			if (!m_hGhost)
+			{
+				m_hGhost = CSprite::SpriteCreate("models/v_tripmine.mdl", origin, false);
+				m_hGhost->pev->spawnflags |= SF_SPRITE_TEMPORARY | SF_SPRITE_STARTON;
+				m_hGhost->pev->rendermode = kRenderTransTexture;
+				m_hGhost->pev->renderamt = 50;
+				m_hGhost->pev->body = 3;
+				m_hGhost->pev->sequence = TRIPMINE_WORLD;
+			}
+			m_hGhost->pev->angles = UTIL_VecToAngles(tr.vecPlaneNormal);
+			m_hGhost->pev->origin = origin;
+			m_hGhost->pev->effects &= ~EF_NODRAW;
+			hideGhost = false;
+		}
+	}
+
+	if (m_hGhost && hideGhost)
+	{
+		m_hGhost->pev->effects |= EF_NODRAW;
+	}
+}
+#endif
+// BSVR end
 
 void CTripmine::WeaponIdle()
 {
+	// BSVR start
+#ifndef CLIENT_DLL
+	UpdateGhost();
+#endif
+	// BSVR end
+
 	//If we're here then we're in a player's inventory, and need to use this body
 	pev->body = 0;
 

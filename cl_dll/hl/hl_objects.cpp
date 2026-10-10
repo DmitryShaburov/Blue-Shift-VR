@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -38,11 +38,21 @@ void UpdateBeams()
 	cl_entity_t* pthisplayer = gEngfuncs.GetLocalPlayer();
 	int idx = pthisplayer->index;
 
+	// BSVR start
 	// Get our exact viewangles from engine
-	gEngfuncs.GetViewAngles((float*)angles);
+	// gEngfuncs.GetViewAngles((float*)angles); - original
 
-	// Determine our last predicted origin
-	HUD_GetLastOrg((float*)&origin);
+	// // Determine our last predicted origin
+	// HUD_GetLastOrg((float*)&origin); - original
+	cl_entity_s* viewModel = gEngfuncs.GetViewModel();
+	if (viewModel == nullptr)
+		return;
+
+	VectorCopy(viewModel->curstate.origin, origin);
+	VectorCopy(viewModel->curstate.angles, angles);
+
+	angles.x = -angles.x;
+	// BSVR end
 
 	AngleVectors(angles, forward, right, up);
 

@@ -16,6 +16,10 @@
 #include "entity_state.h"
 #include "cl_entity.h"
 #include "triangleapi.h"
+
+// BSVR start
+#include "vr/VRRenderer.h"
+// BSVR end
 #include "Exports.h"
 
 #include "particleman.h"
@@ -33,7 +37,10 @@ void DLLEXPORT HUD_DrawNormalTriangles()
 {
 	//	RecClDrawNormalTriangles();
 
-	gHUD.m_Spectator.DrawOverview();
+	// BSVR start
+	// gHUD.m_Spectator.DrawOverview(); - original
+	gVRRenderer.DrawNormal();
+	// BSVR end
 }
 
 
@@ -48,7 +55,10 @@ void DLLEXPORT HUD_DrawTransparentTriangles()
 {
 	//	RecClDrawTransparentTriangles();
 
-
 	if (g_pParticleMan)
 		g_pParticleMan->Update();
+
+	// BSVR start
+	gVRRenderer.DrawTransparent();
+	// BSVR end
 }

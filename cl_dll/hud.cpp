@@ -207,6 +207,104 @@ int __MsgFunc_VGUIMenu(const char* pszName, int iSize, void* pbuf)
 	return 0;
 }
 
+// BSVR start
+int __MsgFunc_VRRstrYaw(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	// a bit hacky, but oh well
+	extern float g_vrRestoreYaw_PrevYaw;
+	extern float g_vrRestoreYaw_CurrentYaw;
+	extern bool g_vrRestoreYaw_HasData;
+	g_vrRestoreYaw_PrevYaw = READ_ANGLE();
+	g_vrRestoreYaw_CurrentYaw = READ_ANGLE();
+	g_vrRestoreYaw_HasData = true;
+	return 0;
+}
+
+int __MsgFunc_VRSpawnYaw(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	// a bit hacky, but oh well
+	extern float g_vrSpawnYaw;
+	extern bool g_vrSpawnYaw_HasData;
+	g_vrSpawnYaw = READ_ANGLE();
+	g_vrSpawnYaw_HasData = true;
+	return 0;
+}
+
+int __MsgFunc_VRWlkWl(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	extern double g_vrWalkedIntoWall;
+	g_vrWalkedIntoWall = gVRRenderer.m_clientTime;
+	return 0;
+}
+
+int __MsgFunc_VRLvlChng(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	extern double gVR_LastLevelChangeTime;
+	gVR_LastLevelChangeTime = gVRRenderer.m_clientTime;
+	return 0;
+}
+
+int __MsgFunc_VRAchvmnt(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	int achievement = READ_LONG();
+	// VRSteamworksManager::GiveAchievement((VRAchievement)achievement);
+	return 0;
+}
+
+// Sends index of current grund entity
+int __MsgFunc_GroundEnt(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_GroundEnt(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_VRCtrlEnt(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_VRCtrlEnt(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_TrainCtrl(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_TrainCtrl(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_VRScrnShke(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_VRScrnShke(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_GrbdLddr(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_GrbdLddr(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_PullLdg(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_PullLdg(pszName, iSize, pbuf);
+}
+
+int __MsgFunc_VRUpdEgon(const char* pszName, int iSize, void* pbuf)
+{
+	BEGIN_READ(pbuf, iSize);
+	Vector beamStartPos{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
+	Vector beamEndPos{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
+
+	extern void EV_UpdateEgon(const Vector & beamStartPos, const Vector & beamEndPos);
+	EV_UpdateEgon(beamStartPos, beamEndPos);
+
+	return 0;
+}
+
+int __MsgFunc_VRTouch(const char* pszName, int iSize, void* pbuf)
+{
+	return gHUD.MsgFunc_VRTouch(pszName, iSize, pbuf);
+}
+// BSVR end
+
 int __MsgFunc_MOTD(const char* pszName, int iSize, void* pbuf)
 {
 	if (gViewPort)
@@ -284,103 +382,7 @@ int __MsgFunc_AllowSpec(const char* pszName, int iSize, void* pbuf)
 	return 0;
 }
 
-// BSVR start
-int __MsgFunc_VRRstrYaw(const char* pszName, int iSize, void* pbuf)
-{
-	BEGIN_READ(pbuf, iSize);
-	// a bit hacky, but oh well
-	extern float g_vrRestoreYaw_PrevYaw;
-	extern float g_vrRestoreYaw_CurrentYaw;
-	extern bool g_vrRestoreYaw_HasData;
-	g_vrRestoreYaw_PrevYaw = READ_ANGLE();
-	g_vrRestoreYaw_CurrentYaw = READ_ANGLE();
-	g_vrRestoreYaw_HasData = true;
-	return 0;
-}
 
-// Sends index of current grund entity
-int __MsgFunc_GroundEnt(const char* pszName, int iSize, void* pbuf)
-{
-	return gHUD.MsgFunc_GroundEnt(pszName, iSize, pbuf);
-}
-
-int __MsgFunc_VRCtrlEnt(const char* pszName, int iSize, void* pbuf)
-{
-	return gHUD.MsgFunc_VRCtrlEnt(pszName, iSize, pbuf);
-}
-
-int __MsgFunc_VRSpawnYaw(const char* pszName, int iSize, void* pbuf)
-{
-	BEGIN_READ(pbuf, iSize);
-	// a bit hacky, but oh well
-	extern float g_vrSpawnYaw;
-	extern bool g_vrSpawnYaw_HasData;
-	g_vrSpawnYaw = READ_ANGLE();
-	g_vrSpawnYaw_HasData = true;
-	return 0;
-}
-
-int __MsgFunc_TrainCtrl(const char* pszName, int iSize, void* pbuf)
-{
-	return gHUD.MsgFunc_TrainCtrl(pszName, iSize, pbuf);
-}
-
-int __MsgFunc_VRScrnShke(const char* pszName, int iSize, void* pbuf)
-{
-	return gHUD.MsgFunc_VRScrnShke(pszName, iSize, pbuf);
-}
-
-int __MsgFunc_GrbdLddr(const char* pszName, int iSize, void* pbuf)
-{
-	return gHUD.MsgFunc_GrbdLddr(pszName, iSize, pbuf);
-}
-
-int __MsgFunc_PullLdg(const char* pszName, int iSize, void* pbuf)
-{
-	return gHUD.MsgFunc_PullLdg(pszName, iSize, pbuf);
-}
-
-int __MsgFunc_VRUpdEgon(const char* pszName, int iSize, void* pbuf)
-{
-	BEGIN_READ(pbuf, iSize);
-	Vector beamStartPos{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
-	Vector beamEndPos{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
-
-	extern void EV_UpdateEgon(const Vector & beamStartPos, const Vector & beamEndPos);
-	EV_UpdateEgon(beamStartPos, beamEndPos);
-
-	return 0;
-}
-
-int __MsgFunc_VRTouch(const char* pszName, int iSize, void* pbuf)
-{
-	return gHUD.MsgFunc_VRTouch(pszName, iSize, pbuf);
-}
-
-int __MsgFunc_VRWlkWl(const char* pszName, int iSize, void* pbuf)
-{
-	BEGIN_READ(pbuf, iSize);
-	extern double g_vrWalkedIntoWall;
-	g_vrWalkedIntoWall = gVRRenderer.m_clientTime;
-	return 0;
-}
-
-int __MsgFunc_VRLvlChng(const char* pszName, int iSize, void* pbuf)
-{
-	BEGIN_READ(pbuf, iSize);
-	extern double gVR_LastLevelChangeTime;
-	gVR_LastLevelChangeTime = gVRRenderer.m_clientTime;
-	return 0;
-}
-
-int __MsgFunc_VRAchvmnt(const char* pszName, int iSize, void* pbuf)
-{
-	BEGIN_READ(pbuf, iSize);
-	int achievement = READ_LONG();
-	// VRSteamworksManager::GiveAchievement((VRAchievement)achievement);
-	return 0;
-}
-// BSVR end
 
 // This is called every time the DLL is loaded
 void CHud::Init()
@@ -447,8 +449,12 @@ void CHud::Init()
 
 	CVAR_CREATE("zoom_sensitivity_ratio", "1.2", FCVAR_ARCHIVE);
 	CVAR_CREATE("cl_autowepswitch", "1", FCVAR_ARCHIVE | FCVAR_USERINFO);
-	default_fov = CVAR_CREATE("default_fov", "90", FCVAR_ARCHIVE);
-	m_pCvarStealMouse = CVAR_CREATE("hud_capturemouse", "1", FCVAR_ARCHIVE);
+	// BSVR start
+	// default_fov = CVAR_CREATE("default_fov", "90", FCVAR_ARCHIVE); - original
+	// m_pCvarStealMouse = CVAR_CREATE("hud_capturemouse", "1", FCVAR_ARCHIVE); - original
+	default_fov = CVAR_CREATE("default_fov", "180", FCVAR_ARCHIVE);
+	m_pCvarStealMouse = CVAR_CREATE("hud_capturemouse", "0", FCVAR_ARCHIVE);
+	// BSVR end
 	m_pCvarDraw = CVAR_CREATE("hud_draw", "1", FCVAR_ARCHIVE);
 	cl_lw = gEngfuncs.pfnGetCvarPointer("cl_lw");
 	cl_rollangle = CVAR_CREATE("cl_rollangle", "2.0", FCVAR_ARCHIVE);
@@ -852,12 +858,5 @@ bool CHud::GetTrainControlsOriginAndOrientation(Vector& origin, Vector& angles)
 		return true;
 	}
 	return false;
-}
-
-
-// Used by hl_weapons.cpp and view.cpp when switching to hand model
-bool PlayerHasSuit()
-{
-	return gHUD.m_iWeaponBits & (1 << (WEAPON_SUIT));
 }
 // BSVR end

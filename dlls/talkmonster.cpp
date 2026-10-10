@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -923,6 +923,12 @@ bool CTalkMonster::FOkToSpeak()
 	if (m_hEnemy != NULL && FVisible(m_hEnemy))
 		return false;
 
+	// BSVR start
+	// don't talk while at gunpoint
+	if (vr_flGunPointTime != 0.f)
+		return false;
+	// BSVR stop
+
 	return true;
 }
 
@@ -1451,3 +1457,33 @@ void CTalkMonster::Precache()
 	if (!FStringNull(m_iszUnUse))
 		m_szGrp[TLK_UNUSE] = STRING(m_iszUnUse);
 }
+
+// BSVR start
+// react to player throwing stuff at me
+void CTalkMonster::GibAttack(EHandleT<CBaseEntity> thrower, const Vector& pos, int bloodcolor)
+{
+	if (!thrower || !thrower->IsPlayer())
+		return;
+
+	if (!FOkToSpeak())
+		return;
+
+	if ((bloodcolor == BLOOD_COLOR_RED || bloodcolor == BLOOD_COLOR_GREEN) && RANDOM_LONG(0, 1) == 0)
+	{
+		PlaySentence(m_szGrp[TLK_GIB_BLOODY], RANDOM_FLOAT(2.8, 3.2), VOL_NORM, ATTN_IDLE);
+	}
+	else
+	{
+		PlaySentence(m_szGrp[TLK_GIB_NEUTRAL], RANDOM_FLOAT(2.8, 3.2), VOL_NORM, ATTN_IDLE);
+	}
+
+	MakeIdealYaw(thrower->pev->origin);
+	IdleHeadTurn(thrower->pev->origin);
+
+
+	// if (thrower->IsNetClient())
+	// {
+	// 	UTIL_VRGiveAchievement(thrower, VRAchievement::GEN_CATCH);
+	// }
+}
+// BSVR end

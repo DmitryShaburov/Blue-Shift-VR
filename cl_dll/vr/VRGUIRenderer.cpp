@@ -430,21 +430,21 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
 
             VerticalSpacer(30);
 
-            nk_layout_row_begin(&ctx, NK_STATIC, 0, 2);
-            {
-                nk_layout_row_push(&ctx, 50 * m_guiScaleW);
-                nk_label(&ctx, " ", NK_TEXT_LEFT);
+            // nk_layout_row_begin(&ctx, NK_STATIC, 0, 2);
+            // {
+            //     nk_layout_row_push(&ctx, 50 * m_guiScaleW);
+            //     nk_label(&ctx, " ", NK_TEXT_LEFT);
 
-                nk_layout_row_push(&ctx, 855 * m_guiScaleW);
-                if (nk_button_label(&ctx, "Straight to Insecurity"))
-                {
-                    VRGameFunctions::StartNewGame(true);
-                    isInNewGameMenu = false;
-                }
-            }
-            nk_layout_row_end(&ctx);
+            //     nk_layout_row_push(&ctx, 855 * m_guiScaleW);
+            //     if (nk_button_label(&ctx, "Straight to Insecurity"))
+            //     {
+            //         VRGameFunctions::StartNewGame(true);
+            //         isInNewGameMenu = false;
+            //     }
+            // }
+            // nk_layout_row_end(&ctx);
 
-            VerticalSpacer(30);
+            // VerticalSpacer(30);
 
             nk_layout_row_begin(&ctx, NK_STATIC, 0, 2);
             {

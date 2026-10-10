@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -96,10 +96,13 @@ void CPython::Holster()
 {
 	m_fInReload = false; // cancel any reload in progress.
 
-	if (m_pPlayer->m_iFOV != 0)
-	{
-		SecondaryAttack();
-	}
+	// BSVR start
+	// No zoom in VR
+	// if (m_pPlayer->m_iFOV != 0)
+	// {
+	// 	SecondaryAttack();
+	// }
+	// BSVR end
 
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 1.0;
 	m_flTimeWeaponIdle = UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
@@ -117,22 +120,28 @@ void CPython::SecondaryAttack()
 		return;
 	}
 
-	if (m_pPlayer->m_iFOV != 0)
-	{
-		m_pPlayer->m_iFOV = 0; // 0 means reset to default fov
-	}
-	else if (m_pPlayer->m_iFOV != 40)
-	{
-		m_pPlayer->m_iFOV = 40;
-	}
+	// BSVR start
+	// No zoom in VR
+	// if (m_pPlayer->m_iFOV != 0)
+	// {
+	// 	m_pPlayer->m_iFOV = 0; // 0 means reset to default fov
+	// }
+	// else if (m_pPlayer->m_iFOV != 40)
+	// {
+	// 	m_pPlayer->m_iFOV = 40;
+	// }
 
-	m_flNextSecondaryAttack = 0.5;
+	// m_flNextSecondaryAttack = 0.5;
+	// BSVR end
 }
 
 void CPython::PrimaryAttack()
 {
 	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
+	// BSVR start
+	// if (m_pPlayer->pev->waterlevel == 3) - original
+	if (m_pPlayer->IsWeaponUnderWater())
+	// BSVR end
 	{
 		PlayEmptySound();
 		m_flNextPrimaryAttack = 0.15;
@@ -161,7 +170,10 @@ void CPython::PrimaryAttack()
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
 
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
+	// BSVR start
+	// UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
+	UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
+	// BSVR end
 
 	Vector vecSrc = m_pPlayer->GetGunPosition();
 	Vector vecAiming = m_pPlayer->GetAutoaimVector(AUTOAIM_10DEGREES);
@@ -184,6 +196,12 @@ void CPython::PrimaryAttack()
 
 	m_flNextPrimaryAttack = 0.75;
 	m_flTimeWeaponIdle = UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.4f);
+#endif
+// BSVR end
 }
 
 
@@ -192,10 +210,13 @@ void CPython::Reload()
 	if (m_pPlayer->ammo_357 <= 0)
 		return;
 
-	if (m_pPlayer->m_iFOV != 0)
-	{
-		m_pPlayer->m_iFOV = 0; // 0 means reset to default fov
-	}
+	// BSVR start
+	// No zoom in VR
+	// if (m_pPlayer->m_iFOV != 0)
+	// {
+	// 	m_pPlayer->m_iFOV = 0; // 0 means reset to default fov
+	// }
+	// BSVR end
 
 	bool bUseScope = false;
 #ifdef CLIENT_DLL

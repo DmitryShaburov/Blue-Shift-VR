@@ -178,6 +178,10 @@ private:
 
 	bool mIsViewEntMirrored{ false };
 
+	// BSVR start
+	bool m_hasViewEntOverride{ false }; // true while a trigger_camera (or other view entity) controls the view
+	// BSVR end
+
 	float m_hmdHeightOffset{ 0.f };
 
 	int vr_scenePushCount = 0;
@@ -224,6 +228,13 @@ public:
 	Vector GetLocalPlayerAngles();
 
 	bool IsViewEntMirrored() { return mIsViewEntMirrored; }
+
+	// BSVR start
+	bool HasViewEntOverride() { return m_hasViewEntOverride; }
+
+	// Orderly teardown from HUD_Shutdown (uninstall GL hooks, VR_Shutdown)
+	void Shutdown();
+	// BSVR end
 
 	bool CanAttack();
 };

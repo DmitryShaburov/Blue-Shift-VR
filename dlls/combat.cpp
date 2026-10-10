@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -35,6 +35,10 @@ extern Vector VecBModelOrigin(entvars_t* pevBModel);
 #define GERMAN_GIB_COUNT 4
 #define HUMAN_GIB_COUNT 6
 #define ALIEN_GIB_COUNT 4
+
+// BSVR start
+int CGib::m_numGibs = 0;
+// BSVR end
 
 
 // HACKHACK -- The gib velocity equations don't work
@@ -247,6 +251,71 @@ void CGib::SpawnRandomGibs(entvars_t* pevVictim, int cGibs, bool human)
 		pGib->LimitVelocity();
 	}
 }
+
+// BSVR start
+void CGib::UpdateOnRemove()
+{
+	CBaseEntity::UpdateOnRemove();
+	m_numGibs--;
+}
+
+void CGib::LimitNumberOfGibs()
+{
+	constexpr const int DEFAULT_MAX_GIBS = 50;
+	int maxGibs = atoi(CVAR_GET_STRING("vr_max_interactive_debris"));
+	if (maxGibs <= 0)
+	{
+		maxGibs = DEFAULT_MAX_GIBS;
+	}
+
+	if (m_numGibs >= maxGibs)
+	{
+		// Delete all gibs not in PVS
+		int numGibs = m_numGibs;
+		CBaseEntity* pGib = nullptr;
+		int counter = 0;
+		while (counter < m_numGibs && (pGib = UTIL_FindEntityByClassname(pGib, "gib")))
+		{
+			if (!pGib->m_isInPVS)
+			{
+				UTIL_Remove(pGib);
+				numGibs--;
+			}
+			counter++;
+		}
+
+		// too many gibs are in PVS! remove 1/4 of all gibs immediately
+		// (this automagically deletes gibs by age, as older gibs are "earlier" in the engine's edict array)
+		counter = 0;
+		while (counter < m_numGibs && numGibs >= (maxGibs * 3 / 4) && (pGib = UTIL_FindEntityByClassname(pGib, "gib")))
+		{
+			// Don't remove gibs currently being dragged
+			if (!pGib->m_vrDragger)
+			{
+				UTIL_Remove(pGib);
+				numGibs--;
+			}
+			counter++;
+		}
+		m_numGibs = numGibs;
+
+		// Fade out enough gibs to reduce to half of max gibs
+		// (this automagically fades out gibs by age, as older gibs are "earlier" in the engine's edict array)
+		int fadeoutgibs = m_numGibs - maxGibs / 2;
+		pGib = nullptr;
+		while (fadeoutgibs > 0 && (pGib = UTIL_FindEntityByClassname(pGib, "gib")))
+		{
+			// Don't fade out gibs currently being dragged
+			if (!pGib->m_vrDragger)
+			{
+				pGib->SetThink(&CGib::SUB_StartFadeOut);
+				pGib->pev->nextthink = gpGlobals->time;
+			}
+			fadeoutgibs--;
+		}
+	}
+}
+// BSVR end
 
 
 bool CBaseMonster::HasHumanGibs()
@@ -684,8 +753,10 @@ void CGib::WaitTillLand()
 
 	if (pev->velocity == g_vecZero)
 	{
-		SetThink(&CGib::SUB_StartFadeOut);
-		pev->nextthink = gpGlobals->time + m_lifeTime;
+		// BSVR start commented out
+		// SetThink(&CGib::SUB_StartFadeOut);
+		// pev->nextthink = gpGlobals->time + m_lifeTime;
+		// BSVR end
 
 		// If you bleed, you stink!
 		if (m_bloodColor != DONT_BLEED)
@@ -712,6 +783,24 @@ void CGib::BounceGibTouch(CBaseEntity* pOther)
 	//if ( RANDOM_LONG(0,1) )
 	//	return;// don't bleed everytime
 
+	// BSVR start
+	bool playsound = false;
+	float volume = 0.f;
+	int material = 0;
+
+	if (m_hThrower)
+	{
+		pOther->GibAttack(m_hThrower, pev->origin, m_bloodColor);
+		m_hThrower = nullptr;
+
+		// play a satisfying sound if we throw a gib
+		float vel = pev->velocity.Length();
+		volume = std::min(1.f, vel / 450.f);
+		material = (pOther->BloodColor() == DONT_BLEED) ? m_material : Materials::matFlesh;
+		playsound = true;
+	}
+	// BSVR end
+
 	if ((pev->flags & FL_ONGROUND) != 0)
 	{
 		pev->velocity = pev->velocity * 0.9;
@@ -732,15 +821,30 @@ void CGib::BounceGibTouch(CBaseEntity* pOther)
 			m_cBloodDecals--;
 		}
 
-		if (m_material != matNone && RANDOM_LONG(0, 2) == 0)
+
+		// BSVR additional condition
+		if (!playsound)
 		{
-			float volume;
-			float zvel = fabs(pev->velocity.z);
+			if (m_material != matNone && RANDOM_LONG(0, 2) == 0)
+			{
+				// float volume; BSVR moved up
+				float zvel = fabs(pev->velocity.z);
 
-			volume = 0.8 * V_min(1.0, ((float)zvel) / 450.0);
-
-			CBreakable::MaterialSoundRandom(edict(), (Materials)m_material, volume);
+				volume = 0.8 * V_min(1.0, ((float)zvel) / 450.0);
+				// BSVR start
+				material = m_material;
+				playsound = true;
+				// BSVR end
+			}
 		}
+	}
+
+	if (playsound && material != matNone)
+	{
+		// BSVR start
+		// CBreakable::MaterialSoundRandom(edict(), (Materials)m_material, volume); - original
+		CBreakable::MaterialSoundRandom(edict(), (Materials)material, volume);
+		// BSVR end
 	}
 }
 
@@ -754,6 +858,20 @@ void CGib::StickyGibTouch(CBaseEntity* pOther)
 
 	SetThink(&CGib::SUB_Remove);
 	pev->nextthink = gpGlobals->time + 10;
+
+	// BSVR start
+	if (m_hThrower)
+	{
+		pOther->GibAttack(m_hThrower, pev->origin, m_bloodColor);
+		m_hThrower = nullptr;
+
+		// play a satisfying sound if we throw a gib
+		float vel = pev->velocity.Length();
+		float volume = std::min(1.f, vel / 450.f);
+		int material = (pOther->BloodColor() == DONT_BLEED) ? m_material : Materials::matFlesh;
+		CBreakable::MaterialSoundRandom(edict(), static_cast<Materials>(material), volume);
+	}
+	// BSVR end
 
 	if (!FClassnameIs(pOther->pev, "worldspawn"))
 	{
@@ -777,6 +895,12 @@ void CGib::StickyGibTouch(CBaseEntity* pOther)
 //
 void CGib::Spawn(const char* szGibModel)
 {
+	// BSVR start
+	ASSERT(szGibModel && strlen(szGibModel) > 0);
+
+	LimitNumberOfGibs();
+	// BSVR end
+
 	pev->movetype = MOVETYPE_BOUNCE;
 	pev->friction = 0.55; // deading the bounce a bit
 
@@ -792,12 +916,18 @@ void CGib::Spawn(const char* szGibModel)
 	UTIL_SetSize(pev, Vector(0, 0, 0), Vector(0, 0, 0));
 
 	pev->nextthink = gpGlobals->time + 4;
-	m_lifeTime = 25;
+	// BSVR start
+	// m_lifeTime = 25;
+	// BSVR end
 	SetThink(&CGib::WaitTillLand);
 	SetTouch(&CGib::BounceGibTouch);
 
 	m_material = matNone;
 	m_cBloodDecals = 5; // how many blood decals this gib can place (1 per bounce until none remain).
+
+	// BSVR start
+	m_numGibs++;
+	// BSVR end
 }
 
 // take health
@@ -885,11 +1015,14 @@ bool CBaseMonster::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, f
 		}
 	}
 
+	// BSVR start
 	// if this is a player, move him around!
-	if ((!FNullEnt(pevInflictor)) && (pev->movetype == MOVETYPE_WALK) && (!pevAttacker || pevAttacker->solid != SOLID_TRIGGER))
-	{
-		pev->velocity = pev->velocity + vecDir * -DamageForce(flDamage);
-	}
+	//  - nope - Max Makes Mods, 2018-01-21
+	// if ((!FNullEnt(pevInflictor)) && (pev->movetype == MOVETYPE_WALK) && (!pevAttacker || pevAttacker->solid != SOLID_TRIGGER))
+	// {
+	// 	pev->velocity = pev->velocity + vecDir * -DamageForce(flDamage);
+	// }
+	// BSVR end
 
 	// do the damage
 	pev->health -= flTake;
@@ -987,7 +1120,7 @@ bool CBaseMonster::DeadTakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacke
 
 	pev->flags &= ~FL_ONGROUND;
 	pev->origin.z += 1;
-	
+
 	// let the damage scoot the corpse around a bit.
 	if ( !FNullEnt(pevInflictor) && (pevAttacker->solid != SOLID_TRIGGER) )
 	{
@@ -1306,7 +1439,7 @@ void CBaseMonster::TraceAttack(entvars_t *pevAttacker, float flDamage, Vector ve
 		AddMultiDamage( pevAttacker, this, flDamage, bitsDamageType );
 
 		int blood = BloodColor();
-		
+
 		if ( blood != DONT_BLEED )
 		{
 			SpawnBlood(vecOrigin, blood, flDamage);// a little surface blood.
@@ -1605,11 +1738,11 @@ void CBaseEntity::TraceBleed(float flDamage, Vector vecDir, TraceResult* ptr, in
 	/*
 	if ( !IsAlive() )
 	{
-		// dealing with a dead monster. 
+		// dealing with a dead monster.
 		if ( pev->max_health <= 0 )
 		{
 			// no blood decal for a monster that has already decalled its limit.
-			return; 
+			return;
 		}
 		else
 		{
@@ -1690,7 +1823,7 @@ void CBaseMonster::MakeDamageBloodDecal(int cCount, float flNoise, TraceResult* 
 			WRITE_COORD( ptr->vecEndPos.x );
 			WRITE_COORD( ptr->vecEndPos.y );
 			WRITE_COORD( ptr->vecEndPos.z );
-			
+
 			WRITE_COORD( Bloodtr.vecEndPos.x );
 			WRITE_COORD( Bloodtr.vecEndPos.y );
 			WRITE_COORD( Bloodtr.vecEndPos.z );

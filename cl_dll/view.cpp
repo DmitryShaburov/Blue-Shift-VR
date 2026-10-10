@@ -442,13 +442,21 @@ void V_CalcIntermissionRefdef(struct ref_params_s* pparams)
 	VectorCopy(pparams->simorg, pparams->vieworg);
 	VectorCopy(pparams->cl_viewangles, pparams->viewangles);
 
-	view->model = NULL;
+	// BSVR start
+	// view->model = NULL; - original
+	if (view != nullptr)
+	{
+		view->model = nullptr;
+	}
+	// BSVR end
 
 	// allways idle in intermission
 	old = v_idlescale;
 	v_idlescale = 1;
 
-	V_AddIdle(pparams);
+	// BSVR start - upstream removed
+	// V_AddIdle(pparams);
+	// BSVR end
 
 	if (0 != gEngfuncs.IsSpectateOnly())
 	{
@@ -499,7 +507,9 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 	Vector camAngles, camForward, camRight, camUp;
 	cl_entity_t* pwater;
 
-	V_DriftPitch(pparams);
+	// BSVR start - upstream removed (view angles come from the headset)
+	// V_DriftPitch(pparams);
+	// BSVR end
 
 	if (0 != gEngfuncs.IsSpectateOnly())
 	{
@@ -511,8 +521,10 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 		ent = gEngfuncs.GetLocalPlayer();
 	}
 
-	// view is the weapon model (only visible from inside body )
-	view = gEngfuncs.GetViewModel();
+	// BSVR start - upstream removed (view model is positioned by VRHelper::UpdateViewEnt)
+	// // view is the weapon model (only visible from inside body )
+	// view = gEngfuncs.GetViewModel();
+	// BSVR end
 
 	// transform the view offset by the model's matrix to get the offset from
 	// model origin for the view
@@ -533,9 +545,14 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 	// FIXME, we send origin at 1/128 now, change this?
 	// the server protocol only specifies to 1/16 pixel, so add 1/32 in each axis
 
-	pparams->vieworg[0] += 1.0 / 32;
-	pparams->vieworg[1] += 1.0 / 32;
-	pparams->vieworg[2] += 1.0 / 32;
+	// BSVR start
+	// pparams->vieworg[0] += 1.0 / 32; - original
+	// pparams->vieworg[1] += 1.0 / 32; - original
+	// pparams->vieworg[2] += 1.0 / 32; - original
+	pparams->vieworg[0] += 1.f / 256.f;  //1.0/32;
+	pparams->vieworg[1] += 1.f / 256.f;  //1.0/32;
+	pparams->vieworg[2] += 1.f / 256.f;  //1.0/32;
+	// BSVR end
 
 	// Check for problems around water, move the viewer artificially if necessary
 	// -- this prevents drawing errors in GL due to waves
@@ -597,9 +614,11 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 
 	pparams->vieworg[2] += waterOffset;
 
-	V_CalcViewRoll(pparams);
+	// BSVR start - upstream removed
+	// V_CalcViewRoll(pparams);
 
-	V_AddIdle(pparams);
+	// V_AddIdle(pparams);
+	// BSVR end
 
 	// offsets
 	VectorCopy(pparams->cl_viewangles, angles);
@@ -635,59 +654,61 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 		}
 	}
 
-	// Give gun our viewangles
-	VectorCopy(pparams->cl_viewangles, view->angles);
+	// BSVR start - upstream removed (view model is positioned by VRHelper::UpdateViewEnt)
+	// // Give gun our viewangles
+	// VectorCopy(pparams->cl_viewangles, view->angles);
 
-	// set up gun position
-	V_CalcGunAngle(pparams);
+	// // set up gun position
+	// V_CalcGunAngle(pparams);
 
-	// Use predicted origin as view origin.
-	VectorCopy(pparams->simorg, view->origin);
-	view->origin[2] += (waterOffset);
-	VectorAdd(view->origin, pparams->viewheight, view->origin);
+	// // Use predicted origin as view origin.
+	// VectorCopy(pparams->simorg, view->origin);
+	// view->origin[2] += (waterOffset);
+	// VectorAdd(view->origin, pparams->viewheight, view->origin);
 
-	// Let the viewmodel shake at about 10% of the amplitude
-	gEngfuncs.V_ApplyShake(view->origin, view->angles, 0.9);
+	// // Let the viewmodel shake at about 10% of the amplitude
+	// gEngfuncs.V_ApplyShake(view->origin, view->angles, 0.9);
 
-	for (i = 0; i < 3; i++)
-	{
-		view->origin[i] += bob * 0.4 * pparams->forward[i];
-	}
-	view->origin[2] += bob;
+	// for (i = 0; i < 3; i++)
+	// {
+	// 	view->origin[i] += bob * 0.4 * pparams->forward[i];
+	// }
+	// view->origin[2] += bob;
 
-	// throw in a little tilt.
-	view->angles[YAW] -= bob * 0.5;
-	view->angles[ROLL] -= bob * 1;
-	view->angles[PITCH] -= bob * 0.3;
+	// // throw in a little tilt.
+	// view->angles[YAW] -= bob * 0.5;
+	// view->angles[ROLL] -= bob * 1;
+	// view->angles[PITCH] -= bob * 0.3;
 
-	if (0 != cl_bobtilt->value)
-	{
-		VectorCopy(view->angles, view->curstate.angles);
-	}
+	// if (0 != cl_bobtilt->value)
+	// {
+	// 	VectorCopy(view->angles, view->curstate.angles);
+	// }
 
-	// pushing the view origin down off of the same X/Z plane as the ent's origin will give the
-	// gun a very nice 'shifting' effect when the player looks up/down. If there is a problem
-	// with view model distortion, this may be a cause. (SJB).
-	view->origin[2] -= 1;
+	// // pushing the view origin down off of the same X/Z plane as the ent's origin will give the
+	// // gun a very nice 'shifting' effect when the player looks up/down. If there is a problem
+	// // with view model distortion, this may be a cause. (SJB).
+	// view->origin[2] -= 1;
 
-	// fudge position around to keep amount of weapon visible
-	// roughly equal with different FOV
-	if (pparams->viewsize == 110)
-	{
-		view->origin[2] += 1;
-	}
-	else if (pparams->viewsize == 100)
-	{
-		view->origin[2] += 2;
-	}
-	else if (pparams->viewsize == 90)
-	{
-		view->origin[2] += 1;
-	}
-	else if (pparams->viewsize == 80)
-	{
-		view->origin[2] += 0.5;
-	}
+	// // fudge position around to keep amount of weapon visible
+	// // roughly equal with different FOV
+	// if (pparams->viewsize == 110)
+	// {
+	// 	view->origin[2] += 1;
+	// }
+	// else if (pparams->viewsize == 100)
+	// {
+	// 	view->origin[2] += 2;
+	// }
+	// else if (pparams->viewsize == 90)
+	// {
+	// 	view->origin[2] += 1;
+	// }
+	// else if (pparams->viewsize == 80)
+	// {
+	// 	view->origin[2] += 0.5;
+	// }
+	// BSVR end
 
 	// Add in the punchangle, if any
 	VectorAdd(pparams->viewangles, pparams->punchangle, pparams->viewangles);
@@ -714,7 +735,9 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 		if (pparams->simorg[2] - oldz > 18)
 			oldz = pparams->simorg[2] - 18;
 		pparams->vieworg[2] += oldz - pparams->simorg[2];
-		view->origin[2] += oldz - pparams->simorg[2];
+	// BSVR start - upstream removed
+	// 	view->origin[2] += oldz - pparams->simorg[2];
+	// BSVR end
 	}
 	else
 	{
@@ -783,7 +806,9 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 
 					VectorAdd(pparams->simorg, delta, pparams->simorg);
 					VectorAdd(pparams->vieworg, delta, pparams->vieworg);
-					VectorAdd(view->origin, delta, view->origin);
+					// BSVR start - upstream removed
+					// VectorAdd(view->origin, delta, view->origin);
+					// BSVR end
 				}
 			}
 		}
@@ -794,30 +819,32 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 	v_client_aimangles = pparams->cl_viewangles;
 	v_lastAngles = pparams->viewangles;
 	//	v_cl_angles = pparams->cl_viewangles;	// keep old user mouse angles !
-	if (0 != CL_IsThirdPerson())
-	{
-		VectorCopy(camAngles, pparams->viewangles);
-	}
+	// BSVR start - upstream removed
+	// if (0 != CL_IsThirdPerson())
+	// {
+	// 	VectorCopy(camAngles, pparams->viewangles);
+	// }
 
-	//Apply this at all times
-	{
-		float pitch = pparams->viewangles[0];
+	// //Apply this at all times
+	// {
+	// 	float pitch = pparams->viewangles[0];
 
-		// Normalize angles
-		if (pitch > 180)
-			pitch -= 360.0;
-		else if (pitch < -180)
-			pitch += 360;
+	// 	// Normalize angles
+	// 	if (pitch > 180)
+	// 		pitch -= 360.0;
+	// 	else if (pitch < -180)
+	// 		pitch += 360;
 
-		// Player pitch is inverted
-		pitch /= -3.0;
+	// 	// Player pitch is inverted
+	// 	pitch /= -3.0;
 
-		// Slam local player's pitch value
-		ent->angles[0] = pitch;
-		ent->curstate.angles[0] = pitch;
-		ent->prevstate.angles[0] = pitch;
-		ent->latched.prevangles[0] = pitch;
-	}
+	// 	// Slam local player's pitch value
+	// 	ent->angles[0] = pitch;
+	// 	ent->curstate.angles[0] = pitch;
+	// 	ent->prevstate.angles[0] = pitch;
+	// 	ent->latched.prevangles[0] = pitch;
+	// }
+	// BSVR end
 
 	// override all previous settings if the viewent isn't the client
 	if (pparams->viewentity > pparams->maxclients)
@@ -838,10 +865,12 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 	// previously done in V_CalcGunAngle but that happens
 	// before a bunch of other stuff happens, which nukes
 	// a bunch of the viewbob fx.
-	VectorCopy(view->origin, view->curstate.origin);
-	VectorCopy(view->origin, view->latched.prevorigin);
-	VectorCopy(view->angles, view->curstate.angles);
-	VectorCopy(view->angles, view->latched.prevangles);
+	// BSVR start - upstream removed (view model is positioned by VRHelper::UpdateViewEnt)
+	// VectorCopy(view->origin, view->curstate.origin);
+	// VectorCopy(view->origin, view->latched.prevorigin);
+	// VectorCopy(view->angles, view->curstate.angles);
+	// VectorCopy(view->angles, view->latched.prevangles);
+	// BSVR end
 
 	lasttime = pparams->time;
 
@@ -1320,19 +1349,22 @@ void V_GetInEyePos(int target, float* origin, float* angles)
 
 	angles[PITCH] *= -3.0f; // see CL_ProcessEntityUpdate()
 
-	if (ent->curstate.solid == SOLID_NOT)
-	{
-		angles[ROLL] = 80; // dead view angle
-		VectorAdd(origin, VEC_DEAD_VIEW, origin);
-	}
-	else if (ent->curstate.usehull == 1)
-	{
-		VectorAdd(origin, VEC_DUCK_VIEW, origin);
-	}
-	else
-		// exacty eye position can't be caluculated since it depends on
-		// client values like cl_bobcycle, this offset matches the default values
-		VectorAdd(origin, VEC_VIEW, origin);
+	// BSVR start - original commented out
+	// if (ent->curstate.solid == SOLID_NOT)
+	// {
+	// 	angles[ROLL] = 80; // dead view angle
+	// 	VectorAdd(origin, VEC_DEAD_VIEW, origin);
+	// }
+	// else if (ent->curstate.usehull == 1)
+	// {
+	// 	VectorAdd(origin, VEC_DUCK_VIEW, origin);
+	// }
+	// else
+	// 	// exacty eye position can't be caluculated since it depends on
+	// 	// client values like cl_bobcycle, this offset matches the default values
+	// 	VectorAdd(origin, VEC_VIEW, origin);
+	origin[2] += 28;  // DEFAULT_VIEWHEIGHT
+	// BSVR end
 }
 
 void V_GetMapFreePosition(float* cl_angles, float* origin, float* angles)
@@ -1438,10 +1470,17 @@ int V_FindViewModelByWeaponModel(int weaponindex)
 			i++;
 		}
 
-		return 0;
+	// BSVR start - commented out original
 	}
-	else
-		return 0;
+	// 	return 0;
+	// }
+	// else
+	// 	return 0;
+	// BSVR end
+
+	// BSVR start
+	return gEngfuncs.pEventAPI->EV_FindModelIndex("models/v_hand.mdl");
+	// BSVR end
 }
 
 
@@ -1714,7 +1753,9 @@ V_Init
 */
 void V_Init()
 {
-	gEngfuncs.pfnAddCommand("centerview", V_StartPitchDrift);
+	// BSVR start - upstream removed
+	// gEngfuncs.pfnAddCommand("centerview", V_StartPitchDrift);
+	// BSVR end
 
 	scr_ofsx = gEngfuncs.pfnRegisterVariable("scr_ofsx", "0", 0);
 	scr_ofsy = gEngfuncs.pfnRegisterVariable("scr_ofsy", "0", 0);

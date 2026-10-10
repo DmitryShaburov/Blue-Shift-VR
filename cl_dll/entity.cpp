@@ -14,6 +14,10 @@
 #include "pm_shared.h"
 #include "Exports.h"
 
+// BSVR start
+#include <unordered_set>
+// BSVR end
+
 #include "particleman.h"
 extern IParticleMan* g_pParticleMan;
 
@@ -44,6 +48,17 @@ int DLLEXPORT HUD_AddEntity(int type, struct cl_entity_s* ent, const char* model
 	default:
 		break;
 	}
+
+	// BSVR start
+	// VR never renders the local player's body. The engine only draws it when the view entity is
+	// a trigger_camera, which would show the player model standing where the body was left.
+	{
+		cl_entity_t* localPlayer = gEngfuncs.GetLocalPlayer();
+		if (localPlayer && ent->index == localPlayer->index)
+			return 0;
+	}
+	// BSVR end
+
 	// each frame every entity passes this function, so the overview hooks it to filter the overview entities
 	// in spectator mode:
 	// each frame every entity passes this function, so the overview hooks
@@ -181,7 +196,10 @@ void DLLEXPORT HUD_TxferPredictionData(struct entity_state_s* ps, const struct e
 	pcd->ammo_rockets = ppcd->ammo_rockets;
 	pcd->m_flNextAttack = ppcd->m_flNextAttack;
 	pcd->fov = ppcd->fov;
-	pcd->weaponanim = ppcd->weaponanim;
+	// BSVR start
+	// pcd->weaponanim = ppcd->weaponanim;
+	pcd->weaponanim = 0;
+	// BSVR end
 	pcd->tfstate = ppcd->tfstate;
 	pcd->maxspeed = ppcd->maxspeed;
 
@@ -294,7 +312,7 @@ void Beams()
 /*
 =========================
 HUD_CreateEntities
-	
+
 Gives us a chance to add additional entities to the render this frame
 =========================
 */
@@ -381,6 +399,12 @@ void DLLEXPORT HUD_TempEntUpdate(
 	TEMPENTITY *pTemp, *pnext, *pprev;
 	float freq, gravity, gravitySlow, life, fastFreq;
 
+	// BSVR start
+	// USed by StudioModelRenderer to filter out temp ents when applying scale (as scale is used as a timer here) - Max Makes Mods, 2019-05-26
+	extern std::unordered_set<cl_entity_t*> g_curFrameTempEnts;
+	g_curFrameTempEnts.clear();
+	// BSVR end
+
 	Vector vAngles;
 
 	gEngfuncs.GetViewAngles((float*)vAngles);
@@ -414,6 +438,8 @@ void DLLEXPORT HUD_TempEntUpdate(
 	{
 		while (pTemp)
 		{
+			g_curFrameTempEnts.insert(&pTemp->entity); // BSVR
+
 			if ((pTemp->flags & FTENT_NOMODEL) == 0)
 			{
 				Callback_AddVisibleEntity(&pTemp->entity);
@@ -431,6 +457,8 @@ void DLLEXPORT HUD_TempEntUpdate(
 
 	while (pTemp)
 	{
+		g_curFrameTempEnts.insert(&pTemp->entity); // BSVR
+
 		bool active;
 
 		active = true;
@@ -739,7 +767,7 @@ finish:
 HUD_GetUserEntity
 
 If you specify negative numbers for beam start and end point entities, then
-  the engine will call back into this function requesting a pointer to a cl_entity_t 
+  the engine will call back into this function requesting a pointer to a cl_entity_t
   object that describes the entity to attach the beam onto.
 
 Indices must start at 1, not zero.

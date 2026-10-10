@@ -257,3 +257,17 @@ bool InterceptOpenGLCalls()
 	return true;
 #endif
 }
+
+// BSVR start
+// Remove the OpenGL hooks while opengl32.dll is guaranteed to still be loaded (called from HUD_Shutdown),
+// instead of leaving it to EasyHook32.dll's own unload during process teardown, when the hooked DLLs
+// may already be gone. LhWaitForPendingRemovals blocks until no thread is still inside a hook.
+void UninstallOpenGLInterceptor()
+{
+#ifdef _WIN32
+	LhUninstallAllHooks();
+	LhWaitForPendingRemovals();
+	hooks.clear();
+#endif
+}
+// BSVR end

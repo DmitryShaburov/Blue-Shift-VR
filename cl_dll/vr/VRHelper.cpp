@@ -489,8 +489,33 @@ void VRHelper::Exit(const char* lpErrorMessage)
 	}
 	vr::VR_Shutdown();
 	gEngfuncs.pfnClientCmd("quit");
-	std::exit(lpErrorMessage != nullptr ? 1 : 0);
+	// BSVR start
+	// std::exit(lpErrorMessage != nullptr ? 1 : 0); - original
+	// Only force the process down on a fatal startup error. A quit requested by SteamVR goes through the
+	// engine's own "quit" issued above, so the engine can shut down in order.
+	if (lpErrorMessage != nullptr)
+	{
+		std::exit(1);
+	}
+	// BSVR end
 }
+
+// BSVR start
+// Orderly VR teardown, called from HUD_Shutdown before the engine unloads client.dll. Upstream instead
+// called std::exit() from DllMain on DLL_PROCESS_DETACH, which cuts the engine's own shutdown short and
+// trips the tier0 worker-thread and filesystem_stdio "!m_bMounted" asserts on the 25th anniversary engine.
+void VRHelper::Shutdown()
+{
+	UninstallOpenGLInterceptor();
+
+	if (vrSystem != nullptr)
+	{
+		vr::VR_Shutdown();
+		vrSystem = nullptr;
+		vrCompositor = nullptr;
+	}
+}
+// BSVR end
 
 Matrix4 VRHelper::GetHMDMatrixProjectionEye(vr::EVREye eEye)
 {
@@ -1219,6 +1244,9 @@ Vector VRHelper::UpdateHMD(int viewent)
 	}
 
 	// override positions if the viewent isn't the client
+	// BSVR start
+	m_hasViewEntOverride = false;
+	// BSVR end
 	if (viewent > -1)
 	{
 		cl_entity_t* viewentity = gEngfuncs.GetEntityByIndex(viewent);
@@ -1228,6 +1256,9 @@ Vector VRHelper::UpdateHMD(int viewent)
 			m_mat4HMDPose[13] = 0.f;
 			m_mat4HMDPose[14] = 0.f;
 			clientGroundPosition = viewentity->origin;
+			// BSVR start
+			m_hasViewEntOverride = true;
+			// BSVR end
 		}
 	}
 

@@ -163,7 +163,11 @@ void VRGameFunctions::QuickSave()
 
 void VRGameFunctions::QuitGame()
 {
-	std::exit(0);
+	// BSVR start
+	// std::exit(0); - original
+	// Let the engine shut down in order instead of killing the process mid-frame.
+	gEngfuncs.pfnClientCmd("quit");
+	// BSVR end
 }
 
 bool VRGameFunctions::QuickSaveExists()

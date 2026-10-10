@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -22,9 +22,12 @@
 #include "cl_util.h"
 #include "parsemsg.h"
 
+// BSVR start
+#include "vr/VRRenderer.h"
+// BSVR end
+
 #include <string.h>
 #include <stdio.h>
-#include "vr/VRRenderer.h" // BSVR: VR HUD rendering (VRHUDDrawBegin / VRHUDDrawFinished)
 
 
 
@@ -121,7 +124,9 @@ bool CHudFlashlight::Draw(float flTime)
 	y = (m_prc1->bottom - m_prc2->top) / 2;
 	x = ScreenWidth - m_iWidth - m_iWidth / 2;
 
-	gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::FLASHLIGHT); // BSVR
+	// BSVR start
+	gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::FLASHLIGHT);
+	// BSVR end
 
 	// Draw the flashlight casing
 	SPR_Set(m_hSprite1, r, g, b);
@@ -147,8 +152,9 @@ bool CHudFlashlight::Draw(float flTime)
 		SPR_DrawAdditive(0, x + iOffset, y, &rc);
 	}
 
-
-	gVRRenderer.VRHUDDrawFinished(); // BSVR
+	// BSVR start
+	gVRRenderer.VRHUDDrawFinished();
+	// BSVR end
 
 	return true;
 }

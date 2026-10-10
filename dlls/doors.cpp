@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -22,6 +22,10 @@
 #include "util.h"
 #include "cbase.h"
 #include "doors.h"
+
+// BSVR start
+#include "vr/VRRotatableEnt.h"
+// BSVR end
 
 
 extern void SetMovedir(entvars_t* ev);
@@ -812,22 +816,22 @@ void CBaseDoor::Blocked(CBaseEntity* pOther)
 }
 
 
-/*QUAKED FuncRotDoorSpawn (0 .5 .8) ? START_OPEN REVERSE  
+/*QUAKED FuncRotDoorSpawn (0 .5 .8) ? START_OPEN REVERSE
 DOOR_DONT_LINK TOGGLE X_AXIS Y_AXIS
-if two doors touch, they are assumed to be connected and operate as  
+if two doors touch, they are assumed to be connected and operate as
 a unit.
 
-TOGGLE causes the door to wait in both the start and end states for  
+TOGGLE causes the door to wait in both the start and end states for
 a trigger event.
 
-START_OPEN causes the door to move to its destination when spawned,  
-and operate in reverse.  It is used to temporarily or permanently  
-close off an area when triggered (not usefull for touch or  
+START_OPEN causes the door to move to its destination when spawned,
+and operate in reverse.  It is used to temporarily or permanently
+close off an area when triggered (not usefull for touch or
 takedamage doors).
 
-You need to have an origin brush as part of this entity.  The  
+You need to have an origin brush as part of this entity.  The
 center of that brush will be
-the point around which it is rotated. It will rotate around the Z  
+the point around which it is rotated. It will rotate around the Z
 axis by default.  You can
 check either the X_AXIS or Y_AXIS box to change that.
 
@@ -837,7 +841,7 @@ check either the X_AXIS or Y_AXIS box to change that.
 REVERSE will cause the door to rotate in the opposite direction.
 
 "angle"		determines the opening direction
-"targetname" if set, no touch field will be spawned and a remote  
+"targetname" if set, no touch field will be spawned and a remote
 button or trigger field activates the door.
 "health"	if set, door must be shot open
 "speed"		movement speed (100 default)
@@ -850,11 +854,22 @@ button or trigger field activates the door.
 3)	stone chain
 4)	screechy metal
 */
-class CRotDoor : public CBaseDoor
+class CRotDoor : public CBaseDoor, VRRotatableEnt // BSVR add rotatable
 {
 public:
 	void Spawn() override;
 	void SetToggleState(int state) override;
+
+// BSVR start
+protected:
+	virtual bool CanDoVRDragRotation(CBaseEntity* pPlayer, Vector& angleStart, Vector& angleEnd) override;
+	virtual void StartVRDragRotation() override;
+	virtual bool SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta) override;
+	virtual void StopVRDragRotation() override;
+	virtual float GetVRDragRotationMoveDistance() override { return m_flMoveDistance; }
+	virtual CBaseEntity* MyEntityPointer() override { return this; }
+	virtual VRRotatableEnt* MyRotatableEntPtr() override { return this; }
+// BSVR end
 };
 
 LINK_ENTITY_TO_CLASS(func_door_rotating, CRotDoor);
@@ -919,6 +934,95 @@ void CRotDoor::SetToggleState(int state)
 
 	UTIL_SetOrigin(pev, pev->origin);
 }
+
+// BSVR start
+bool CRotDoor::CanDoVRDragRotation(CBaseEntity* pPlayer, Vector& angleStart, Vector& angleEnd)
+{
+	if (!UTIL_IsMasterTriggered(m_sMaster, pPlayer))
+		return false;
+
+	// door is non-solid
+	if (FBitSet(pev->spawnflags, SF_DOOR_PASSABLE))
+		return false;
+
+	// door can only be used through a trigger
+	if (!FStringNull(pev->targetname))
+		return false;
+
+	m_hActivator = pPlayer;
+	angleStart = m_vecAngle1;
+	angleEnd = m_vecAngle2;
+
+	return true;
+}
+
+void CRotDoor::StartVRDragRotation()
+{
+	if (!FBitSet(pev->spawnflags, SF_DOOR_SILENT))
+		EMIT_SOUND(ENT(pev), CHAN_STATIC, STRING(pev->noiseMoving), 1, ATTN_NORM);
+
+	SetThink(nullptr);
+	SetTouch(nullptr);
+	SetUse(nullptr);
+}
+
+bool CRotDoor::SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta)
+{
+	if (m_toggle_state == TS_AT_TOP)
+	{
+		m_toggle_state = TS_GOING_DOWN;
+	}
+	else if (m_toggle_state == TS_AT_BOTTOM)
+	{
+		m_toggle_state = TS_GOING_UP;
+	}
+
+	if (m_toggle_state == TS_GOING_UP && delta >= 1.f)
+	{
+		pev->angles = m_vecAngle2;
+		m_vecFinalAngle = m_vecAngle2;
+		SetMoveDone(&CBaseDoor::DoorHitTop);
+		AngularMoveDone();
+		return false;
+	}
+	else if (m_toggle_state == TS_GOING_DOWN && delta <= 0.f)
+	{
+		pev->angles = m_vecAngle1;
+		m_vecFinalAngle = m_vecAngle1;
+		SetMoveDone(&CBaseDoor::DoorHitBottom);
+		AngularMoveDone();
+		return false;
+	}
+	else
+	{
+		SetThink(nullptr);
+		SetTouch(nullptr);
+		SetUse(nullptr);
+		// ALERT(at_console, "ANGLES: %f %f %f\n", angles.x, angles.y, angles.z);
+		pev->angles = angles;
+		return true;
+	}
+}
+
+void CRotDoor::StopVRDragRotation()
+{
+	SetUse(&CRotDoor::Use);
+
+	if (FBitSet(pev->spawnflags, SF_DOOR_USE_ONLY))
+		SetTouch(&CBaseDoor::DoorTouch);
+
+	if (m_toggle_state == TS_GOING_DOWN)
+	{
+		m_toggle_state = TS_AT_TOP;
+		DoorGoDown();
+	}
+	else if (m_toggle_state == TS_GOING_UP)
+	{
+		m_toggle_state = TS_AT_BOTTOM;
+		DoorGoUp();
+	}
+}
+// BSVR end
 
 
 class CMomentaryDoor : public CBaseToggle

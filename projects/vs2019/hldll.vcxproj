@@ -349,6 +349,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClInclude Include="..\..\engine\studio.h" />
     <ClInclude Include="..\..\game_shared\filesystem_utils.h" />
     <ClInclude Include="..\..\game_shared\vr\VRShared.h" />
+    <ClInclude Include="..\..\game_shared\vr\VRComModelHL25.h" />
     <ClInclude Include="..\..\pm_shared\pm_debug.h" />
     <ClInclude Include="..\..\pm_shared\pm_defs.h" />
     <ClInclude Include="..\..\pm_shared\pm_info.h" />

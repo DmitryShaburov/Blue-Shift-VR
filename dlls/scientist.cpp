@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -668,11 +668,22 @@ void CScientist::Spawn()
 	SET_MODEL(ENT(pev), GetScientistModel());
 	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 
+	// BSVR start
+	pev->scale = CVAR_GET_FLOAT("vr_npcscale");
+	if (pev->scale <= 0.f)
+	{
+		pev->scale = 1.f;
+	}
+	// BSVR end
+
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
 	m_bloodColor = BLOOD_COLOR_RED;
 	pev->health = gSkillData.scientistHealth;
-	pev->view_ofs = Vector(0, 0, 50);  // position of the eyes relative to monster's origin.
+	// BSVR start
+	// pev->view_ofs = Vector(0, 0, 50);  // position of the eyes relative to monster's origin - original
+	pev->view_ofs = Vector(0, 0, 50 * pev->scale);  // position of the eyes relative to monster's origin.
+	// BSVR end
 	m_flFieldOfView = VIEW_FIELD_WIDE; // NOTE: we need a wide field of view so scientists will notice player and say hello
 	m_MonsterState = MONSTERSTATE_NONE;
 
@@ -745,6 +756,11 @@ void CScientist::TalkInit()
 
 	m_szGrp[TLK_WOUND] = "SC_WOUND";
 	m_szGrp[TLK_MORTAL] = "SC_MORTAL";
+
+	// BSVR start
+	m_szGrp[TLK_GIB_NEUTRAL] = "SC_GIB_NEUT";
+	m_szGrp[TLK_GIB_BLOODY] = "SC_GIB_BLD";
+	// BSVR end
 
 	// get voice for head
 	switch (pev->body % NUM_SCIENTIST_HEADS)

@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -934,6 +934,11 @@ void GameDLLInit()
 	// BSVR end
 
 	SERVER_COMMAND("exec skill.cfg\n");
+
+	// BSVR start
+	// Seed rand()
+	srand(rand() ^ time(nullptr));
+	// BSVR end
 }
 
 void GameDLLShutdown()

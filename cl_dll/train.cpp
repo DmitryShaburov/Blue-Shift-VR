@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -23,7 +23,9 @@
 #include <string.h>
 #include <stdio.h>
 #include "parsemsg.h"
-#include "vr/VRRenderer.h" // BSVR: VR HUD rendering (VRHUDDrawBegin / VRHUDDrawFinished)
+// BSVR start
+#include "vr/VRRenderer.h"
+// BSVR end
 
 DECLARE_MESSAGE(m_Train, Train)
 
@@ -55,18 +57,27 @@ bool CHudTrain::Draw(float fTime)
 	{
 		int r, g, b, x, y;
 
-		UnpackRGB(r, g, b, RGB_YELLOWISH);
-		SPR_Set(m_hSprite, r, g, b);
+		// BSVR start - moved down
+		// UnpackRGB(r, g, b, RGB_YELLOWISH);
+		// SPR_Set(m_hSprite, r, g, b);
+		// BSVR end
 
 		// This should show up to the right and part way up the armor number
 		y = ScreenHeight - SPR_Height(m_hSprite, 0) - gHUD.m_iFontHeight;
 		x = ScreenWidth / 3 + SPR_Width(m_hSprite, 0) / 4;
 
-		gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::TRAINCONTROLS); // BSVR
+		// BSVR start
+		gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::TRAINCONTROLS);
+
+		UnpackRGB(r, g, b, RGB_YELLOWISH);
+		SPR_Set(m_hSprite, r, g, b);
+		// BSVR end
 
 		SPR_DrawAdditive(m_iPos - 1, x, y, NULL);
 
-		gVRRenderer.VRHUDDrawFinished(); // BSVR
+		// BSVR start
+		gVRRenderer.VRHUDDrawFinished();
+		// BSVR end
 	}
 
 	return true;

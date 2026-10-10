@@ -26,6 +26,8 @@
 
 // BSVR start
 #include "vr/hlmv_mathlib.h"
+
+constexpr const int VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE = 1024;
 // BSVR end
 
 
@@ -38,17 +40,90 @@ bool ExtractBbox(void* pmodel, int sequence, float* mins, float* maxs)
 	if (!pstudiohdr)
 		return false;
 
+	// BSVR start
+	if (sequence < 0 || sequence >= pstudiohdr->numseq)
+		return false;
+
+	if (pstudiohdr->numseq <= 0)
+		return false;
+	// BSVR end
+
 	mstudioseqdesc_t* pseqdesc;
 
 	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex);
 
-	mins[0] = pseqdesc[sequence].bbmin[0];
-	mins[1] = pseqdesc[sequence].bbmin[1];
-	mins[2] = pseqdesc[sequence].bbmin[2];
+	// BSVR start
+	VectorCopy(pseqdesc[sequence].bbmin, mins);
+	VectorCopy(pseqdesc[sequence].bbmax, maxs);
 
-	maxs[0] = pseqdesc[sequence].bbmax[0];
-	maxs[1] = pseqdesc[sequence].bbmax[1];
-	maxs[2] = pseqdesc[sequence].bbmax[2];
+	// Some of our weapons hide parts 9999 units off the model origin (e.g. the RPG rocket when firing)
+	// The bounding boxes then are invalid, which we fix by simply taking the bounding box for the idle animation (index 0)
+	Vector size;
+	VectorSubtract(maxs, mins, size);
+	if (VectorLength(size) > VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE || VectorLength(mins) > VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE || VectorLength(maxs) > VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE)
+	{
+		// idle bounding box is too big, print warning
+		ALERT(at_console, "NOTICE: bounding box for model %s with animation %s is too big, trying to find smaller bbox!\n", pstudiohdr->name, pseqdesc[sequence].label);
+
+		for (int i = 0; i < pstudiohdr->numseq; i++)
+		{
+			Vector cursize;
+			VectorSubtract(pseqdesc[i].bbmax, pseqdesc[i].bbmin, cursize);
+			if (VectorLength(cursize) < VectorLength(size))
+			{
+				VectorCopy(pseqdesc[i].bbmin, mins);
+				VectorCopy(pseqdesc[i].bbmax, maxs);
+				VectorCopy(cursize, size);
+			}
+		}
+	}
+
+	VectorSubtract(maxs, mins, size);
+	if (VectorLength(size) > VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE || VectorLength(mins) > VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE || VectorLength(maxs) > VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE)
+	{
+		// idle bounding box is too big, print warning
+		ALERT(at_console, "WARNING: smallest bounding box for model %s is too big, trying to create a fitting bbox!\n", pstudiohdr->name);
+
+		Vector smallestbounds;
+		smallestbounds[0] = 9999.f;
+		smallestbounds[1] = 9999.f;
+		smallestbounds[2] = 9999.f;
+		for (int i = 0; i < pstudiohdr->numseq; i++)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				smallestbounds[j] = std::min(smallestbounds[j], fabs(pseqdesc[i].bbmin[j]));
+				smallestbounds[j] = std::min(smallestbounds[j], fabs(pseqdesc[i].bbmax[j]));
+				mins[j] = -smallestbounds[j];
+				maxs[j] = smallestbounds[j];
+			}
+		}
+	}
+
+	VectorSubtract(maxs, mins, size);
+	if (VectorLength(size) > VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE || VectorLength(mins) > VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE || VectorLength(maxs) > VR_MAX_VALID_MODEL_SEQUENCE_BBOX_SIZE)
+	{
+		// idle bounding box is too big, print warning
+		ALERT(at_console, "WARNING: created bounding box for model %s is still too big, falling back to 16x16x16!\n", pstudiohdr->name, pseqdesc[sequence].label);
+
+		mins[0] = -8.f;
+		mins[1] = -8.f;
+		mins[2] = -8.f;
+		maxs[0] = 8.f;
+		maxs[1] = 8.f;
+		maxs[2] = 8.f;
+	}
+	// BSVR end
+
+	// BSVR start - original code
+	// mins[0] = pseqdesc[sequence].bbmin[0];
+	// mins[1] = pseqdesc[sequence].bbmin[1];
+	// mins[2] = pseqdesc[sequence].bbmin[2];
+
+	// maxs[0] = pseqdesc[sequence].bbmax[0];
+	// maxs[1] = pseqdesc[sequence].bbmax[1];
+	// maxs[2] = pseqdesc[sequence].bbmax[2];
+	// BSVR end
 
 	return true;
 }
@@ -194,10 +269,58 @@ void SequencePrecache(void* pmodel, const char* pSequenceName)
 	}
 }
 
-
-
 // BSVR start
 // stock GetSequenceInfo removed, replaced by the extended version further below (as in Half-Life-VR)
+
+int GetNumSequences(void* pmodel)
+{
+	studiohdr_t* pstudiohdr = static_cast<studiohdr_t*>(pmodel);
+	if (!pstudiohdr)
+		return 0;
+	return pstudiohdr->numseq;
+}
+
+int GetSequenceInfo(void* pmodel, entvars_t* pev, float* pflFrameRate, float* pflGroundSpeed, float* pflFPS, int* piNumFrames, bool* pfIsLooping)
+{
+	return GetSequenceInfo(pmodel, pev->sequence, pflFrameRate, pflGroundSpeed, pflFPS, piNumFrames, pfIsLooping);
+}
+
+int GetSequenceInfo(void* pmodel, int sequence, float* pflFrameRate, float* pflGroundSpeed, float* pflFPS, int* piNumFrames, bool* pfIsLooping)
+{
+	studiohdr_t* pstudiohdr = static_cast<studiohdr_t*>(pmodel);
+	if (!pstudiohdr)
+		return 0;
+
+	if (sequence >= pstudiohdr->numseq)
+	{
+		*pflFrameRate = 0.0;
+		*pflGroundSpeed = 0.0;
+		return 0;
+	}
+
+	mstudioseqdesc_t* pseqdesc = reinterpret_cast<mstudioseqdesc_t*>(reinterpret_cast<byte*>(pstudiohdr) + pstudiohdr->seqindex) + sequence;
+
+	if (pflFPS)
+		*pflFPS = pseqdesc->fps;
+	if (piNumFrames)
+		*piNumFrames = pseqdesc->numframes;
+	if (pfIsLooping)
+		*pfIsLooping = pseqdesc->flags & STUDIO_LOOPING;
+
+	if (pseqdesc->numframes > 1)
+	{
+		*pflFrameRate = 256 * pseqdesc->fps / (pseqdesc->numframes - 1);
+		*pflGroundSpeed = sqrtf(pseqdesc->linearmovement[0] * pseqdesc->linearmovement[0] + pseqdesc->linearmovement[1] * pseqdesc->linearmovement[1] + pseqdesc->linearmovement[2] * pseqdesc->linearmovement[2]);
+		*pflGroundSpeed = *pflGroundSpeed * pseqdesc->fps / (pseqdesc->numframes - 1);
+	}
+	else
+	{
+		*pflFrameRate = 256.0;
+		*pflGroundSpeed = 0.0;
+	}
+
+	return 1;
+}
 // BSVR end
 
 
@@ -216,7 +339,9 @@ int GetSequenceFlags(void* pmodel, entvars_t* pev)
 }
 
 
-int GetAnimationEvent(void* pmodel, entvars_t* pev, MonsterEvent_t* pMonsterEvent, float flStart, float flEnd, int index)
+// BSVR start
+int GetAnimationEvent(void* pmodel, entvars_t* pev, MonsterEvent_t* pMonsterEvent, float flStart, float flEnd, int index, ClientAnimEvent_t* pClientAnimEvent)
+// BSVR end
 {
 	studiohdr_t* pstudiohdr;
 
@@ -248,16 +373,32 @@ int GetAnimationEvent(void* pmodel, entvars_t* pev, MonsterEvent_t* pMonsterEven
 
 	for (; index < pseqdesc->numevents; index++)
 	{
-		// Don't send client-side events to the server AI
-		if (pevent[index].event >= EVENT_CLIENT)
-			continue;
-
 		if ((pevent[index].frame >= flStart && pevent[index].frame < flEnd) ||
 			((pseqdesc->flags & STUDIO_LOOPING) != 0 && flEnd >= pseqdesc->numframes - 1 && pevent[index].frame < flEnd - pseqdesc->numframes + 1))
 		{
-			pMonsterEvent->event = pevent[index].event;
-			pMonsterEvent->options = pevent[index].options;
-			return index + 1;
+			// Don't send client-side events to the server AI
+			if (pevent[index].event >= EVENT_CLIENT)
+			{
+				// BSVR start
+				if (pClientAnimEvent)
+				{
+					pClientAnimEvent->isSet = true;
+					pClientAnimEvent->event = pevent[index].event;
+					pClientAnimEvent->options = pevent[index].options;
+					return index + 1;
+				}
+				// BSVR end
+			}
+			else
+			{
+				// BSVR start
+				if (pClientAnimEvent)
+					pClientAnimEvent->isSet = false;
+				// BSVR end
+				pMonsterEvent->event = pevent[index].event;
+				pMonsterEvent->options = pevent[index].options;
+				return index + 1;
+			}
 		}
 	}
 	return 0;
@@ -362,7 +503,6 @@ float SetBlending(void* pmodel, entvars_t* pev, int iBlender, float flValue)
 
 	return setting * (1.0 / 255.0) * (pseqdesc->blendend[iBlender] - pseqdesc->blendstart[iBlender]) + pseqdesc->blendstart[iBlender];
 }
-
 
 
 
@@ -477,56 +617,6 @@ int GetBodygroup(void* pmodel, entvars_t* pev, int iGroup)
 }
 
 // BSVR start
-int GetSequenceInfo(void* pmodel, entvars_t* pev, float* pflFrameRate, float* pflGroundSpeed, float* pflFPS, int* piNumFrames, bool* pfIsLooping)
-{
-	return GetSequenceInfo(pmodel, pev->sequence, pflFrameRate, pflGroundSpeed, pflFPS, piNumFrames, pfIsLooping);
-}
-
-int GetSequenceInfo(void* pmodel, int sequence, float* pflFrameRate, float* pflGroundSpeed, float* pflFPS, int* piNumFrames, bool* pfIsLooping)
-{
-	studiohdr_t* pstudiohdr = static_cast<studiohdr_t*>(pmodel);
-	if (!pstudiohdr)
-		return 0;
-
-	if (sequence >= pstudiohdr->numseq)
-	{
-		*pflFrameRate = 0.0;
-		*pflGroundSpeed = 0.0;
-		return 0;
-	}
-
-	mstudioseqdesc_t* pseqdesc = reinterpret_cast<mstudioseqdesc_t*>(reinterpret_cast<byte*>(pstudiohdr) + pstudiohdr->seqindex) + sequence;
-
-	if (pflFPS)
-		*pflFPS = pseqdesc->fps;
-	if (piNumFrames)
-		*piNumFrames = pseqdesc->numframes;
-	if (pfIsLooping)
-		*pfIsLooping = pseqdesc->flags & STUDIO_LOOPING;
-
-	if (pseqdesc->numframes > 1)
-	{
-		*pflFrameRate = 256 * pseqdesc->fps / (pseqdesc->numframes - 1);
-		*pflGroundSpeed = sqrtf(pseqdesc->linearmovement[0] * pseqdesc->linearmovement[0] + pseqdesc->linearmovement[1] * pseqdesc->linearmovement[1] + pseqdesc->linearmovement[2] * pseqdesc->linearmovement[2]);
-		*pflGroundSpeed = *pflGroundSpeed * pseqdesc->fps / (pseqdesc->numframes - 1);
-	}
-	else
-	{
-		*pflFrameRate = 256.0;
-		*pflGroundSpeed = 0.0;
-	}
-
-	return 1;
-}
-
-int GetNumSequences(void* pmodel)
-{
-	studiohdr_t* pstudiohdr = static_cast<studiohdr_t*>(pmodel);
-	if (!pstudiohdr)
-		return 0;
-	return pstudiohdr->numseq;
-}
-
 // Blatantly copied from client.dll's StudioSetupBones, modified for our VR weapons - Max Makes Mods, 2019-07-13
 namespace
 {

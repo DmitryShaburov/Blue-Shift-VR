@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -115,7 +115,10 @@ void CGauss::Holster()
 void CGauss::PrimaryAttack()
 {
 	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
+	// BSVR start
+	// if (m_pPlayer->pev->waterlevel == 3) - original
+	if (m_pPlayer->IsWeaponUnderWater())
+	// BSVR end
 	{
 		PlayEmptySound();
 		m_flNextSecondaryAttack = m_flNextPrimaryAttack = GetNextAttackDelay(0.15);
@@ -147,7 +150,10 @@ void CGauss::SecondaryAttack()
 	m_pPlayer->m_flStartCharge = V_min(m_pPlayer->m_flStartCharge, gpGlobals->time);
 
 	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
+	// BSVR start
+	// if (m_pPlayer->pev->waterlevel == 3) - original
+	if (m_pPlayer->IsWeaponUnderWater())
+	// BSVR end
 	{
 		if (m_fInAttack != 0)
 		{
@@ -295,9 +301,14 @@ void CGauss::StartFire()
 	// and we end up ear blasting the player!
 	m_pPlayer->m_flStartCharge = V_min(m_pPlayer->m_flStartCharge, gpGlobals->time);
 
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
-	Vector vecAiming = gpGlobals->v_forward;
-	Vector vecSrc = m_pPlayer->GetGunPosition(); // + gpGlobals->v_up * -8 + gpGlobals->v_right * 8;
+	// BSVR start
+	// UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle); - original
+	// Vector vecAiming = gpGlobals->v_forward; - original
+	// Vector vecSrc = m_pPlayer->GetGunPosition(); // + gpGlobals->v_up * -8 + gpGlobals->v_right * 8; - original
+	UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
+	Vector vecAiming = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
+	Vector vecSrc = m_pPlayer->GetGunPosition();    // + gpGlobals->v_up * -8 + gpGlobals->v_right * 8;
+	// BSVR end
 
 	if (gpGlobals->time - m_pPlayer->m_flStartCharge > GetFullChargeTime())
 	{
@@ -323,19 +334,24 @@ void CGauss::StartFire()
 		//ALERT ( at_console, "Time:%f Damage:%f\n", gpGlobals->time - m_pPlayer->m_flStartCharge, flDamage );
 
 #ifndef CLIENT_DLL
-		float flZVel = m_pPlayer->pev->velocity.z;
-
-		if (!m_fPrimaryFire)
+		// BSVR start - wrap into flag
+		if (CVAR_GET_FLOAT("vr_no_gauss_recoil") != 0.f)  // Allow disabling of gauss recoil in VR to avoid nausea - Max Makes Mods, 2019-04-8
 		{
-			m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * flDamage * 5;
-		}
+			float flZVel = m_pPlayer->pev->velocity.z;
 
-		if (!g_pGameRules->IsMultiplayer())
+			if (!m_fPrimaryFire)
+			{
+				m_pPlayer->pev->velocity = m_pPlayer->pev->velocity - gpGlobals->v_forward * flDamage * 5;
+			}
 
-		{
-			// in deathmatch, gauss can pop you up into the air. Not in single play.
-			m_pPlayer->pev->velocity.z = flZVel;
+			if (!g_pGameRules->IsMultiplayer())
+
+			{
+				// in deathmatch, gauss can pop you up into the air. Not in single play.
+				m_pPlayer->pev->velocity.z = flZVel;
+			}
 		}
+		// BSVR end
 #endif
 		// player "shoot" animation
 		m_pPlayer->SetAnimation(PLAYER_ATTACK1);
@@ -369,13 +385,16 @@ void CGauss::Fire(Vector vecOrigSrc, Vector vecDir, float flDamage)
 #endif
 
 	// The main firing event is sent unreliably so it won't be delayed.
-	PLAYBACK_EVENT_FULL(FEV_NOTHOST, m_pPlayer->edict(), m_usGaussFire, 0.0, m_pPlayer->pev->origin, m_pPlayer->pev->angles, flDamage, 0.0, 0, 0, m_fPrimaryFire ? 1 : 0, 0);
+	// BSVR start
+	// PLAYBACK_EVENT_FULL(FEV_NOTHOST, m_pPlayer->edict(), m_usGaussFire, 0.0, m_pPlayer->pev->origin, m_pPlayer->pev->angles, flDamage, 0.0, 0, 0, m_fPrimaryFire ? 1 : 0, 0); - original
+	PLAYBACK_EVENT_FULL(FEV_NOTHOST, m_pPlayer->edict(), m_usGaussFire, 0.0, m_pPlayer->GetGunPosition(), pev->angles, flDamage, 0.0, 0, 0, m_fPrimaryFire ? 1 : 0, 0);
+	// BSVR end
 
 	SendStopEvent(false);
 
 
-	/*ALERT( at_console, "%f %f %f\n%f %f %f\n", 
-		vecSrc.x, vecSrc.y, vecSrc.z, 
+	/*ALERT( at_console, "%f %f %f\n%f %f %f\n",
+		vecSrc.x, vecSrc.y, vecSrc.z,
 		vecDest.x, vecDest.y, vecDest.z );*/
 
 
@@ -516,6 +535,12 @@ void CGauss::Fire(Vector vecOrigSrc, Vector vecDir, float flDamage)
 	}
 #endif
 	// ALERT( at_console, "%d bytes\n", nTotal );
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(flDamage / 200.f);
+#endif
+// BSVR end
 }
 
 

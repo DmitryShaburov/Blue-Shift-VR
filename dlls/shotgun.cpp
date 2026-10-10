@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -93,7 +93,10 @@ bool CShotgun::Deploy()
 void CShotgun::PrimaryAttack()
 {
 	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
+	// BSVR start
+	// if (m_pPlayer->pev->waterlevel == 3) - original
+	if (m_pPlayer->IsWeaponUnderWater())
+	// BSVR end
 	{
 		PlayEmptySound();
 		m_flNextPrimaryAttack = GetNextAttackDelay(0.15);
@@ -159,13 +162,22 @@ void CShotgun::PrimaryAttack()
 	else
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 1;
 	m_fInSpecialReload = 0;
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.4f);
+#endif
+// BSVR end
 }
 
 
 void CShotgun::SecondaryAttack()
 {
 	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
+	// BSVR start
+	// if (m_pPlayer->pev->waterlevel == 3) - original
+	if (m_pPlayer->IsWeaponUnderWater())
+	// BSVR end
 	{
 		PlayEmptySound();
 		m_flNextPrimaryAttack = GetNextAttackDelay(0.15);
@@ -234,6 +246,12 @@ void CShotgun::SecondaryAttack()
 		m_flTimeWeaponIdle = 1.5;
 
 	m_fInSpecialReload = 0;
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.8f);
+#endif
+// BSVR end
 }
 
 

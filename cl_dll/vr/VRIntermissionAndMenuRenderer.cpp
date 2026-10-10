@@ -37,7 +37,6 @@
 #include "VROpenGLInterceptor.h"
 #include "VRInput.h"
 
-#define HARDWARE_MODE
 #include "com_model.h"
 
 #include "vr_gl.h"

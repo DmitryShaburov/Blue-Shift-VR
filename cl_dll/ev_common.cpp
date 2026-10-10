@@ -171,35 +171,52 @@ Determine where to eject shells from
 */
 void EV_GetDefaultShellInfo(event_args_t* args, float* origin, float* velocity, float* ShellVelocity, float* ShellOrigin, float* forward, float* right, float* up, float forwardScale, float upScale, float rightScale)
 {
-	int i;
-	float fR, fU;
+	// BSVR start commented upstream code
+	// int i;
+	// float fR, fU;
 
-	int idx;
+	// int idx;
 
-	idx = args->entindex;
+	// idx = args->entindex;
 
-	Vector view_ofs = VEC_VIEW;
+	// Vector view_ofs = VEC_VIEW;
 
-	if (EV_IsPlayer(idx))
+	// if (EV_IsPlayer(idx))
+	// {
+	// 	if (EV_IsLocal(idx))
+	// 	{
+	// 		gEngfuncs.pEventAPI->EV_LocalPlayerViewheight(view_ofs);
+	// 	}
+	// 	else if (args->ducking == 1)
+	// 	{
+	// 		view_ofs = VEC_DUCK_VIEW;
+	// 	}
+	// }
+
+	// fR = gEngfuncs.pfnRandomFloat(50, 70);
+	// fU = gEngfuncs.pfnRandomFloat(100, 150);
+
+	// for (i = 0; i < 3; i++)
+	// {
+	// 	ShellVelocity[i] = velocity[i] + right[i] * fR + up[i] * fU + forward[i] * 25;
+	// 	ShellOrigin[i] = origin[i] + view_ofs[i] + up[i] * upScale + forward[i] * forwardScale + right[i] * rightScale;
+	// }
+	// BSVR end commented upstream code
+
+	// BSVR start
+	cl_entity_s* viewModel = gEngfuncs.GetViewModel();
+	if (viewModel != nullptr)
 	{
-		if (EV_IsLocal(idx))
+		float fR = gEngfuncs.pfnRandomFloat(50, 70);
+		float fU = gEngfuncs.pfnRandomFloat(100, 150);
+
+		for (int i = 0; i < 3; i++)
 		{
-			gEngfuncs.pEventAPI->EV_LocalPlayerViewheight(view_ofs);
-		}
-		else if (args->ducking == 1)
-		{
-			view_ofs = VEC_DUCK_VIEW;
+			ShellVelocity[i] = viewModel->curstate.velocity[i] + right[i] * fR + up[i] * fU + forward[i] * 25;
+			ShellOrigin[i] = viewModel->curstate.origin[i] + up[i] * upScale + forward[i] * forwardScale + right[i] * rightScale;
 		}
 	}
-
-	fR = gEngfuncs.pfnRandomFloat(50, 70);
-	fU = gEngfuncs.pfnRandomFloat(100, 150);
-
-	for (i = 0; i < 3; i++)
-	{
-		ShellVelocity[i] = velocity[i] + right[i] * fR + up[i] * fU + forward[i] * 25;
-		ShellOrigin[i] = origin[i] + view_ofs[i] + up[i] * upScale + forward[i] * forwardScale + right[i] * rightScale;
-	}
+	// BSVR end
 }
 
 /*
@@ -211,13 +228,23 @@ Flag weapon/view model for muzzle flash
 */
 void EV_MuzzleFlash()
 {
-	// Add muzzle flash to current weapon model
-	cl_entity_t* ent = GetViewEntity();
-	if (!ent)
-	{
-		return;
-	}
+	// BSVR start commented upstream code
+	// // Add muzzle flash to current weapon model
+	// cl_entity_t* ent = GetViewEntity();
+	// if (!ent)
+	// {
+	// 	return;
+	// }
 
-	// Or in the muzzle flash
-	ent->curstate.effects |= EF_MUZZLEFLASH;
+	// // Or in the muzzle flash
+	// ent->curstate.effects |= EF_MUZZLEFLASH;
+	// BSVR end commented upstream code
+
+	// BSVR start
+	// "Hack" - Since we use server side entities for our weapons bound to VR controllers,
+	// we simply send a message up to the server,
+	// so it can set the muzzle flash to the actual weapon. - Max Makes Mods, 2019-04-13
+
+	gEngfuncs.pfnClientCmd("vr_muzzleflash");
+	// BSVR end
 }

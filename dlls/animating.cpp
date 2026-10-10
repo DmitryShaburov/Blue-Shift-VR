@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -135,7 +135,9 @@ int CBaseAnimating::GetSequenceFlags()
 //=========================================================
 void CBaseAnimating::DispatchAnimEvents(float flInterval)
 {
-	MonsterEvent_t event;
+	// BSVR start
+	// MonsterEvent_t event; - originals
+	// BSVR end
 
 	void* pmodel = GET_MODEL_PTR(ENT(pev));
 
@@ -159,10 +161,17 @@ void CBaseAnimating::DispatchAnimEvents(float flInterval)
 
 	int index = 0;
 
-	while ((index = GetAnimationEvent(pmodel, pev, &event, flStart, flEnd, index)) != 0)
+	// BSVR start
+	MonsterEvent_t event;
+	ClientAnimEvent_t clientevent{};
+	while ((index = GetAnimationEvent(pmodel, pev, &event, flStart, flEnd, index, &clientevent)) != 0)
 	{
-		HandleAnimEvent(&event);
+		if (clientevent.isSet)
+			HandleClientAnimEvent(&clientevent);
+		else
+			HandleAnimEvent(&event);
 	}
+	// BSVR end
 }
 
 

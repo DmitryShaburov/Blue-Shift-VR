@@ -31,6 +31,9 @@ constexpr int MAX_PLAYERS = 32;
 #define HIDEHUD_FLASHLIGHT (1 << 1)
 #define HIDEHUD_ALL (1 << 2)
 #define HIDEHUD_HEALTH (1 << 3)
+// BSVR start
+#define HIDEHUD_WEAPONBLOCKED (1 << 4)  // Just store this boolean as a bit in m_iHideHUD �\_("/)_/� - Max Makes Mods, 2018-02-04
+// BSVR end
 
 #define MAX_AMMO_TYPES 32 // ???
 #define MAX_AMMO_SLOTS 32 // not really slots

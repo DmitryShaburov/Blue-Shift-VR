@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -68,6 +68,9 @@ bool CHandGrenade::GetItemInfo(ItemInfo* p)
 
 bool CHandGrenade::Deploy()
 {
+	// BSVR start
+	m_flStartThrow = 0;
+	// BSVR end
 	m_flReleaseThrow = -1;
 	return DefaultDeploy("models/v_grenade.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar");
 }
@@ -118,47 +121,67 @@ void CHandGrenade::WeaponIdle()
 	if (m_flReleaseThrow == 0 && 0 != m_flStartThrow)
 		m_flReleaseThrow = gpGlobals->time;
 
-	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
-		return;
+	// BSVR - commented out
+	// if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
+	// 	return;
+	// BSVR end
 
 	if (0 != m_flStartThrow)
 	{
-		Vector angThrow = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+		// BSVR start - moved into VR flag if / else
+		#ifndef CLIENT_DLL
+		Vector grenadeVelocity;
+		if (CVAR_GET_FLOAT("vr_weapon_grenade_mode") != 0.f)
+		{
+			// Vector angThrow = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle; - original
+			Vector angThrow = m_pPlayer->GetAimAngles();  // m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 
-		if (angThrow.x < 0)
-			angThrow.x = -10 + angThrow.x * ((90 - 10) / 90.0);
+			if (angThrow.x < 0)
+				angThrow.x = -10 + angThrow.x * ((90 - 10) / 90.0);
+			else
+				angThrow.x = -10 + angThrow.x * ((90 + 10) / 90.0);
+
+			float flVel = (90 - angThrow.x) * 4;
+			if (flVel > 500)
+				flVel = 500;
+
+			UTIL_MakeVectors(angThrow);
+
+			grenadeVelocity = gpGlobals->v_forward * flVel + m_pPlayer->pev->velocity;
+		}
 		else
-			angThrow.x = -10 + angThrow.x * ((90 + 10) / 90.0);
-
-		float flVel = (90 - angThrow.x) * 4;
-		if (flVel > 500)
-			flVel = 500;
-
-		UTIL_MakeVectors(angThrow);
-
-		Vector vecSrc = m_pPlayer->pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_forward * 16;
-
-		Vector vecThrow = gpGlobals->v_forward * flVel + m_pPlayer->pev->velocity;
+		{
+			grenadeVelocity = m_pPlayer->GetWeaponVelocity() * 2;
+		}
+		// Vector vecSrc = m_pPlayer->pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_forward * 16; - original
+		// Vector vecThrow = gpGlobals->v_forward * flVel + m_pPlayer->pev->velocity; - original
+		// BSVR end
 
 		// alway explode 3 seconds after the pin was pulled
 		float time = m_flStartThrow - gpGlobals->time + 3.0;
 		if (time < 0)
 			time = 0;
 
-		CGrenade::ShootTimed(m_pPlayer->pev, vecSrc, vecThrow, time);
+		// BSVR start
+		// CGrenade::ShootTimed(m_pPlayer->pev, vecSrc, vecThrow, time); - original
+		CGrenade* pGrenade = CGrenade::ShootTimed(m_pPlayer->pev, m_pPlayer->GetGunPosition(), grenadeVelocity, time);
+		pGrenade->pev->dmg = this->pev->dmg;  // Original HL ignored skill setting for grenades...
+		#endif
 
-		if (flVel < 500)
-		{
-			SendWeaponAnim(HANDGRENADE_THROW1);
-		}
-		else if (flVel < 1000)
-		{
-			SendWeaponAnim(HANDGRENADE_THROW2);
-		}
-		else
-		{
-			SendWeaponAnim(HANDGRENADE_THROW3);
-		}
+		// commented out original
+		// if (flVel < 500)
+		// {
+		// 	SendWeaponAnim(HANDGRENADE_THROW1);
+		// }
+		// else if (flVel < 1000)
+		// {
+		// 	SendWeaponAnim(HANDGRENADE_THROW2);
+		// }
+		// else
+		// {
+		// 	SendWeaponAnim(HANDGRENADE_THROW3);
+		// }
+		// BSVR end
 
 		// player "shoot" animation
 		m_pPlayer->SetAnimation(PLAYER_ATTACK1);

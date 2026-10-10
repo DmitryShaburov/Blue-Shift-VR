@@ -49,7 +49,7 @@ void VRSettings::Init()
 	RegisterCVAR("vr_speech_language_id", "1400");
 	RegisterCVAR("vr_flashlight_attachment", "0");
 	RegisterCVAR("vr_flashlight_toggle", "1");
-	RegisterCVAR("vr_movement_attachment", "2");
+	RegisterCVAR("vr_movement_attachment", "2"); // BSVR changed to HMD
 	RegisterCVAR("vr_force_introtrainride", "1");
 	RegisterCVAR("vr_gauss_scale", "1");
 	RegisterCVAR("vr_gordon_hand_scale", "1");
@@ -70,7 +70,7 @@ void VRSettings::Init()
 	RegisterCVAR("vr_hud_size", "1");
 	RegisterCVAR("vr_hud_textscale", "1");
 
-	RegisterCVAR("vr_ladder_mode", "2"); // BSVR: default to VR_LADDER_MODE_LEGACY_ONLY until the immersive ladder code in PM_LadderMove is ported (upstream default: 0)
+	RegisterCVAR("vr_ladder_mode", "2"); // BSVR changed to VR_LADDER_MODE_LEGACY_ONLY
 	RegisterCVAR("vr_ladder_immersive_movement_swinging_enabled", "1");
 	RegisterCVAR("vr_ladder_legacy_movement_speed", "200");
 	RegisterCVAR("vr_ladder_legacy_sideways_speed", "50");
@@ -125,11 +125,11 @@ void VRSettings::Init()
 	RegisterCVAR("vr_view_dist_to_walls", VR_DEFAULT_VIEW_DIST_TO_WALLS_AS_STRING);
 	RegisterCVAR("vr_weapon_grenade_mode", "0");
 	RegisterCVAR("vr_weaponscale", "1");
-	RegisterCVAR("vr_world_scale", "1");
+	RegisterCVAR("vr_world_scale", "0.97");
 	RegisterCVAR("vr_world_z_strech", "1");
 	RegisterCVAR("vr_xenjumpthingies_teleporteronly", "0");
 	RegisterCVAR("vr_headset_fps", "90");
-	RegisterCVAR("vr_autocrouch_enabled", "1");
+	RegisterCVAR("vr_autocrouch_enabled", "0"); // BSVR changed to disabled
 	RegisterCVAR("vr_tankcontrols", "2");
 	RegisterCVAR("vr_tankcontrols_max_distance", "128");
 	RegisterCVAR("vr_legacy_tankcontrols_enabled", "0");
@@ -150,7 +150,7 @@ void VRSettings::Init()
 	RegisterCVAR("vr_blastpit_fan_nonsolid", "1");
 	RegisterCVAR("vr_blastpit_fan_delay", "1");
 
-	RegisterCVAR("vr_use_fmod", "1");
+	RegisterCVAR("vr_use_fmod", "0"); // BSVR changed to no-FMOD
 	RegisterCVAR("vr_fmod_3d_occlusion", "1");
 	RegisterCVAR("vr_fmod_wall_occlusion", "40");
 	RegisterCVAR("vr_fmod_door_occlusion", "30");

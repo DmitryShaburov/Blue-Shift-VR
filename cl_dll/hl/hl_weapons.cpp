@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -203,7 +203,11 @@ void CBasePlayerWeapon::Holster()
 {
 	m_fInReload = false; // cancel any reload in progress.
 	g_irunninggausspred = false;
-	m_pPlayer->pev->viewmodel = 0;
+
+	// BSVR start
+	// m_pPlayer->pev->viewmodel = 0; - original
+	gEngfuncs.CL_LoadModel("models/v_hand.mdl", &m_pPlayer->pev->viewmodel);
+	// BSVR end
 }
 
 /*
@@ -215,9 +219,14 @@ Animate weapon model
 */
 void CBasePlayerWeapon::SendWeaponAnim(int iAnim, int body)
 {
-	m_pPlayer->pev->weaponanim = iAnim;
+	// BSVR start commented out original
+	// m_pPlayer->pev->weaponanim = iAnim;
+	// BSVR end
 
 	HUD_SendWeaponAnim(iAnim, body, false);
+	// BSVR start
+	InterCept_EV_WeaponAnimation(iAnim, body);
+	// BSVR end
 }
 
 /*
@@ -703,8 +712,12 @@ void HUD_WeaponsPostThink(local_state_s* from, local_state_s* to, usercmd_t* cmd
 
 	// Don't go firing anything if we have died or are spectating
 	// Or if we don't have a weapon model deployed
+	// BSVR start
+	// Or if the weapon is blocked (e.g. player is using a mounted gun) - Max Makes Mods, 2018-02-04
+	extern bool GetHUDWeaponBlocked();
 	if ((player.pev->deadflag != (DEAD_DISCARDBODY + 1)) &&
-		!CL_IsDead() && 0 != player.pev->viewmodel && 0 == g_iUser1)
+		!CL_IsDead() && 0 != player.pev->viewmodel && 0 == g_iUser1 && !GetHUDWeaponBlocked())
+	// BSVR end
 	{
 		if (player.m_flNextAttack <= 0)
 		{
@@ -771,14 +784,16 @@ void HUD_WeaponsPostThink(local_state_s* from, local_state_s* to, usercmd_t* cmd
 
 	// Make sure that weapon animation matches what the game .dll is telling us
 	//  over the wire ( fixes some animation glitches )
-	if (g_runfuncs && (HUD_GetWeaponAnim() != to->client.weaponanim))
-	{
-		//Make sure the 357 has the right body
-		g_Python.pev->body = bIsMultiplayer() ? 1 : 0;
+	// BSVR start
+	// if (g_runfuncs && (HUD_GetWeaponAnim() != to->client.weaponanim))
+	// {
+	// 	//Make sure the 357 has the right body
+	// 	g_Python.pev->body = bIsMultiplayer() ? 1 : 0;
 
-		// Force a fixed anim down to viewmodel
-		HUD_SendWeaponAnim(to->client.weaponanim, pWeapon->pev->body, true);
-	}
+	// 	// Force a fixed anim down to viewmodel
+	// 	HUD_SendWeaponAnim(to->client.weaponanim, pWeapon->pev->body, true);
+	// }
+	// BSVR end
 
 	for (i = 0; i < MAX_WEAPONS; i++)
 	{

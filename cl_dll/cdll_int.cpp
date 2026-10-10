@@ -421,3 +421,11 @@ public:
 };
 
 EXPOSE_SINGLE_INTERFACE(CClientExports, IGameClientExports, GAMECLIENTEXPORTS_INTERFACE_VERSION);
+
+// BSVR start
+// For weapons.cpp - Max Makes Mods, 2018-02-04
+bool GetHUDWeaponBlocked()
+{
+	return gHUD.m_iHideHUDDisplay & HIDEHUD_WEAPONBLOCKED;
+}
+// BSVR end

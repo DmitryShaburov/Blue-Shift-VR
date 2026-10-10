@@ -119,6 +119,9 @@ class CBaseToggle;
 class CBaseMonster;
 class CBasePlayerItem;
 class CSquadMonster;
+// BSVR start
+class CTalkMonster;
+// BSVR end
 
 
 #define SF_NORESPAWN (1 << 30) // !!!set this bit on guns and stuff that should never respawn.
@@ -298,17 +301,6 @@ public:
 
 using EHANDLE = EHandleT<CBaseEntity>;
 
-struct EHandleHash {
-	std::size_t operator()(const EHANDLE& e) const {
-		return std::hash<edict_t*>{}(e.Get());
-	}
-};
-struct EHandleEqual {
-	bool operator()(const EHANDLE& e1, const EHANDLE& e2) const {
-		return e1 == e2;
-	}
-};
-
 // For real rotation of rotating buttons in VR - Max Makes Mods, 2019-05-26
 class VRRotatableEnt;
 // BSVR end
@@ -341,7 +333,10 @@ public:
 	virtual bool KeyValue(KeyValueData* pkvd) { return false; }
 	virtual bool Save(CSave& save);
 	virtual bool Restore(CRestore& restore);
-	virtual int ObjectCaps() { return FCAP_ACROSS_TRANSITION; }
+	// BSVR start
+	// virtual int ObjectCaps() { return FCAP_ACROSS_TRANSITION; }
+	virtual int ObjectCaps() { return m_objectCaps; }
+	// BSVR end
 	virtual void Activate() {}
 
 	// Setup the object->object collision box (pev->mins / pev->maxs is the object->world collision box)
@@ -398,6 +393,19 @@ public:
 	virtual bool IsNetClient() { return false; }
 	virtual const char* TeamID() { return ""; }
 
+	// BSVR start
+	// Moved SetTransparency from CSprite to CBaseEntity - Max Makes Mods, 2017-08-27
+	inline void SetTransparency(int rendermode, int r, int g, int b, int a, int fx)
+	{
+		pev->rendermode = rendermode;
+		pev->rendercolor.x = r;
+		pev->rendercolor.y = g;
+		pev->rendercolor.z = b;
+		pev->renderamt = a;
+		pev->renderfx = fx;
+	}
+	// BSVR end
+
 
 	//	virtual void	SetActivator( CBaseEntity *pActivator ) {}
 	virtual CBaseEntity* GetNextTarget();
@@ -443,7 +451,10 @@ public:
 		::operator delete(pMem);
 	}
 
-	void UpdateOnRemove();
+	// BSVR start - made virtual so CGib::UpdateOnRemove can decrement the gib counter via UTIL_Remove
+	// void UpdateOnRemove(); - original
+	virtual void UpdateOnRemove();
+	// BSVR end
 
 	// common member functions
 	void EXPORT SUB_Remove();
@@ -697,6 +708,15 @@ public:
 	VRControllerID m_vrDragController{ VRControllerID::INVALID };
 	Vector m_vrDragOriginOffset;
 	Vector m_vrDragAnglesOffset;
+
+		// overriden by NPCs that react to the player throwing stuff at them
+	virtual void GibAttack(EHandleT<CBaseEntity> thrower, const Vector& pos, int bloodcolor) {}
+
+	// Remember if entity is in PVS this frame (last frame? doesn't matter), set in AddToFullPack in client.cpp - Max Makes Mods, 2020-03-08
+	bool m_isInPVS = false;
+
+	// So we can add or remove object caps to any entity without changing the ObjectCaps function
+	int m_objectCaps = FCAP_ACROSS_TRANSITION;
 	// BSVR end
 };
 

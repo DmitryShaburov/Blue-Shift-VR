@@ -101,20 +101,47 @@ void CBasePlayerWeapon::ResetEmptySound()
 	m_iPlayEmptySound = true;
 }
 
-bool CanAttack(float attack_time, float curtime, bool isPredicted)
+// BSVR start
+// bool CanAttack(float attack_time, float curtime, bool isPredicted)
+bool CanAttack(CBasePlayer* pPlayer, float attack_time, float curtime, bool isPredicted)
+// BSVR end
 {
+	// BSVR start
+	// Weapon blocked (e.g. player is using a mounted gun) - Max Makes Mods, 2018-02-04
+	// The client-side predicted player never receives m_iHideHUD, so read the networked HUD flag there instead.
+#ifdef CLIENT_DLL
+	extern bool GetHUDWeaponBlocked();
+	if (GetHUDWeaponBlocked())
+#else
+	if (FBitSet(pPlayer->m_iHideHUD, HIDEHUD_WEAPONBLOCKED))
+#endif
+	{
+		return false;
+	}
+
+	bool result;
+	// BSVR end
 #if defined(CLIENT_WEAPONS)
 	if (!isPredicted)
 #else
 	if (1)
 #endif
 	{
-		return (attack_time <= curtime) ? true : false;
+		// BSVR start
+		// return (attack_time <= curtime) ? true : false;
+		result = (attack_time <= curtime) ? true : false;
+		// BSVR end
 	}
 	else
 	{
-		return ((static_cast<int>(std::floor(attack_time * 1000.0)) * 1000.0) <= 0.0) ? true : false;
+		// BSVR start
+		// return ((static_cast<int>(std::floor(attack_time * 1000.0)) * 1000.0) <= 0.0) ? true : false;
+		result = ((static_cast<int>(std::floor(attack_time * 1000.0)) * 1000.0) <= 0.0) ? true : false;
+		// BSVR end
 	}
+	// BSVR start
+	return result && pPlayer->VRCanAttack();
+	// BSVR end
 }
 
 void CBasePlayerWeapon::ItemPostFrame()
@@ -138,7 +165,10 @@ void CBasePlayerWeapon::ItemPostFrame()
 		m_flLastFireTime = 0.0f;
 	}
 
-	if ((m_pPlayer->pev->button & IN_ATTACK2) != 0 && CanAttack(m_flNextSecondaryAttack, gpGlobals->time, UseDecrement()))
+	// BSVR start
+	// if ((m_pPlayer->pev->button & IN_ATTACK2) != 0 && CanAttack(m_flNextSecondaryAttack, gpGlobals->time, UseDecrement()))
+	if ((m_pPlayer->pev->button & IN_ATTACK2) != 0 && CanAttack(m_pPlayer, m_flNextSecondaryAttack, gpGlobals->time, UseDecrement()))
+	// BSVR end
 	{
 		if (pszAmmo2() && 0 == m_pPlayer->m_rgAmmo[SecondaryAmmoIndex()])
 		{
@@ -149,7 +179,10 @@ void CBasePlayerWeapon::ItemPostFrame()
 		SecondaryAttack();
 		m_pPlayer->pev->button &= ~IN_ATTACK2;
 	}
-	else if ((m_pPlayer->pev->button & IN_ATTACK) != 0 && CanAttack(m_flNextPrimaryAttack, gpGlobals->time, UseDecrement()))
+	// BSVR start
+	// else if ((m_pPlayer->pev->button & IN_ATTACK) != 0 && CanAttack(m_flNextPrimaryAttack, gpGlobals->time, UseDecrement()))
+	else if ((m_pPlayer->pev->button & IN_ATTACK) != 0 && CanAttack(m_pPlayer, m_flNextPrimaryAttack, gpGlobals->time, UseDecrement()))
+	// BSVR end
 	{
 		if ((m_iClip == 0 && pszAmmo1()) || (iMaxClip() == -1 && 0 == m_pPlayer->m_rgAmmo[PrimaryAmmoIndex()]))
 		{
@@ -202,14 +235,49 @@ void CBasePlayerWeapon::ItemPostFrame()
 	}
 }
 
-void CBasePlayer::SelectLastItem()
-{
-	if (!m_pLastItem)
-	{
-		return;
-	}
+// BSVR start
+// void CBasePlayer::SelectLastItem()
+// {
+// 	if (!m_pLastItem)
+// 	{
+// 		return;
+// 	}
 
-	if (m_pActiveItem && !m_pActiveItem->CanHolster())
+// 	if (m_pActiveItem && !m_pActiveItem->CanHolster())
+// 	{
+// 		return;
+// 	}
+
+// 	ResetAutoaim();
+
+// 	// FIX, this needs to queue them up and delay
+// 	if (m_pActiveItem)
+// 		m_pActiveItem->Holster();
+
+// 	CBasePlayerItem* pTemp = m_pActiveItem;
+// 	m_pActiveItem = m_pLastItem;
+// 	m_pLastItem = pTemp;
+
+// 	auto weapon = m_pActiveItem->GetWeaponPtr();
+
+// 	if (weapon)
+// 	{
+// 		weapon->m_ForceSendAnimations = true;
+// 	}
+
+// 	m_pActiveItem->Deploy();
+
+// 	if (weapon)
+// 	{
+// 		weapon->m_ForceSendAnimations = false;
+// 	}
+
+// 	m_pActiveItem->UpdateItemInfo();
+// }
+
+void CBasePlayer::SelectLastItem(void)
+{
+	if (m_pActiveItem != nullptr && !m_pActiveItem->CanHolster())
 	{
 		return;
 	}
@@ -217,26 +285,25 @@ void CBasePlayer::SelectLastItem()
 	ResetAutoaim();
 
 	// FIX, this needs to queue them up and delay
-	if (m_pActiveItem)
+	if (m_pActiveItem != nullptr)
+	{
 		m_pActiveItem->Holster();
-
-	CBasePlayerItem* pTemp = m_pActiveItem;
-	m_pActiveItem = m_pLastItem;
-	m_pLastItem = pTemp;
-
-	auto weapon = m_pActiveItem->GetWeaponPtr();
-
-	if (weapon)
-	{
-		weapon->m_ForceSendAnimations = true;
 	}
 
-	m_pActiveItem->Deploy();
-
-	if (weapon)
+	if (m_pLastItem == nullptr)
 	{
-		weapon->m_ForceSendAnimations = false;
+		m_pLastItem = m_pActiveItem;
+		m_pActiveItem = nullptr;
+		pev->viewmodel = MAKE_STRING("models/v_hand.mdl");
+		pev->weaponmodel = iStringNull;
 	}
-
-	m_pActiveItem->UpdateItemInfo();
+	else
+	{
+		CBasePlayerItem* pTemp = m_pActiveItem;
+		m_pActiveItem = m_pLastItem;
+		m_pLastItem = pTemp;
+		m_pActiveItem->Deploy();
+		m_pActiveItem->UpdateItemInfo();
+	}
 }
+// BSVR end

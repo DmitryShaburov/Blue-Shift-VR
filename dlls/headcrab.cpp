@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -22,6 +22,10 @@
 #include "monsters.h"
 #include "schedule.h"
 #include "game.h"
+
+// BSVR start
+#include "vr/VRPhysicsHelper.h"
+// BSVR end
 
 //=========================================================
 // Monster's Anim Events Go Here
@@ -101,6 +105,15 @@ public:
 	static const char* pAttackSounds[];
 	static const char* pDeathSounds[];
 	static const char* pBiteSounds[];
+
+	// BSVR start
+	// Headcrabs are draggable!
+	virtual bool IsDraggable() override { return true; }
+	virtual void HandleDragStart() override;
+	virtual void HandleDragStop() override;
+	virtual void HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles) override;
+	virtual void BaseBalled(CBaseEntity* pPlayer, const Vector& velocity) override;
+	// BSVR end
 };
 LINK_ENTITY_TO_CLASS(monster_headcrab, CHeadCrab);
 
@@ -475,6 +488,117 @@ Schedule_t* CHeadCrab::GetScheduleOfType(int Type)
 	return CBaseMonster::GetScheduleOfType(Type);
 }
 
+// BSVR start
+void CHeadCrab::HandleDragStart()
+{
+	SetThink(&CHeadCrab::DragThink);
+	pev->nextthink = gpGlobals->time + 0.1f;
+	pev->solid = SOLID_NOT;
+	pev->movetype = MOVETYPE_NONE;
+
+	if (!IsAlive())
+		return;
+
+	m_IdealMonsterState = MONSTERSTATE_NONE;
+	m_IdealActivity = ACT_IDLE;
+	m_iHintNode = -1;
+	m_afMemory = MEMORY_CLEAR;
+	m_hEnemy = nullptr;
+	ClearSchedule();
+	RouteClear();
+
+	pev->sequence = 13;	// "yaw_adjustment" - perfect for grabbing headcrab
+	ResetSequenceInfo();
+	m_fSequenceLoops = true;
+}
+
+void CHeadCrab::HandleDragStop()
+{
+	SetThink(&CHeadCrab::CallMonsterThink);
+	pev->nextthink = gpGlobals->time + 0.1f;
+	pev->solid = SOLID_SLIDEBOX;
+	pev->angles.x = 0.f;
+	pev->angles.z = 0.f;
+
+	if (IsAlive())
+	{
+		m_IdealMonsterState = MONSTERSTATE_IDLE;
+		m_IdealActivity = ACT_IDLE;
+		pev->movetype = MOVETYPE_STEP;
+	}
+	else
+	{
+		pev->movetype = MOVETYPE_TOSS;
+	}
+
+	// give it a little throw
+	BaseBalled(nullptr, pev->velocity * 1.5f);
+}
+
+void CHeadCrab::HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles)
+{
+	pev->velocity = velocity;
+	pev->angles = angles;
+
+	// TODO: Define good grab offset
+	/*
+	Vector grabOffset = Vector(0, 0, 0);
+	VRPhysicsHelper::Instance().RotateVector(grabOffset, pev->angles);
+	pev->origin = origin + grabOffset;
+	*/
+	pev->origin = origin;
+
+	if (IsAlive())
+	{
+		if (m_fSequenceFinished)
+		{
+			pev->sequence = 13;
+			ResetSequenceInfo();
+			m_fSequenceLoops = true;
+		}
+		StudioFrameAdvance();
+	}
+
+	// Check if player smashes us into a wall
+	if (CONTENTS_SOLID == UTIL_PointContents(pev->origin, true, nullptr))
+	{
+		extern float GetMeleeSwingSpeed();
+		if (pev->velocity.Length() > GetMeleeSwingSpeed())
+		{
+			PainSound();
+			this->TakeDamage(pev, pev, pev->health + 1000.f, DMG_CRUSH | DMG_ALWAYSGIB);
+		}
+	}
+}
+
+void CHeadCrab::BaseBalled(CBaseEntity* pPlayer, const Vector& velocity)
+{
+	if (IsAlive())
+	{
+		// scream if alive
+		PainSound();
+
+		// prevent attack for 2 seconds
+		m_flNextAttack = gpGlobals->time + 2.f;
+
+
+		// if baseballed by player in mid-air, give achievement
+		// if (!FBitSet(pev->flags, FL_ONGROUND) && pPlayer && pPlayer->IsNetClient())
+		// {
+		// 	UTIL_VRGiveAchievement(pPlayer, VRAchievement::GEN_BASEBALLED);
+		// }
+	}
+
+	// take off ground
+	ClearBits(pev->flags, FL_ONGROUND);
+	pev->origin.z += 1.f;
+	UTIL_SetOrigin(pev, pev->origin);
+
+	// set velocity with a little kick
+	pev->velocity = velocity * 1.5f;
+}
+// BSVR end
+
 
 class CBabyCrab : public CHeadCrab
 {
@@ -487,6 +611,10 @@ public:
 	Schedule_t* GetScheduleOfType(int Type) override;
 	int GetVoicePitch() override { return PITCH_NORM + RANDOM_LONG(40, 50); }
 	float GetSoundVolue() override { return 0.8; }
+
+	// BSVR start
+	virtual bool IsDraggable() override { return false; }
+	// BSVR end
 };
 LINK_ENTITY_TO_CLASS(monster_babycrab, CBabyCrab);
 

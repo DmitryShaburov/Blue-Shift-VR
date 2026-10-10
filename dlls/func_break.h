@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -86,6 +86,63 @@ public:
 	float m_angle;
 	int m_iszGibModel;
 	int m_iszSpawnObject;
+	// BSVR start
+	int m_iSmokeTrail = 0;
+
+	int m_numGibBodies = 0;
+
+private:
+
+	void VRSpawnBreakModels(
+		const Vector& pos,
+		const Vector& size,
+		Vector direction,
+		float random,
+		float life,
+		int count,
+		const char* model,
+		int modelIndex,
+		int material,
+		int body, int numBodies,
+		char flags);
+
+	// returns number of gibs actually spawned
+	int VRSpawnGibs(const char* model,
+		const Vector& pos,
+		const Vector& size,
+		Vector direction,
+		float random,
+		float life,
+		int count,
+		int material,
+		int body, int numBodies,
+		char flags);
+
+	void VRSpawnTempEnts(
+		int modelIndex,
+		const Vector& pos,
+		const Vector& size,
+		Vector direction,
+		float random,
+		float life,
+		int count,
+		char flags);
+
+	int VRGetGibCount(int totalcount);
+
+	enum class KillMethod
+	{
+		UNKNOWN,
+		MELEE,
+		PROJECTILE,
+		TRIGGER,
+		TOUCH
+	};
+
+	// Remember who killed us and how (for deciding how many interactive gibs to spawn)
+	EHandleT<CBaseEntity> m_hKiller;
+	KillMethod m_killMethod{ KillMethod::UNKNOWN };
+	// BSVR end
 };
 
 // BSVR start - moved from func_break.cpp so VR controller code can dynamic_cast to it

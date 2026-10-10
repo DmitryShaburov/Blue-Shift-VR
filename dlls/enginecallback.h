@@ -74,24 +74,26 @@ void CHANGE_LEVEL(char* s1, char* s2);
 #define RANDOM_FLOAT (*g_engfuncs.pfnRandomFloat)
 #define GETPLAYERAUTHID (*g_engfuncs.pfnGetPlayerAuthId)
 
-inline void MESSAGE_BEGIN(int msg_dest, int msg_type, const float* pOrigin = NULL, edict_t* ed = NULL)
-{
-	(*g_engfuncs.pfnMessageBegin)(msg_dest, msg_type, pOrigin, ed);
-}
-#define MESSAGE_END (*g_engfuncs.pfnMessageEnd)
-#define WRITE_BYTE (*g_engfuncs.pfnWriteByte)
-#define WRITE_CHAR (*g_engfuncs.pfnWriteChar)
-#define WRITE_SHORT (*g_engfuncs.pfnWriteShort)
-#define WRITE_LONG (*g_engfuncs.pfnWriteLong)
-#define WRITE_ANGLE (*g_engfuncs.pfnWriteAngle)
-#define WRITE_COORD (*g_engfuncs.pfnWriteCoord)
-#define WRITE_STRING (*g_engfuncs.pfnWriteString)
-#define WRITE_ENTITY (*g_engfuncs.pfnWriteEntity)
+// BSVR start moved down
+// inline void MESSAGE_BEGIN(int msg_dest, int msg_type, const float* pOrigin = NULL, edict_t* ed = NULL)
+// {
+// 	(*g_engfuncs.pfnMessageBegin)(msg_dest, msg_type, pOrigin, ed);
+// }
+// #define MESSAGE_END (*g_engfuncs.pfnMessageEnd)
+// #define WRITE_BYTE (*g_engfuncs.pfnWriteByte)
+// #define WRITE_CHAR (*g_engfuncs.pfnWriteChar)
+// #define WRITE_SHORT (*g_engfuncs.pfnWriteShort)
+// #define WRITE_LONG (*g_engfuncs.pfnWriteLong)
+// #define WRITE_ANGLE (*g_engfuncs.pfnWriteAngle)
+// #define WRITE_COORD (*g_engfuncs.pfnWriteCoord)
+// #define WRITE_STRING (*g_engfuncs.pfnWriteString)
+// #define WRITE_ENTITY (*g_engfuncs.pfnWriteEntity)
 
-inline void WRITE_FLOAT(float value)
-{
-	WRITE_LONG(*reinterpret_cast<int*>(&value));
-}
+// inline void WRITE_FLOAT(float value)
+// {
+// 	WRITE_LONG(*reinterpret_cast<int*>(&value));
+// }
+// BSVR end
 
 // BSVR start
 namespace
@@ -99,6 +101,160 @@ namespace
 	bool _isBogusMessage = false;
 }
 
+inline void MESSAGE_BEGIN_IMPL(const char* msg_args, int msg_dest, int msg_type, const float* pOrigin = nullptr, edict_t* ed = nullptr)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Last message was bogus and not finished before new message!\n");
+		_isBogusMessage = false;
+	}
+
+	// Very very very rarely for some reason the game might crash with
+	// "Tried to create a message with a bogus message type ( 0 )".
+	// We catch that here and log it instead of crashing.
+	if (msg_type == 0)
+	{
+		_isBogusMessage = true;
+		g_engfuncs.pfnAlertMessage(at_error, "Tried to send a bogus message, intercepted: %s\n", msg_args);
+		if (pOrigin)
+		{
+			g_engfuncs.pfnAlertMessage(at_error, "Bogus message pOrigin: %f %f %f\n", pOrigin[0], pOrigin[1], pOrigin[2]);
+		}
+		if (ed)
+		{
+			g_engfuncs.pfnAlertMessage(at_error, "Bogus message ed\n");
+		}
+		return;
+	}
+
+	(*g_engfuncs.pfnMessageBegin)(msg_dest, msg_type, pOrigin, ed);
+}
+
+inline void MESSAGE_BEGIN_IMPL(const char* msg_args, int msg_dest, int msg_type, const float* pOrigin, entvars_t* pev)
+{
+	MESSAGE_BEGIN_IMPL(msg_args, msg_dest, msg_type, pOrigin, pev->pContainingEntity);
+}
+
+#define MESSAGE_BEGIN(...) MESSAGE_BEGIN_IMPL(#__VA_ARGS__, __VA_ARGS__)
+
+inline void MESSAGE_END()
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message end.\n");
+		_isBogusMessage = false;
+		return;
+	}
+	(*g_engfuncs.pfnMessageEnd)();
+}
+inline void WRITE_BYTE(int iValue)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message byte: %i\n", iValue);
+		return;
+	}
+	(*g_engfuncs.pfnWriteByte)(iValue);
+}
+inline void WRITE_CHAR(int iValue)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message char: %i\n", iValue);
+		return;
+	}
+	(*g_engfuncs.pfnWriteChar)(iValue);
+}
+inline void WRITE_SHORT(int iValue)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message short: %i\n", iValue);
+		return;
+	}
+	(*g_engfuncs.pfnWriteShort)(iValue);
+}
+inline void WRITE_LONG(int iValue)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message long: %i\n", iValue);
+		return;
+	}
+	(*g_engfuncs.pfnWriteLong)(iValue);
+}
+inline void WRITE_ANGLE(float flValue)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message angle: %f\n", flValue);
+		return;
+	}
+	(*g_engfuncs.pfnWriteAngle)(flValue);
+}
+inline void WRITE_COORD(float flValue)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message coord: %f\n", flValue);
+		return;
+	}
+	(*g_engfuncs.pfnWriteCoord)(flValue);
+}
+inline void WRITE_STRING(const char* sz)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message string: %s\n", sz);
+		return;
+	}
+	(*g_engfuncs.pfnWriteString)(sz);
+}
+inline void WRITE_ENTITY(int iValue)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message entity: %i\n", iValue);
+		return;
+	}
+	(*g_engfuncs.pfnWriteEntity)(iValue);
+}
+inline void WRITE_COORDS(const float* v)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message coords: %f %f %f\n", v[0], v[1], v[2]);
+		return;
+	}
+	WRITE_COORD(v[0]);
+	WRITE_COORD(v[1]);
+	WRITE_COORD(v[2]);
+}
+inline void WRITE_ANGLES(const float* v)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message angles: %f %f %f\n", v[0], v[1], v[2]);
+		return;
+	}
+	WRITE_ANGLE(v[0]);
+	WRITE_ANGLE(v[1]);
+	WRITE_ANGLE(v[2]);
+}
+inline void WRITE_FLOAT(float f)
+{
+	if (_isBogusMessage)
+	{
+		g_engfuncs.pfnAlertMessage(at_error, "Bogus message float: %f\n", f);
+		return;
+	}
+	unsigned char floatbytes[sizeof(float)];
+	memcpy(floatbytes, &f, sizeof(float));
+	for (size_t i = 0; i < sizeof(float); i++)
+	{
+		WRITE_BYTE(floatbytes[i]);
+	}
+}
 inline void WRITE_PRECISE_VECTOR(const float* v)
 {
 	if (_isBogusMessage)
@@ -113,8 +269,10 @@ inline void WRITE_PRECISE_VECTOR(const float* v)
 // BSVR end
 
 #define CVAR_REGISTER (*g_engfuncs.pfnCVarRegister)
-#define CVAR_GET_FLOAT (*g_engfuncs.pfnCVarGetFloat)
-#define CVAR_GET_STRING (*g_engfuncs.pfnCVarGetString)
+// BSVR start, moved to util
+// #define CVAR_GET_FLOAT (*g_engfuncs.pfnCVarGetFloat)
+// #define CVAR_GET_STRING (*g_engfuncs.pfnCVarGetString)
+// BSVR end
 #define CVAR_SET_FLOAT (*g_engfuncs.pfnCVarSetFloat)
 #define CVAR_SET_STRING (*g_engfuncs.pfnCVarSetString)
 #define CVAR_GET_POINTER (*g_engfuncs.pfnCVarGetPointer)
@@ -136,7 +294,9 @@ inline void* GET_PRIVATE(edict_t* pent)
 #define FIND_ENTITY_IN_SPHERE (*g_engfuncs.pfnFindEntityInSphere)
 #define FIND_CLIENT_IN_PVS (*g_engfuncs.pfnFindClientInPVS)
 #define EMIT_AMBIENT_SOUND (*g_engfuncs.pfnEmitAmbientSound)
-#define GET_MODEL_PTR (*g_engfuncs.pfnGetModelPtr)
+// BSVR start
+// #define GET_MODEL_PTR (*g_engfuncs.pfnGetModelPtr) - original, moved to util
+// BSVR end
 #define REG_USER_MSG (*g_engfuncs.pfnRegUserMsg)
 #define GET_BONE_POSITION (*g_engfuncs.pfnGetBonePosition)
 #define FUNCTION_FROM_NAME (*g_engfuncs.pfnFunctionFromName)

@@ -227,6 +227,9 @@ public:
 	virtual void PreThink();
 	virtual void PostThink();
 	Vector GetGunPosition() override;
+	// BSVR start
+	virtual Vector GetAimAngles(void);  // Extra method for VR controller weapons - Max Makes Mods, 2019-03-30
+	// BSVR end
 	bool TakeHealth(float flHealth, int bitsDamageType) override;
 	void TraceAttack(entvars_t* pevAttacker, float flDamage, Vector vecDir, TraceResult* ptr, int bitsDamageType) override;
 	bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType) override;
@@ -297,8 +300,10 @@ public:
 	bool HasPlayerItem(CBasePlayerItem* pCheckItem);
 	bool HasNamedPlayerItem(const char* pszItemName);
 	bool HasWeapons(); // do I have ANY weapons?
-	void SelectPrevItem(int iItem);
-	void SelectNextItem(int iItem);
+	// BSVR start
+	// void SelectPrevItem(int iItem); - original
+	// void SelectNextItem(int iItem); - original
+	// BSVR end
 	void SelectLastItem();
 	void SelectItem(const char* pstr);
 	void ItemPreFrame();
@@ -466,7 +471,7 @@ public:
 
 	VRController& GetController(VRControllerID id) { return m_vrControllers[id]; }
 
-// 	bool IsAnyControllerFiringAndHoldingThisTank(CBaseEntity* pTank);
+	bool IsAnyControllerFiringAndHoldingThisTank(CBaseEntity* pTank);
 
 
 // private VR methods:
@@ -507,11 +512,11 @@ public:
 	const Vector GetWeaponPosition();
 	const Vector GetWeaponAngles();
 	const Vector GetWeaponViewAngles();
-// 	const Vector GetWeaponVelocity();
+	const Vector GetWeaponVelocity();
 	const Vector GetClientOrigin();   // Used by UpdateClientData to send player origin to client
 	const Vector GetClientViewOfs();  // Used by UpdateClientData to send player view_ofs to client
-// 	bool IsWeaponUnderWater();
-// 	bool IsWeaponPositionValid();
+	bool IsWeaponUnderWater();
+	bool IsWeaponPositionValid();
 
 	void UpdateVRHeadset(const int timestamp, const Vector2D& hmdOffset, const float offsetZ, const Vector& forward, const Vector2D& hmdYawOffsetDelta, float prevYaw, float currentYaw, bool hasReceivedRestoreYawMsg, bool hasReceivedSpawnYaw);
 	void UpdateVRController(const VRControllerID vrControllerID, const int timestamp, const bool isValid, const bool isMirrored, const Vector& offset, const Vector& angles, const Vector& velocity, bool isDragging, bool isFiring);
@@ -557,8 +562,8 @@ public:
 
 	void HandleSpeechCommand(VRSpeechCommand command);
 
-// 	// For tanks (used in CFuncTank::TrackTarget())
-// 	Vector GetTankControlAngles();
+	// For tanks (used in CFuncTank::TrackTarget())
+	Vector GetTankControlAngles();
 
 	// Checks if the weapon can be fired (prevents shooting when controller is pointed through walls)
 	bool VRCanAttack();
@@ -575,7 +580,7 @@ private:
 	bool m_vrHasSurfacedInThatMapWithTheTank{ false };
 	bool m_vrJustGotYeetedByBPTrain{ false };
 
-// 	float m_vrLastJumpTime{ 0.f };
+	float m_vrLastJumpTime{ 0.f };
 // BSVR end
 };
 

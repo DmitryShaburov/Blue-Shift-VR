@@ -7,7 +7,6 @@ Disable warnings for:
 */
 
 #define IS_DOUBLE_PRECISION_ENABLED
-#define HARDWARE_MODE
 
 #include "extdll.h"
 
@@ -15,6 +14,7 @@ Disable warnings for:
 #include "pm_defs.h"
 #include "plane.h"
 #include "com_model.h"
+#include "vr/VRComModelHL25.h"
 #include "studio.h"
 
 #include <fstream>

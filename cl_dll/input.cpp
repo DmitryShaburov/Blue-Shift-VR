@@ -24,6 +24,7 @@
 // BSVR start
 #include "vr/VRInput.h"
 #include "vr/VRRenderer.h"
+#include "vr/VRHelper.h" // VRHelper::Shutdown in HUD_Shutdown
 // BSVR end
 
 
@@ -797,20 +798,22 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 
 
 	// BSVR start
+	// Set current view angles from the headset and push them into the engine.
+	// gEngfuncs.GetViewAngles((float*)viewangles); - original
+	// // Set current view angles.
+	//
+	// if (g_iAlive)
+	// {
+	// 	VectorCopy(viewangles, cmd->viewangles);
+	// 	VectorCopy(viewangles, oldangles);
+	// }
+	// else
+	// {
+	// 	VectorCopy(oldangles, cmd->viewangles);
+	// }
 	gVRRenderer.GetViewAngles((float*)viewangles);
+	gEngfuncs.SetViewAngles((float*)viewangles);
 	// BSVR end
-	gEngfuncs.GetViewAngles((float*)viewangles);
-	// Set current view angles.
-
-	if (g_iAlive)
-	{
-		VectorCopy(viewangles, cmd->viewangles);
-		VectorCopy(viewangles, oldangles);
-	}
-	else
-	{
-		VectorCopy(oldangles, cmd->viewangles);
-	}
 
 	// BSVR start
 	// Hackhack - Use movement angles to set "viewangles",
@@ -1090,6 +1093,10 @@ void DLLEXPORT HUD_Shutdown()
 
 	ShutdownInput();
 
+	// BSVR start
+	// Remove the OpenGL hooks and shut down OpenVR while the engine is still intact; see VRHelper::Shutdown.
+	gVRRenderer.GetHelper()->Shutdown();
+	// BSVR end
 
 	FileSystem_FreeFileSystem();
 	CL_UnloadParticleMan();

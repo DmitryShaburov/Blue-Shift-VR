@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -143,6 +143,13 @@ int GetNewDLLFunctions(NEW_DLL_FUNCTIONS* pFunctionTable, int* interfaceVersion)
 
 int DispatchSpawn(edict_t* pent)
 {
+	// BSVR start
+	// Don't spawn entities in game loaded from invalid savegame (see world.cpp RestoreGlobalState)
+	extern bool g_didRestoreSaveGameFail;
+	if (g_didRestoreSaveGameFail)
+		return -1;
+	// BSVR end
+
 	CBaseEntity* pEntity = (CBaseEntity*)GET_PRIVATE(pent);
 
 	if (pEntity)
@@ -324,6 +331,13 @@ CBaseEntity* FindGlobalEntity(string_t classname, string_t globalname)
 
 int DispatchRestore(edict_t* pent, SAVERESTOREDATA* pSaveData, int globalEntity)
 {
+	// BSVR start
+	// Don't restore entities in game loaded from invalid savegame (see world.cpp RestoreGlobalState)
+	extern bool g_didRestoreSaveGameFail;
+	if (g_didRestoreSaveGameFail)
+		return -1;
+	// BSVR end
+
 	gpGlobals->time = pSaveData->time;
 
 	CBaseEntity* pEntity = (CBaseEntity*)GET_PRIVATE(pent);
@@ -377,14 +391,17 @@ int DispatchRestore(edict_t* pent, SAVERESTOREDATA* pSaveData, int globalEntity)
 			}
 		}
 
+		// BSVR start
+		pEntity->Restore(restoreHelper);
+		// BSVR end
 		if ((pEntity->ObjectCaps() & FCAP_MUST_SPAWN) != 0)
 		{
-			pEntity->Restore(restoreHelper);
+			// pEntity->Restore(restoreHelper); - original
 			pEntity->Spawn();
 		}
 		else
 		{
-			pEntity->Restore(restoreHelper);
+			// pEntity->Restore(restoreHelper); - original
 			pEntity->Precache();
 		}
 
@@ -392,7 +409,7 @@ int DispatchRestore(edict_t* pent, SAVERESTOREDATA* pSaveData, int globalEntity)
 		pEntity = (CBaseEntity*)GET_PRIVATE(pent);
 
 #if 0
-		if ( pEntity && !FStringNull(pEntity->pev->globalname) && 0 != globalEntity ) 
+		if ( pEntity && !FStringNull(pEntity->pev->globalname) && 0 != globalEntity )
 		{
 			ALERT( at_console, "Global %s is %s\n", STRING(pEntity->pev->globalname), STRING(pEntity->pev->model) );
 		}
@@ -743,32 +760,49 @@ bool CBaseEntity::IsDormant()
 
 bool CBaseEntity::IsInWorld()
 {
-	// position
-	if (pev->origin.x >= 4096)
+	// BSVR start	// position
+	if (pev->origin.x >= 8192)
 		return false;
-	if (pev->origin.y >= 4096)
+	if (pev->origin.y >= 8192)
 		return false;
-	if (pev->origin.z >= 4096)
+	if (pev->origin.z >= 8192)
 		return false;
-	if (pev->origin.x <= -4096)
+	if (pev->origin.x <= -8192)
 		return false;
-	if (pev->origin.y <= -4096)
+	if (pev->origin.y <= -8192)
 		return false;
-	if (pev->origin.z <= -4096)
+	if (pev->origin.z <= -8192)
 		return false;
-	// speed
-	if (pev->velocity.x >= 2000)
-		return false;
-	if (pev->velocity.y >= 2000)
-		return false;
-	if (pev->velocity.z >= 2000)
-		return false;
-	if (pev->velocity.x <= -2000)
-		return false;
-	if (pev->velocity.y <= -2000)
-		return false;
-	if (pev->velocity.z <= -2000)
-		return false;
+	// BSVR end
+
+	// BSVR start original
+	// // position
+	// if (pev->origin.x >= 4096)
+	// 	return false;
+	// if (pev->origin.y >= 4096)
+	// 	return false;
+	// if (pev->origin.z >= 4096)
+	// 	return false;
+	// if (pev->origin.x <= -4096)
+	// 	return false;
+	// if (pev->origin.y <= -4096)
+	// 	return false;
+	// if (pev->origin.z <= -4096)
+	// 	return false;
+	// // speed
+	// if (pev->velocity.x >= 2000)
+	// 	return false;
+	// if (pev->velocity.y >= 2000)
+	// 	return false;
+	// if (pev->velocity.z >= 2000)
+	// 	return false;
+	// if (pev->velocity.x <= -2000)
+	// 	return false;
+	// if (pev->velocity.y <= -2000)
+	// 	return false;
+	// if (pev->velocity.z <= -2000)
+	// 	return false;
+	// BSVR end
 
 	return true;
 }

@@ -42,11 +42,12 @@
 // BSVR start
 // inline float CVAR_GET_FLOAT(const char* x) { return gEngfuncs.pfnGetCvarFloat((char*)x); }
 // inline const char* CVAR_GET_STRING(const char* x) { return gEngfuncs.pfnGetCvarString((char*)x); }
-inline struct cvar_s* CVAR_CREATE(const char* cv, const char* val, const int flags) { return gEngfuncs.pfnRegisterVariable((char*)cv, (char*)val, flags); }
-
 float CVAR_GET_FLOAT(const char* x);
 const char* CVAR_GET_STRING(const char* x);
-void* GET_MODEL_PTR(edict_t* pent);
+inline struct cvar_s* CVAR_CREATE(const char* cv, const char* val, const int flags)
+{
+	return gEngfuncs.pfnRegisterVariable((char*)cv, (char*)val, flags);
+}
 // BSVR end
 
 // BSVR start - Intercepter functions for VR HUD rendering - Max Makes Mods, 2018-01-07
@@ -103,7 +104,13 @@ inline void SPR_DrawAdditive(int frame, int x, int y, const Rect* prc)
 #define ServerCmd (*gEngfuncs.pfnServerCmd)
 #define EngineClientCmd (*gEngfuncs.pfnClientCmd)
 #define EngineFilteredClientCmd (*gEngfuncs.pfnFilteredClientCmd)
-#define SetCrosshair (*gEngfuncs.pfnSetCrosshair)
+// BSVR start
+// #define SetCrosshair (*gEngfuncs.pfnSetCrosshair)
+inline void SetCrosshair(HSPRITE hspr, Rect rc, int r, int g, int b)
+{
+	// No crosshair in VR
+}
+// BSVR end
 #define AngleVectors (*gEngfuncs.pfnAngleVectors)
 
 

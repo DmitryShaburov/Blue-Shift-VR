@@ -33,6 +33,7 @@ public:
 
 // BSVR start
 private:
+
 	bool DrawVREntity(
 		const char* modelname,
 		const Vector& origin, const Vector& angles,
@@ -42,23 +43,6 @@ private:
 		int effects,
 		int rendermode, int renderamt, int renderfx, color24 rendercolor,
 		bool isController, bool mirrored);
-
-	// Calculates bones for given matrices, leaving m_pbonetransform and m_plighttransform intact
-	// Max Makes Mods, 2019-10-23
-	void StudioSetupBonesInline(float bonetransform[MAXSTUDIOBONES][3][4], float lighttransform[MAXSTUDIOBONES][3][4], float* overrideFrame = nullptr);
-
-	// engine gives times as double, but all operations and all entity fields are float, so we store times as floats now and convert them here:
-	void GetTimes()
-	{
-		double time, oldtime;
-		extern engine_studio_api_t IEngineStudio;
-		IEngineStudio.GetTimes(&m_nFrameCount, &time, &oldtime);
-		m_clTime = static_cast<float>(time);
-		m_clOldTime = static_cast<float>(oldtime);
-	}
-
-protected:
-	bool m_isCurrentModelMirrored = false;
 // BSVR end
 
 public:
@@ -126,6 +110,27 @@ public:
 
 	// Process movement of player
 	virtual void StudioProcessGait(entity_state_t* pplayer);
+
+// BSVR start
+private:
+	// Calculates bones for given matrices, leaving m_pbonetransform and m_plighttransform intact
+	// Max Makes Mods, 2019-10-23
+	void StudioSetupBonesInline(float bonetransform[MAXSTUDIOBONES][3][4], float lighttransform[MAXSTUDIOBONES][3][4], float* overrideFrame = nullptr);
+
+	// engine gives times as double, but all operations and all entity fields are float, so we store times as floats now and convert them here:
+	void GetTimes()
+	{
+		double time, oldtime;
+		extern engine_studio_api_t IEngineStudio;
+		IEngineStudio.GetTimes(&m_nFrameCount, &time, &oldtime);
+		m_clTime = static_cast<float>(time);
+		m_clOldTime = static_cast<float>(oldtime);
+	}
+
+protected:
+
+	bool m_isCurrentModelMirrored = false;
+// BSVR end
 
 public:
 	// Client clock

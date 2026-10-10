@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -1255,6 +1255,11 @@ void CSprite::AnimateThink()
 
 	pev->nextthink = gpGlobals->time + 0.1;
 	m_lastTime = gpGlobals->time;
+
+	// BSVR start
+	if (m_fSetAnimtime)
+		pev->animtime = gpGlobals->time;
+	// BSVR end
 }
 
 void CSprite::AnimateUntilDead()
@@ -1503,12 +1508,14 @@ void CGibShooter::ShootThink()
 
 		float thinkTime = pGib->pev->nextthink - gpGlobals->time;
 
-		pGib->m_lifeTime = (m_flGibLife * RANDOM_FLOAT(0.95, 1.05)); // +/- 5%
-		if (pGib->m_lifeTime < thinkTime)
-		{
-			pGib->pev->nextthink = gpGlobals->time + pGib->m_lifeTime;
-			pGib->m_lifeTime = 0;
-		}
+		// BSVR start
+		// pGib->m_lifeTime = (m_flGibLife * RANDOM_FLOAT(0.95, 1.05)); // +/- 5%
+		// if (pGib->m_lifeTime < thinkTime)
+		// {
+		// 	pGib->pev->nextthink = gpGlobals->time + pGib->m_lifeTime;
+		// 	pGib->m_lifeTime = 0;
+		// }
+		// BSVR end
 	}
 
 	if (--m_iGibs <= 0)
@@ -1606,7 +1613,14 @@ CGib* CEnvShooter::CreateGib()
 	pGib->pev->renderamt = pev->renderamt;
 	pGib->pev->rendercolor = pev->rendercolor;
 	pGib->pev->renderfx = pev->renderfx;
-	pGib->pev->scale = pev->scale;
+	// BSVR start
+	// only scale sprites
+	// pGib->pev->scale = pev->scale; - original
+	if (std::string_view(STRING(pev->model)).find(".mdl") == std::string::npos)
+	{
+		pGib->pev->scale = pev->scale;
+	}
+	// BSVR end
 	pGib->pev->skin = pev->skin;
 
 	return pGib;
@@ -2177,6 +2191,10 @@ void CEnvBeverage::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE u
 		return;
 	}
 
+	// BSVR start
+	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/g_bounce3.wav", 1, ATTN_NORM);
+	// BSVR end
+
 	CBaseEntity* pCan = CBaseEntity::Create("item_sodacan", pev->origin, pev->angles, edict());
 
 	if (pev->skin == 6)
@@ -2207,73 +2225,167 @@ void CEnvBeverage::Spawn()
 	{
 		pev->health = 10;
 	}
+
+	// BSVR start
+	// give soda machines a bit more soda cans for the fun ;)
+	pev->health *= 5;
+	// BSVR end
 }
 
 //=========================================================
 // Soda can
 //=========================================================
-class CItemSoda : public CBaseEntity
+// BSVR start
+// class CItemSoda : public CBaseEntity - original
+class CItemSoda : public CGib
+// BSVR end
 {
 public:
 	void Spawn() override;
-	void Precache() override;
-	void EXPORT CanThink();
-	void EXPORT CanTouch(CBaseEntity* pOther);
+	// void Precache() override;
+	// BSVR start
+	// void EXPORT CanThink(); - original
+	// void EXPORT CanTouch(CBaseEntity* pOther); - original
+	virtual void HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles) override;
+	virtual bool IsDraggable() override { return !(pev->effects & EF_NODRAW) && CGib::IsDraggable(); }
+	virtual void HandleDragStart() override;
+	virtual void HandleDragStop() override;
+	// BSVR end
+
+private:
+	void Drink(CBaseEntity* pDrinker);
 };
 
-void CItemSoda::Precache()
-{
-}
+// BSVR start
+// void CItemSoda::Precache()
+// {
+// }
+// BSVR end
 
 LINK_ENTITY_TO_CLASS(item_sodacan, CItemSoda);
 
 void CItemSoda::Spawn()
 {
-	Precache();
-	pev->solid = SOLID_NOT;
-	pev->movetype = MOVETYPE_TOSS;
+	// BSVR start
+	// Precache(); - original
+	// pev->solid = SOLID_NOT; - original
+	// pev->movetype = MOVETYPE_TOSS; - original
 
-	SET_MODEL(ENT(pev), "models/can.mdl");
+	// SET_MODEL(ENT(pev), "models/can.mdl"); - original
+
+	// cans are frickin huge in VR!
+	pev->scale = 0.5f;
+
+	CGib::Spawn("models/can.mdl");
+
+	SET_MODEL(ENT(pev), STRING(pev->model));
+	// BSVR end
 	UTIL_SetSize(pev, Vector(0, 0, 0), Vector(0, 0, 0));
 
-	SetThink(&CItemSoda::CanThink);
-	pev->nextthink = gpGlobals->time + 0.5;
+	// BSVR start
+	pev->classname = MAKE_STRING("item_sodacan");
+
+	//m_lifeTime = -1;	// live forever
+	m_material = matMetal;
+
+	// cans don't bleed
+	m_bloodColor = DONT_BLEED;
+	m_cBloodDecals = 0;
+	// SetThink(&CItemSoda::CanThink);
+	// pev->nextthink = gpGlobals->time + 0.5;
 }
 
-void CItemSoda::CanThink()
+void CItemSoda::HandleDragStart()
 {
-	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/g_bounce3.wav", 1, ATTN_NORM);
-
-	pev->solid = SOLID_TRIGGER;
-	UTIL_SetSize(pev, Vector(-8, -8, 0), Vector(8, 8, 8));
-	SetThink(NULL);
-	SetTouch(&CItemSoda::CanTouch);
-}
-
-void CItemSoda::CanTouch(CBaseEntity* pOther)
-{
-	if (!pOther->IsPlayer())
-	{
-		return;
-	}
-
-	// spoit sound here
-
-	pOther->TakeHealth(1, DMG_GENERIC); // a bit of health.
-
+	// tell the machine the the can was taken
 	if (!FNullEnt(pev->owner))
 	{
-		// tell the machine the can was taken
 		pev->owner->v.frags = 0;
+		pev->owner = nullptr;
 	}
+
+	CGib::HandleDragStart();
+}
+
+void CItemSoda::HandleDragStop()
+{
+	CGib::HandleDragStop();
+}
+
+void CItemSoda::HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles)
+{
+	CGib::HandleDragUpdate(origin, velocity, angles);
+
+	// check if player moved the can close enough to face for drinking
+	EHandleT<CBaseEntity> hPlayer = m_vrDragger;
+	if (hPlayer && hPlayer->IsPlayer())
+	{
+		float distance2D = (hPlayer->EyePosition() - pev->origin).Length2D();
+		float distanceZ = fabs(hPlayer->EyePosition().z - pev->origin.z);
+		if (distanceZ < 8.f && distance2D < 16.f + (std::max)(0.f, CVAR_GET_FLOAT("vr_view_dist_to_walls")))
+		{
+			Drink(hPlayer);
+		}
+	}
+}
+
+void CItemSoda::Drink(CBaseEntity* pDrinker)
+{
+	// closest audio file to drinking sound i could find xD
+	EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "gonarch/gon_sack2.wav", 1, ATTN_NORM, 0, PITCH_HIGH);
+
+	pDrinker->TakeHealth(1, DMG_GENERIC);  // a bit of health.
 
 	pev->solid = SOLID_NOT;
 	pev->movetype = MOVETYPE_NONE;
 	pev->effects = EF_NODRAW;
-	SetTouch(NULL);
+	SetTouch(nullptr);
 	SetThink(&CItemSoda::SUB_Remove);
 	pev->nextthink = gpGlobals->time;
+
+
+	// if (pDrinker && pDrinker->IsNetClient())
+	// {
+	// 	UTIL_VRGiveAchievement(pDrinker, VRAchievement::GEN_REFRESHING);
+	// }
 }
+
+// commented out originals
+// void CItemSoda::CanThink()
+// {
+// 	EMIT_SOUND(ENT(pev), CHAN_WEAPON, "weapons/g_bounce3.wav", 1, ATTN_NORM);
+
+// 	pev->solid = SOLID_TRIGGER;
+// 	UTIL_SetSize(pev, Vector(-8, -8, 0), Vector(8, 8, 8));
+// 	SetThink(NULL);
+// 	SetTouch(&CItemSoda::CanTouch);
+// }
+
+// void CItemSoda::CanTouch(CBaseEntity* pOther)
+// {
+// 	if (!pOther->IsPlayer())
+// 	{
+// 		return;
+// 	}
+
+// 	// spoit sound here
+
+// 	pOther->TakeHealth(1, DMG_GENERIC); // a bit of health.
+
+// 	if (!FNullEnt(pev->owner))
+// 	{
+// 		// tell the machine the can was taken
+// 		pev->owner->v.frags = 0;
+// 	}
+
+// 	pev->solid = SOLID_NOT;
+// 	pev->movetype = MOVETYPE_NONE;
+// 	pev->effects = EF_NODRAW;
+// 	SetTouch(NULL);
+// 	SetThink(&CItemSoda::SUB_Remove);
+// 	pev->nextthink = gpGlobals->time;
+// }
+// BSVR end
 
 const int SF_WARPBALL_FIRE_ONCE = 1 << 0;
 const int SF_WARPBALL_DELAYED_DAMAGE = 1 << 1;

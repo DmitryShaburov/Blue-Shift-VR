@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -111,6 +111,11 @@ void CItem::ItemTouch(CBaseEntity* pOther)
 	}
 
 	CBasePlayer* pPlayer = (CBasePlayer*)pOther;
+
+	// BSVR start
+	if (!pPlayer)
+		return;
+	// BSVR end
 
 	// ok, a player is touching this item, but can he have it?
 	if (!g_pGameRules->CanHaveItem(pPlayer, this))

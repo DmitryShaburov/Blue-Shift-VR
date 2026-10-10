@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   This source code contains proprietary and confidential information of
@@ -142,6 +142,23 @@ Schedule_t slBarneyEnemyDraw[] =
 			0,
 			"Barney Enemy Draw"}};
 
+// BSVR start
+// Disarm barney if gun was drawn due to player pointing gun
+Task_t tlBarneyDisarm[] =
+{
+	{TASK_STOP_MOVING, 0},
+	{TASK_PLAY_SEQUENCE, (float)ACT_DISARM},
+};
+
+Schedule_t slBarneyDisarm[] =
+{
+	{tlBarneyDisarm,
+	 (int)std::size(tlBarneyDisarm),
+	 0,
+	 0,
+	 "Barney Disarm"} };
+// BSVR end
+
 Task_t tlBaFaceTarget[] =
 	{
 		{TASK_SET_ACTIVITY, (float)ACT_IDLE},
@@ -200,6 +217,7 @@ DEFINE_CUSTOM_SCHEDULES(CBarney){
 	slBarneyEnemyDraw,
 	slBaFaceTarget,
 	slIdleBaStand,
+	slBarneyDisarm,
 };
 
 
@@ -399,6 +417,14 @@ void CBarney::Spawn()
 	SET_MODEL(ENT(pev), "models/barney.mdl");
 	UTIL_SetSize(pev, VEC_HUMAN_HULL_MIN, VEC_HUMAN_HULL_MAX);
 
+	// BSVR start
+	pev->scale = CVAR_GET_FLOAT("vr_npcscale");
+	if (pev->scale <= 0.f)
+	{
+		pev->scale = 1.f;
+	}
+	// BSVR end
+
 	pev->solid = SOLID_SLIDEBOX;
 	pev->movetype = MOVETYPE_STEP;
 	m_bloodColor = BLOOD_COLOR_RED;
@@ -471,6 +497,11 @@ void CBarney::TalkInit()
 
 	m_szGrp[TLK_WOUND] = "BA_WOUND";
 	m_szGrp[TLK_MORTAL] = "BA_MORTAL";
+
+	// BSVR start
+	m_szGrp[TLK_GIB_NEUTRAL] = "BA_GIB_NEUT";
+	m_szGrp[TLK_GIB_BLOODY] = "BA_GIB_BLD";
+	// BSVR end
 
 	// get voice for head - just one barney voice for now
 	m_voicePitch = 100;
@@ -620,7 +651,9 @@ Schedule_t* CBarney::GetScheduleOfType(int Type)
 	switch (Type)
 	{
 	case SCHED_ARM_WEAPON:
-		if (m_hEnemy != NULL)
+		// BSVR start added HasMemory
+		if (m_hEnemy != NULL || (HasMemory(bits_MEMORY_GUNPOINT_THREE) && HasMemory(bits_MEMORY_SUSPICIOUS)))
+		// BSVR end
 		{
 			// face enemy, then draw.
 			return slBarneyEnemyDraw;
@@ -679,6 +712,19 @@ Schedule_t* CBarney::GetSchedule()
 	{
 		PlaySentence("BA_KILL", 4, VOL_NORM, ATTN_NORM);
 	}
+
+	// BSVR start
+	// if (m_MonsterState != MONSTERSTATE_SCRIPT && m_MonsterState != MONSTERSTATE_PRONE && !m_pCine && IsAlive())
+	// {
+	// 	// we are the barney at the start of the first Residue Processing level, who runs into a barnacle.
+	// 	// if we are alive without a script, a player probably saved us
+	// 	if (FStrEq(STRING(INDEXENT(0)->v.model), "maps/c2a4a.bsp")
+	// 		&& FStrEq(STRING(pev->targetname), "barn_run_barn"))
+	// 	{
+	// 		VRAchievementsAndStatsTracker::ResidueBarneyIsAlive();
+	// 	}
+	// }
+	// BSVR end
 
 	switch (m_MonsterState)
 	{

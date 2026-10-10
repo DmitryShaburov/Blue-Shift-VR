@@ -40,6 +40,45 @@
 
 #define TRACER_FREQ 4 // Tracers fire every fourth bullet
 
+// BSVR start
+// Returns the minimum speed required to do melee damage with a VR controller - Max Makes Mods, 2019-04-07
+float GetMeleeSwingSpeed()
+{
+	float speed = CVAR_GET_FLOAT("vr_melee_swing_speed");
+	// Don't allow negative or 0 values
+	return std::max(1.f, speed);
+}
+
+float GetWeaponScale(const char* weaponModelName)
+{
+	float baseWeaponScale = CVAR_GET_FLOAT("vr_weaponscale");
+	if (baseWeaponScale < 0.01f)
+		baseWeaponScale = 1.f;
+
+	float worldScale = CVAR_GET_FLOAT("vr_world_scale");
+	if (worldScale == 0.f)
+		worldScale = 1.f;
+	else if (worldScale < 0.1f)
+		worldScale = 0.1f;
+	else if (worldScale > 100.f)
+		worldScale = 100.f;
+	baseWeaponScale /= worldScale;
+
+	// "models/w_<weapon>.mdl" -> "vr_<weapon>_scale"
+	// "models/v_<weapon>.mdl" -> "vr_<weapon>_scale"
+	std::string cvarWeaponModelScale =
+		std::regex_replace(
+			std::string{ weaponModelName },
+			std::regex{ "models/[vw]_([a-zA-Z_-]+)\\.mdl" },
+			"vr_$1_scale");
+	float weaponScale = CVAR_GET_FLOAT(cvarWeaponModelScale.data());
+	if (weaponScale < 0.01f)
+		weaponScale = 1.f;
+
+	return baseWeaponScale * weaponScale;
+}
+// BSVR end
+
 
 //=========================================================
 // MaxAmmoCarry - pass in a name and this function will tell
@@ -362,16 +401,7 @@ void W_Precache()
 
 	// BSVR start
 	// VR hand model
-	PRECACHE_MODEL("models/v_hand_labcoat.mdl");
-	PRECACHE_MODEL("models/v_hand_hevsuit.mdl");
-	if (std::filesystem::exists(UTIL_GetFilePath("/models/vr_hand_hevsuit.mdl")))
-	{
-		PRECACHE_MODEL("models/vr_hand_hevsuit.mdl");
-	}
-	if (std::filesystem::exists(UTIL_GetFilePath("/models/vr_hand_labcoat.mdl")))
-	{
-		PRECACHE_MODEL("models/vr_hand_labcoat.mdl");
-	}
+	PRECACHE_MODEL("models/v_hand.mdl");
 	// BSVR ends
 }
 
@@ -612,8 +642,13 @@ void CBasePlayerItem::Kill()
 
 void CBasePlayerItem::Holster()
 {
-	m_pPlayer->pev->viewmodel = 0;
+	// BSVR start
+	// m_pPlayer->pev->viewmodel = 0; - original
+	m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_hand.mdl");
 	m_pPlayer->pev->weaponmodel = 0;
+	// BSVR start
+	m_pPlayer->HolsterWeapon(false);
+	// BSVR end
 }
 
 void CBasePlayerItem::AttachToPlayer(CBasePlayer* pPlayer)
@@ -728,17 +763,22 @@ void CBasePlayerWeapon::SendWeaponAnim(int iAnim, int body)
 {
 	const bool skiplocal = !m_ForceSendAnimations && UseDecrement() != false;
 
-	m_pPlayer->pev->weaponanim = iAnim;
+	// BSVR start
+	// m_pPlayer->pev->weaponanim = iAnim; - original
+	m_pPlayer->PlayVRWeaponAnimation(iAnim, pev->body);
+	// BSVR end
 
 #if defined(CLIENT_WEAPONS)
 	if (skiplocal && ENGINE_CANSKIP(m_pPlayer->edict()))
 		return;
 #endif
 
-	MESSAGE_BEGIN(MSG_ONE, SVC_WEAPONANIM, NULL, m_pPlayer->pev);
-	WRITE_BYTE(iAnim);	   // sequence number
-	WRITE_BYTE(pev->body); // weaponmodel bodygroup.
-	MESSAGE_END();
+	// BSVR start - commented out original
+	// MESSAGE_BEGIN(MSG_ONE, SVC_WEAPONANIM, NULL, m_pPlayer->pev);
+	// WRITE_BYTE(iAnim);	   // sequence number
+	// WRITE_BYTE(pev->body); // weaponmodel bodygroup.
+	// MESSAGE_END();
+	// BSVR end
 }
 
 bool CBasePlayerWeapon::AddPrimaryAmmo(CBasePlayerWeapon* origin, int iCount, char* szName, int iMaxClip, int iMaxCarry)
@@ -883,7 +923,10 @@ int CBasePlayerWeapon::SecondaryAmmoIndex()
 void CBasePlayerWeapon::Holster()
 {
 	m_fInReload = false; // cancel any reload in progress.
-	m_pPlayer->pev->viewmodel = 0;
+	// BSVR start
+	// m_pPlayer->pev->viewmodel = 0; - original
+	m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_hand.mdl");
+	// BSVR end
 	m_pPlayer->pev->weaponmodel = 0;
 }
 
@@ -1005,31 +1048,40 @@ bool CBasePlayerWeapon::ExtractClipAmmo(CBasePlayerWeapon* pWeapon)
 //=========================================================
 void CBasePlayerWeapon::RetireWeapon()
 {
-	SetThink(&CBasePlayerWeapon::CallDoRetireWeapon);
-	pev->nextthink = gpGlobals->time + 0.01f;
-}
-
-void CBasePlayerWeapon::DoRetireWeapon()
-{
-	if (!m_pPlayer || m_pPlayer->m_pActiveItem != this)
-	{
-		// Already retired?
-		return;
-	}
-
+	// BSVR start
+	// SetThink(&CBasePlayerWeapon::CallDoRetireWeapon); - original
+	// pev->nextthink = gpGlobals->time + 0.01f; - original
 	// first, no viewmodel at all.
-	m_pPlayer->pev->viewmodel = iStringNull;
+	m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_hand.mdl");
 	m_pPlayer->pev->weaponmodel = iStringNull;
-	//m_pPlayer->pev->viewmodelindex = NULL;
 
 	g_pGameRules->GetNextBestWeapon(m_pPlayer, this);
-
-	//If we're still equipped and we couldn't switch to another weapon, dequip this one
-	if (CanHolster() && m_pPlayer->m_pActiveItem == this)
-	{
-		m_pPlayer->SwitchWeapon(nullptr);
-	}
+	// BSVR end
 }
+
+// BSVR commented out original
+void CBasePlayerWeapon::DoRetireWeapon()
+{
+	// if (!m_pPlayer || m_pPlayer->m_pActiveItem != this)
+	// {
+	// 	// Already retired?
+	// 	return;
+	// }
+
+	// // first, no viewmodel at all.
+	// m_pPlayer->pev->viewmodel = iStringNull;
+	// m_pPlayer->pev->weaponmodel = iStringNull;
+	// //m_pPlayer->pev->viewmodelindex = NULL;
+
+	// g_pGameRules->GetNextBestWeapon(m_pPlayer, this);
+
+	// //If we're still equipped and we couldn't switch to another weapon, dequip this one
+	// if (CanHolster() && m_pPlayer->m_pActiveItem == this)
+	// {
+	// 	m_pPlayer->SwitchWeapon(nullptr);
+	// }
+}
+// BSVR end
 
 //=========================================================================
 // GetNextAttackDelay - An accurate way of calcualting the next attack time.
@@ -1464,42 +1516,3 @@ TYPEDESCRIPTION CSatchel::m_SaveData[] =
 		DEFINE_FIELD(CSatchel, m_chargeReady, FIELD_INTEGER),
 };
 IMPLEMENT_SAVERESTORE(CSatchel, CBasePlayerWeapon);
-
-// BSVR start
-// Returns the minimum speed required to do melee damage with a VR controller - Max Makes Mods, 2019-04-07
-float GetMeleeSwingSpeed()
-{
-	float speed = CVAR_GET_FLOAT("vr_melee_swing_speed");
-	// Don't allow negative or 0 values
-	return std::max(1.f, speed);
-}
-
-float GetWeaponScale(const char* weaponModelName)
-{
-	float baseWeaponScale = CVAR_GET_FLOAT("vr_weaponscale");
-	if (baseWeaponScale < 0.01f)
-		baseWeaponScale = 1.f;
-
-	float worldScale = CVAR_GET_FLOAT("vr_world_scale");
-	if (worldScale == 0.f)
-		worldScale = 1.f;
-	else if (worldScale < 0.1f)
-		worldScale = 0.1f;
-	else if (worldScale > 100.f)
-		worldScale = 100.f;
-	baseWeaponScale /= worldScale;
-
-	// "models/w_<weapon>.mdl" -> "vr_<weapon>_scale"
-	// "models/v_<weapon>.mdl" -> "vr_<weapon>_scale"
-	std::string cvarWeaponModelScale =
-		std::regex_replace(
-			std::string{ weaponModelName },
-			std::regex{ "models/[vw]_([a-zA-Z_-]+)\\.mdl" },
-			"vr_$1_scale");
-	float weaponScale = CVAR_GET_FLOAT(cvarWeaponModelScale.data());
-	if (weaponScale < 0.01f)
-		weaponScale = 1.f;
-
-	return baseWeaponScale * weaponScale;
-}
-// BSVR end

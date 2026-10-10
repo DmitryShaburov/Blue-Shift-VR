@@ -226,14 +226,7 @@ void VRController::UpdateModel(CBasePlayer* pPlayer)
 {
 	if (m_weaponId == WEAPON_BAREHAND)
 	{
-		if (pPlayer->HasSuit())
-		{
-			m_modelName = MAKE_STRING("models/v_hand_hevsuit.mdl");
-		}
-		else
-		{
-			m_modelName = MAKE_STRING("models/v_hand_labcoat.mdl");
-		}
+		m_modelName = MAKE_STRING("models/v_hand.mdl");
 	}
 	else
 	{
@@ -441,7 +434,7 @@ CVRControllerModel* VRController::GetModel() const
 {
 	if (!m_hModel)
 	{
-		CVRControllerModel* pModel = CVRControllerModel::Create(m_modelName ? STRING(m_modelName) : "models/v_hand_labcoat.mdl", GetPosition());
+		CVRControllerModel* pModel = CVRControllerModel::Create(m_modelName ? STRING(m_modelName) : "models/v_hand.mdl", GetPosition());
 		if (IsValid())
 		{
 			pModel->TurnOn();

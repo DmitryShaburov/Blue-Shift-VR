@@ -7,7 +7,8 @@ namespace BsvrInstaller;
 // converted Blue Shift maps.
 //
 // A source ending in "/" copies a whole folder tree. A "*" copies matching files from one folder.
-// Targets are folders relative to the mod folder.
+// Targets are folders relative to the mod folder; a target not ending in "/" is a file path, which
+// renames a single source file.
 static class Assets
 {
     static readonly (string From, string To)[] FromHalfLifeVr =
@@ -18,22 +19,11 @@ static class Assets
         ("valve/textures/background.png",    "textures/"),
         ("valve/textures/null.png",          "textures/"),
         ("valve/textures/skybox/",           "textures/skybox/"),  // VR sky for maps whose sky name matches
-        ("valve/models/v_*.mdl",             "models/"),           // VR weapon and hand view models
-        ("valve/models/vr_hand_*.mdl",       "models/"),           // finger tracking hands
-        ("valve/models/animov/*.mdl",        "models/animov/"),
-        ("valve/models/SD/v_*.mdl",          "models/SD/"),
-        ("valve/models/SD/animov/*.mdl",     "models/SD/animov/"),
         ("valve/sprites/black.spr",          "sprites/"),
         ("valve/sound/plats/train_use2.wav", "sound/plats/"),
     ];
 
-    // HD replacements for WAD textures, 3 GB, only used when vr_hd_textures_enabled is on.
-    static readonly (string From, string To)[] HdTexturesFromHalfLifeVr =
-    [
-        ("valve/textures/game/", "textures/game/"),
-    ];
-
-    public static void Install(string halfLifeDir, string halfLifeVrDir, string modDir, bool hdTextures)
+    public static void Install(string halfLifeDir, string halfLifeVrDir, string modDir)
     {
         Directory.CreateDirectory(modDir);
 
@@ -42,12 +32,6 @@ static class Assets
 
         Console.WriteLine("VR assets from Half-Life: VR");
         CopyAll(halfLifeVrDir, FromHalfLifeVr, modDir);
-
-        if (hdTextures)
-        {
-            Console.WriteLine("HD textures from Half-Life: VR");
-            CopyAll(halfLifeVrDir, HdTexturesFromHalfLifeVr, modDir);
-        }
 
         Console.WriteLine("Maps from Blue Shift");
         Maps.Install(halfLifeDir, modDir);
@@ -98,6 +82,17 @@ static class Assets
         if (item.From.EndsWith('/'))
         {
             return Directory.Exists(source) ? CopyTree(source, targetDir) : 0;
+        }
+
+        if (!item.To.EndsWith('/'))
+        {
+            if (!File.Exists(source))
+            {
+                return 0;
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(targetDir)!);
+            File.Copy(source, targetDir, overwrite: true);
+            return 1;
         }
 
         var sourceDir = Path.GetDirectoryName(source)!;

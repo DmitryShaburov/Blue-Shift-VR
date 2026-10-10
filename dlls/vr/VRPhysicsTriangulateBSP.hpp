@@ -134,7 +134,7 @@ namespace
 	class TranslatedFace
 	{
 	public:
-		TranslatedFace(const msurface_t& face, const Vector& origin, PlaneVertexMetaDataMap& planeVertexMetaData) :
+		TranslatedFace(const msurface_hl25_t& face, const Vector& origin, PlaneVertexMetaDataMap& planeVertexMetaData) :
 			plane{ origin + face.polys->verts[0], FBitSet(face.flags, SURF_PLANEBACK) ? -face.plane->normal : face.plane->normal }
 		{
 			for (int i = 0; i < face.polys->numverts; ++i)
@@ -294,7 +294,7 @@ namespace
 		{
 			for (int i = 0; i < model->nummodelsurfaces; ++i)
 			{
-				TranslatedFace face{ model->surfaces[model->firstmodelsurface + i], origin, planeVertexMetaData };
+				TranslatedFace face{ *VRGetSurface(model, model->firstmodelsurface + i), origin, planeVertexMetaData };
 				planeFaces[face.GetPlane()].push_back(face);
 				++faceCount;
 			}

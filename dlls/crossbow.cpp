@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -278,10 +278,13 @@ void CCrossbow::Holster()
 {
 	m_fInReload = false; // cancel any reload in progress.
 
-	if (m_pPlayer->m_iFOV != 0)
-	{
-		SecondaryAttack();
-	}
+	// BSVR start
+	// no zoom in VR!
+	// if (m_pPlayer->m_iFOV != 0)
+	// {
+	// 	SecondaryAttack();
+	// }
+	// BSVR end
 
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5;
 	if (0 != m_iClip)
@@ -292,16 +295,18 @@ void CCrossbow::Holster()
 
 void CCrossbow::PrimaryAttack()
 {
-
-#ifdef CLIENT_DLL
-	if (m_pPlayer->m_iFOV != 0 && bIsMultiplayer())
-#else
-	if (m_pPlayer->m_iFOV != 0 && g_pGameRules->IsMultiplayer())
-#endif
-	{
-		FireSniperBolt();
-		return;
-	}
+	// BSVR start
+	// no zoom in VR!
+// #ifdef CLIENT_DLL
+// 	if (m_pPlayer->m_iFOV != 0 && bIsMultiplayer())
+// #else
+// 	if (m_pPlayer->m_iFOV != 0 && g_pGameRules->IsMultiplayer())
+// #endif
+// 	{
+// 		FireSniperBolt();
+// 		return;
+// 	}
+	// BSVR end
 
 	FireBolt();
 }
@@ -334,10 +339,15 @@ void CCrossbow::FireSniperBolt()
 	// player "shoot" animation
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
-	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-	UTIL_MakeVectors(anglesAim);
-	Vector vecSrc = m_pPlayer->GetGunPosition() - gpGlobals->v_up * 2;
-	Vector vecDir = gpGlobals->v_forward;
+	// BSVR start
+	// Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle; - original
+	// UTIL_MakeVectors(anglesAim); - original
+	// Vector vecSrc = m_pPlayer->GetGunPosition() - gpGlobals->v_up * 2; - original
+	// Vector vecDir = gpGlobals->v_forward; - original
+	UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
+	Vector vecSrc = m_pPlayer->GetGunPosition();    // -gpGlobals->v_up * 2;
+	Vector vecDir = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
+	// BSVR end
 
 	UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
 
@@ -349,6 +359,12 @@ void CCrossbow::FireSniperBolt()
 		ApplyMultiDamage(pev, m_pPlayer->pev);
 	}
 #endif
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.25f);
+#endif
+// BSVR end
 }
 
 void CCrossbow::FireBolt()
@@ -377,20 +393,32 @@ void CCrossbow::FireBolt()
 	// player "shoot" animation
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
-	Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
-	UTIL_MakeVectors(anglesAim);
+	// BSVR start
+	// Vector anglesAim = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle; - original
+	// UTIL_MakeVectors(anglesAim); - original
 
-	anglesAim.x = -anglesAim.x;
-	Vector vecSrc = m_pPlayer->GetGunPosition() - gpGlobals->v_up * 2;
-	Vector vecDir = gpGlobals->v_forward;
+	// anglesAim.x = -anglesAim.x; - original
+	// Vector vecSrc = m_pPlayer->GetGunPosition() - gpGlobals->v_up * 2; - original
+	// Vector vecDir = gpGlobals->v_forward; - original
+	UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
+
+	Vector vecSrc = m_pPlayer->GetGunPosition();    // -gpGlobals->v_up * 2;
+	Vector vecDir = m_pPlayer->GetAutoaimVector();  // gpGlobals->v_forward;
+	// BSVR end
 
 #ifndef CLIENT_DLL
 	CCrossbowBolt* pBolt = CCrossbowBolt::BoltCreate();
 	pBolt->pev->origin = vecSrc;
-	pBolt->pev->angles = anglesAim;
+	// BSVR start
+	// pBolt->pev->angles = anglesAim; - original
+	pBolt->pev->angles = m_pPlayer->GetAimAngles();
+	// BSVR end
 	pBolt->pev->owner = m_pPlayer->edict();
 
-	if (m_pPlayer->pev->waterlevel == 3)
+	// BSVR start
+	// if (m_pPlayer->pev->waterlevel == 3) - original
+	if (m_pPlayer->IsWeaponUnderWater())
+	// BSVR end
 	{
 		pBolt->pev->velocity = vecDir * BOLT_WATER_VELOCITY;
 		pBolt->pev->speed = BOLT_WATER_VELOCITY;
@@ -415,22 +443,33 @@ void CCrossbow::FireBolt()
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 5.0;
 	else
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.75;
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.5f);
+#endif
+// BSVR end
 }
 
 
 void CCrossbow::SecondaryAttack()
 {
-	if (m_pPlayer->m_iFOV != 0)
-	{
-		m_pPlayer->m_iFOV = 0; // 0 means reset to default fov
-	}
-	else if (m_pPlayer->m_iFOV != 20)
-	{
-		m_pPlayer->m_iFOV = 20;
-	}
+	// BSVR start
+	// no zoom in VR!
+	// if (m_pPlayer->m_iFOV != 0)
+	// {
+	// 	m_pPlayer->m_iFOV = 0; // 0 means reset to default fov
+	// }
+	// else if (m_pPlayer->m_iFOV != 20)
+	// {
+	// 	m_pPlayer->m_iFOV = 20;
+	// }
 
-	pev->nextthink = UTIL_WeaponTimeBase() + 0.1;
-	m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+	// pev->nextthink = UTIL_WeaponTimeBase() + 0.1;
+	// m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 1.0;
+
+	FireSniperBolt();
+	// BSVR end
 }
 
 
@@ -439,10 +478,13 @@ void CCrossbow::Reload()
 	if (m_pPlayer->ammo_bolts <= 0)
 		return;
 
-	if (m_pPlayer->m_iFOV != 0)
-	{
-		SecondaryAttack();
-	}
+	// BSVR start
+	// no zoom in VR!
+	// if (m_pPlayer->m_iFOV != 0)
+	// {
+	// 	SecondaryAttack();
+	// }
+	// BSVR end
 
 	if (DefaultReload(5, CROSSBOW_RELOAD, 4.5))
 	{

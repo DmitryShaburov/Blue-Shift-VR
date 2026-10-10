@@ -18,6 +18,12 @@
 #include "effects.h"
 #include "weaponinfo.h"
 
+// BSVR start
+#ifdef CLIENT_DLL
+extern void VRRegisterRecoil(float intensity);
+#endif
+// BSVR end
+
 class CBasePlayer;
 class CBasePlayerWeapon;
 
@@ -60,6 +66,18 @@ public:
 	void Killed(entvars_t* pevAttacker, int iGib) override;
 
 	bool m_fRegisteredSound; // whether or not this grenade has issued its DANGER sound to the world sound list yet.
+
+	// BSVR start
+	virtual bool IsDraggable() override;
+	virtual void HandleDragStart() override;
+	virtual void HandleDragStop() override;
+	virtual void HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles) override;
+	virtual void BaseBalled(CBaseEntity* pPlayer, const Vector& velocity) override;
+
+private:
+	void (CBaseEntity ::* m_backupThink)(void) = nullptr;
+	void (CBaseEntity ::* m_backupTouch)(CBaseEntity* pOther) = nullptr;
+	// BSVR end
 };
 
 
@@ -87,9 +105,6 @@ public:
 #define WEAPON_SATCHEL     14
 #define WEAPON_SNARK       15
 #define WEAPON_BAREHAND    16
-
-float GetMeleeSwingSpeed();
-float GetWeaponScale(const char* weaponModelName);
 // BSVR end
 
 #define MAX_NORMAL_BATTERY 100
@@ -340,6 +355,19 @@ public:
 	bool Save(CSave& save) override;
 	bool Restore(CRestore& restore) override;
 
+	// BSVR start
+	// upstream declares this as void; the Blue Shift SDK's KeyValue returns bool
+	bool KeyValue(KeyValueData* pkvd) override
+	{
+		const bool handled = CBasePlayerItem::KeyValue(pkvd);
+		// Hackhack, set pev->scale here for all world weapons,
+		// as they are way too big in VR.
+		// TODO: Once all weapon models are fixed, remove this code.
+		pev->scale = 0.7f;
+		return handled;
+	}
+	// BSVR end
+
 	static TYPEDESCRIPTION m_SaveData[];
 
 	// generic weapon versions of CBasePlayerItem calls
@@ -568,6 +596,11 @@ private:
 	unsigned short m_usFireGlock2;
 };
 
+// BSVR start
+float GetMeleeSwingSpeed();
+float GetWeaponScale(const char* weaponModelName);
+// BSVR end
+
 enum crowbar_e
 {
 	CROWBAR_IDLE = 0,
@@ -591,6 +624,10 @@ public:
 	void EXPORT Smack();
 	bool GetItemInfo(ItemInfo* p) override;
 
+	// BSVR start
+	virtual void ItemPostFrame(void);
+	// BSVR end
+
 	void PrimaryAttack() override;
 	bool Swing(bool fFirst);
 	bool Deploy() override;
@@ -609,6 +646,14 @@ public:
 
 private:
 	unsigned short m_usCrowbar;
+
+// BSVR start
+#ifndef CLIENT_DLL
+	// Stuff for VR swinging
+	bool playedWooshSound = false;
+	float lastWooshSoundTime = 0;
+#endif
+// BSVR end
 };
 
 enum python_e
@@ -1228,6 +1273,14 @@ public:
 
 private:
 	unsigned short m_usTripFire;
+
+// BSVR start
+#ifndef CLIENT_DLL
+	// "ghost" tripmine used in VR to show where the mine will be placed
+	void UpdateGhost();
+	EHandleT<CBaseEntity> m_hGhost;
+#endif
+// BSVR end
 };
 
 enum squeak_e
@@ -1254,6 +1307,10 @@ public:
 	void Holster() override;
 	void WeaponIdle() override;
 	bool m_fJustThrown;
+
+	// BSVR start
+	void Throw();
+	// BSVR end
 
 	bool UseDecrement() override
 	{

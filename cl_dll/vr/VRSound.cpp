@@ -260,7 +260,7 @@ bool g_fmodIgnoreEverythingWeAreShuttingDown = false;
 
 // 	for (int i = 0; i < model->nummodelsurfaces; ++i)
 // 	{
-// 		glpoly_t* poly = model->surfaces[model->firstmodelsurface + i].polys;
+// 		glpoly_t* poly = VRGetSurface(model, model->firstmodelsurface + i)->polys;
 // 		while (poly)
 // 		{
 // 			if (poly->numverts <= 0)
@@ -278,7 +278,7 @@ bool g_fmodIgnoreEverythingWeAreShuttingDown = false;
 // 			poly = poly->next;
 
 // 			// escape rings
-// 			if (poly == model->surfaces[model->firstmodelsurface + i].polys)
+// 			if (poly == VRGetSurface(model, model->firstmodelsurface + i)->polys)
 // 				break;
 // 		}
 // 	}

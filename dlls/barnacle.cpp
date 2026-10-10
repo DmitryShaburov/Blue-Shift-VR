@@ -314,6 +314,23 @@ void CBarnacle::BarnacleThink()
 				m_flKillVictimTime = -1; // set this to a bogus time while the victim is lifted.
 
 				m_flAltitude = (pev->origin.z - pTouchEnt->EyePosition().z);
+
+
+				// BSVR start
+				// // check if a scientist walked into the barnacle tongue while following a player, or after being pushed by the player
+				// if (FClassnameIs(pTouchEnt->pev, "monster_scientist"))
+				// {
+				// 	CBaseMonster* pMonster = dynamic_cast<CBaseMonster*>(pTouchEnt);
+				// 	if (pMonster)
+				// 	{
+				// 		// scientists use bits_COND_SPECIAL1 as bits_COND_CLIENT_PUSH
+				// 		if (pMonster->HasConditions(bits_COND_SPECIAL1) || pMonster->IsFollowing())
+				// 		{
+				// 			UTIL_VRGiveAchievementAll(VRAchievement::HID_ROPES);
+				// 		}
+				// 	}
+				// }
+				// BSVR end
 			}
 		}
 		else

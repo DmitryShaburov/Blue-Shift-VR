@@ -116,7 +116,21 @@ namespace
 
 	bool IsWorldValid(const model_t* world)
 	{
-		return world != nullptr && world->needload == 0 && world->marksurfaces[0] != nullptr && world->marksurfaces[0]->polys != nullptr && !DoesAnyBrushModelNeedLoading(world);
+		if (world == nullptr || world->needload != 0 || world->marksurfaces[0] == nullptr)
+			return false;
+
+		if (!VRIsModelLayoutValid(world))
+		{
+			static const model_t* lastReportedWorld = nullptr;
+			if (lastReportedWorld != world)
+			{
+				lastReportedWorld = world;
+				ALERT(at_console, "ERROR: BSP surface layout doesn't match the engine, VR physics disabled for map %s.\n", world->name);
+			}
+			return false;
+		}
+
+		return VRGetMarkSurface(world, 0)->polys != nullptr && !DoesAnyBrushModelNeedLoading(world);
 	}
 
 	bool CompareWorlds(const model_t* world1, const model_t* worl2)

@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -130,11 +130,21 @@ edict_t* CGameRules::GetPlayerSpawnSpot(CBasePlayer* pPlayer)
 	edict_t* pentSpawnSpot = EntSelectSpawnPoint(pPlayer);
 
 	pPlayer->pev->origin = VARS(pentSpawnSpot)->origin + Vector(0, 0, 1);
-	pPlayer->pev->v_angle = g_vecZero;
+	// BSVR start
+	// pPlayer->pev->v_angle = g_vecZero; - original
+	// BSVR end
 	pPlayer->pev->velocity = g_vecZero;
-	pPlayer->pev->angles = VARS(pentSpawnSpot)->angles;
-	pPlayer->pev->punchangle = g_vecZero;
-	pPlayer->pev->fixangle = 1;
+	// BSVR start
+	// pPlayer->pev->angles = VARS(pentSpawnSpot)->angles; - original
+	// pPlayer->pev->punchangle = g_vecZero; - original
+	// pPlayer->pev->fixangle = 1; - original
+
+	// Remember spawn yaw to send down to client
+	pPlayer->vr_spawnYaw = VARS(pentSpawnSpot)->angles.y;
+	// We just spawned, so we need to account for this in UpdateVRHeadset (HMD offset needs to be shifted into spawn position),
+	// this flag will do this - Max Makes Mods, 2019-04-13
+	pPlayer->vr_IsJustSpawned = true;
+	// BSVR end
 
 	return pentSpawnSpot;
 }

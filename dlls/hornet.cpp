@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -96,9 +96,11 @@ void CHornet::Spawn()
 	SetTouch(&CHornet::DieTouch);
 	SetThink(&CHornet::StartTrack);
 
-	edict_t* pSoundEnt = pev->owner;
-	if (!pSoundEnt)
-		pSoundEnt = edict();
+	// BSVR start - commented out
+	// edict_t* pSoundEnt = pev->owner;
+	// if (!pSoundEnt)
+	// 	pSoundEnt = edict();
+	// BSVR end
 
 	if (!FNullEnt(pev->owner) && (pev->owner->v.flags & FL_CLIENT) != 0)
 	{
@@ -213,7 +215,7 @@ old colors
 			WRITE_BYTE( 100 );   // r, g, b
 			WRITE_BYTE( 255 );   // r, g, b
 			break;
-	
+
 */
 
 	// trail
@@ -411,7 +413,10 @@ void CHornet::DieTouch(CBaseEntity* pOther)
 {
 	//Only deal damage if the owner exists in this map.
 	//Hornets that transition without their owner (e.g. Alien Grunt) will otherwise pass a null pointer down to TakeDamage.
-	if (pOther && 0 != pOther->pev->takedamage && nullptr != pev->owner)
+	// BSVR start
+	// if (pOther && 0 != pOther->pev->takedamage && nullptr != pev->owner) - original
+	if (pOther && 0 != pOther->pev->takedamage && !(pOther->IsPlayer() && pOther->edict() == pev->owner))
+	// BSVR end
 	{ // do the damage
 
 		switch (RANDOM_LONG(0, 2))

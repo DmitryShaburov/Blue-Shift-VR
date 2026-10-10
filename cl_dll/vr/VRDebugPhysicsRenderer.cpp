@@ -33,8 +33,8 @@
 #include "VRRenderer.h"
 #include "VRHelper.h"
 
-#define HARDWARE_MODE
 #include "com_model.h"
+#include "vr/VRComModelHL25.h"
 
 #include "vr_gl.h"
 
@@ -182,7 +182,7 @@ typedef std::unordered_map<TranslatedPlane, std::unordered_map<Vector, VertexMet
 class TranslatedFace
 {
 public:
-	TranslatedFace(const msurface_t& face, const Vector& origin, PlaneVertexMetaDataMap& planeVertexMetaData) :
+	TranslatedFace(const msurface_hl25_t& face, const Vector& origin, PlaneVertexMetaDataMap& planeVertexMetaData) :
 		plane{ origin + Vector(face.polys->verts[0]), (face.flags & SURF_PLANEBACK) ? -face.plane->normal : face.plane->normal }
 	{
 		for (int i = 0; i < face.polys->numverts; ++i)
@@ -341,7 +341,7 @@ void CollectFaces(const model_t* model, const Vector& origin, PlaneFacesMap& pla
 	{
 		for (int i = 0; i < model->nummodelsurfaces; ++i)
 		{
-			TranslatedFace face{ model->surfaces[model->firstmodelsurface + i], origin, planeVertexMetaData };
+			TranslatedFace face{ *VRGetSurface(model, model->firstmodelsurface + i), origin, planeVertexMetaData };
 			planeFaces[face.GetPlane()].push_back(face);
 		}
 	}
@@ -432,7 +432,7 @@ void VRRenderer::DebugRenderPhysicsPolygons()
 	glColor4f(1.f, 0.08f, 1.f, 0.58f);  // pink for debugging/testing
 
 	cl_entity_s* map = gEngfuncs.GetEntityByIndex(0);
-	if (map != nullptr && map->model != nullptr)
+	if (map != nullptr && map->model != nullptr && VRIsModelLayoutValid(map->model))
 	{
 		if (lol != map->model || loldebug != CVAR_GET_FLOAT("vr_debug_physics"))
 		{

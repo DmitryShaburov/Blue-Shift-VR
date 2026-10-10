@@ -490,24 +490,44 @@ void CSqueak::Holster()
 }
 
 
+// BSVR start completely new primary attack method
 void CSqueak::PrimaryAttack()
+{
+	if (!m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+	{
+		/*
+		if (RANDOM_FLOAT(0, 1) <= 0.5)
+			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt2.wav", 1, ATTN_NORM, 0, 105);
+		else
+			EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, 105);
+		*/
+
+		m_flStartThrow = 1;
+	}
+}
+// BSVR end
+
+// BSVR start new method
+void CSqueak::Throw()
 {
 	if (0 != m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType])
 	{
-		UTIL_MakeVectors(m_pPlayer->pev->v_angle);
-		TraceResult tr;
-		Vector trace_origin;
+		// BSVR start commented out original
+		// UTIL_MakeVectors(m_pPlayer->pev->v_angle);
+		// TraceResult tr;
+		// Vector trace_origin;
 
-		// HACK HACK:  Ugly hacks to handle change in origin based on new physics code for players
-		// Move origin up if crouched and start trace a bit outside of body ( 20 units instead of 16 )
-		trace_origin = m_pPlayer->pev->origin;
-		if ((m_pPlayer->pev->flags & FL_DUCKING) != 0)
-		{
-			trace_origin = trace_origin - (VEC_HULL_MIN - VEC_DUCK_HULL_MIN);
-		}
+		// // HACK HACK:  Ugly hacks to handle change in origin based on new physics code for players
+		// // Move origin up if crouched and start trace a bit outside of body ( 20 units instead of 16 )
+		// trace_origin = m_pPlayer->pev->origin;
+		// if ((m_pPlayer->pev->flags & FL_DUCKING) != 0)
+		// {
+		// 	trace_origin = trace_origin - (VEC_HULL_MIN - VEC_DUCK_HULL_MIN);
+		// }
 
-		// find place to toss monster
-		UTIL_TraceLine(trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr);
+		// // find place to toss monster
+		// UTIL_TraceLine(trace_origin + gpGlobals->v_forward * 20, trace_origin + gpGlobals->v_forward * 64, dont_ignore_monsters, NULL, &tr);
+		// BSVR end
 
 		int flags;
 #ifdef CLIENT_WEAPONS
@@ -518,14 +538,30 @@ void CSqueak::PrimaryAttack()
 
 		PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usSnarkFire, 0.0, g_vecZero, g_vecZero, 0.0, 0.0, 0, 0, 0, 0);
 
-		if (tr.fAllSolid == 0 && tr.fStartSolid == 0 && tr.flFraction > 0.25)
+		// BSVR start - commented out
+		// if (tr.fAllSolid == 0 && tr.fStartSolid == 0 && tr.flFraction > 0.25)
+		// BSVR end
 		{
 			// player "shoot" animation
 			m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
 #ifndef CLIENT_DLL
-			CBaseEntity* pSqueak = CBaseEntity::Create("monster_snark", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict());
-			pSqueak->pev->velocity = gpGlobals->v_forward * 200 + m_pPlayer->pev->velocity;
+			// BSVR start
+			Vector vecThrow;
+			if (CVAR_GET_FLOAT("vr_weapon_grenade_mode") != 0.f)
+			{
+				vecThrow = m_pPlayer->GetAutoaimVector() * 200 + m_pPlayer->pev->velocity;
+			}
+			else
+			{
+				vecThrow = m_pPlayer->GetWeaponVelocity() * 2;
+			}
+
+			// CBaseEntity* pSqueak = CBaseEntity::Create("monster_snark", tr.vecEndPos, m_pPlayer->pev->v_angle, m_pPlayer->edict()); - original
+			// pSqueak->pev->velocity = gpGlobals->v_forward * 200 + m_pPlayer->pev->velocity; - original
+			CBaseEntity* pSqueak = CBaseEntity::Create<CBaseEntity>("monster_snark", m_pPlayer->GetGunPosition(), m_pPlayer->GetWeaponAngles(), m_pPlayer->edict());
+			pSqueak->pev->velocity = vecThrow;
+			// BSVR end
 #endif
 
 			// play hunt sound
@@ -547,15 +583,32 @@ void CSqueak::PrimaryAttack()
 		}
 	}
 }
+// BSVR end
 
 
 void CSqueak::SecondaryAttack()
 {
+	// BSVR start
+	// Just squeek a bit :3
+	if (RANDOM_FLOAT(0, 1) <= 0.5)
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt2.wav", 1, ATTN_NORM, 0, 105);
+	else
+		EMIT_SOUND_DYN(ENT(pev), CHAN_VOICE, "squeek/sqk_hunt3.wav", 1, ATTN_NORM, 0, 105);
+	// BSVR end
 }
 
 
 void CSqueak::WeaponIdle()
 {
+	// BSVR start
+	if (m_flStartThrow)
+	{
+		Throw();
+		m_flStartThrow = 0;
+		return;
+	}
+	// BSVR end
+
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;
 

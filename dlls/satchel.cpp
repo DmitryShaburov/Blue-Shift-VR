@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -199,6 +199,10 @@ void CSatchel::Spawn()
 
 	m_iDefaultAmmo = SATCHEL_DEFAULT_GIVE;
 
+	// BSVR start
+	pev->dmg = gSkillData.plrDmgSatchel;
+	// BSVR end
+
 	FallInit(); // get ready to fall down.
 }
 
@@ -318,9 +322,13 @@ void CSatchel::PrimaryAttack()
 	switch (m_chargeReady)
 	{
 	case 0:
-	{
-		Throw();
-	}
+		// BSVR start - added condition
+		// Throw(); - original
+		if (!m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+		{
+			m_flStartThrow = 1;
+		}
+		// BSVR end
 	break;
 	case 1:
 	{
@@ -362,7 +370,13 @@ void CSatchel::SecondaryAttack()
 {
 	if (m_chargeReady != 2)
 	{
-		Throw();
+		// BSVR start - added condition
+		// Throw(); - original
+		if (!m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+		{
+			m_flStartThrow = 1;
+		}
+		// BSVR end
 	}
 }
 
@@ -371,12 +385,29 @@ void CSatchel::Throw()
 {
 	if (0 != m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType])
 	{
-		Vector vecSrc = m_pPlayer->pev->origin;
+		// BSVR start - originals
+		// Vector vecSrc = m_pPlayer->pev->origin;
 
-		Vector vecThrow = gpGlobals->v_forward * 274 + m_pPlayer->pev->velocity;
+		// Vector vecThrow = gpGlobals->v_forward * 274 + m_pPlayer->pev->velocity;
+		// BSVR end
 
 #ifndef CLIENT_DLL
-		CBaseEntity* pSatchel = Create("monster_satchel", vecSrc, Vector(0, 0, 0), m_pPlayer->edict());
+		// BSVR start
+		Vector vecThrow;
+		if (CVAR_GET_FLOAT("vr_weapon_grenade_mode") != 0.f)
+		{
+			vecThrow = m_pPlayer->GetAutoaimVector() * 274 + m_pPlayer->pev->velocity;
+		}
+		else
+		{
+			vecThrow = m_pPlayer->GetWeaponVelocity() * 1.5f;
+		}
+
+		Vector vecSrc = m_pPlayer->GetGunPosition();
+
+		CSatchelCharge* pSatchel = CBaseEntity::Create<CSatchelCharge>("monster_satchel", vecSrc, Vector(0, 0, 0), m_pPlayer->edict());
+		// CBaseEntity* pSatchel = Create("monster_satchel", vecSrc, Vector(0, 0, 0), m_pPlayer->edict()); - original
+		// BSVR end
 		pSatchel->pev->velocity = vecThrow;
 		pSatchel->pev->avelocity.y = 400;
 
@@ -403,6 +434,15 @@ void CSatchel::Throw()
 
 void CSatchel::WeaponIdle()
 {
+	// BSVR start
+	if (m_flStartThrow)
+	{
+		Throw();
+		m_flStartThrow = 0;
+		return;
+	}
+	// BSVR end
+
 	if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 		return;
 

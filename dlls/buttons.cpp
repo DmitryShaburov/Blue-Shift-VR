@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -25,6 +25,11 @@
 #include "cbase.h"
 #include "saverestore.h"
 #include "doors.h"
+
+// BSVR start
+// for func_rot_button and momentary_rot_button in VR
+#include "vr/VRRotatableEnt.h"
+// BSVR end
 
 #define SF_BUTTON_DONTMOVE 1
 #define SF_ROTBUTTON_NOTSOLID 1
@@ -817,6 +822,49 @@ void CBaseButton::TriggerAndWait()
 
 	pev->frame = 1; // use alternate textures
 
+	// BSVR start
+	// // used by player
+	// if (m_hActivator && m_hActivator->IsNetClient())
+	// {
+	// 	// entrance map
+	// 	if (FStrEq(STRING(INDEXENT(0)->v.model), "maps/c1a0.bsp"))
+	// 	{
+	// 		// button for that laptop with "important messages"
+	// 		if (FStrEq(STRING(pev->target), "introroomgizmomm"))
+	// 		{
+	// 			UTIL_VRGiveAchievement(m_hActivator, VRAchievement::AM_IMPORTANTMSG);
+	// 		}
+	// 		// alarm button on barney's desk
+	// 		else if (FStrEq(STRING(pev->target), "buzzerlightsonmm"))
+	// 		{
+	// 			UTIL_VRGiveAchievement(m_hActivator, VRAchievement::AM_TROUBLE);
+	// 		}
+	// 		// light switch in that one office
+	// 		else if (FStrEq(STRING(pev->target), "office1mm"))
+	// 		{
+	// 			UTIL_VRGiveAchievement(m_hActivator, VRAchievement::AM_LIGHTSOFF);
+	// 		}
+	// 	}
+	// 	// rocket map
+	// 	else if (FStrEq(STRING(INDEXENT(0)->v.model), "maps/c2a2h.bsp"))
+	// 	{
+	// 		// button that launches rocket
+	// 		if (FStrEq(STRING(pev->target), "launch_countdownmm"))
+	// 		{
+	// 			UTIL_VRGiveAchievement(m_hActivator, VRAchievement::OAR_INFINITY);
+	// 		}
+	// 	}
+	// 	// blast pit map
+	// 	else if (FStrEq(STRING(INDEXENT(0)->v.model), "maps/c1a4i.bsp"))
+	// 	{
+	// 		// button that launches rocket
+	// 		if (FStrEq(STRING(pev->target), "init_rocket_fire"))
+	// 		{
+	// 			VRAchievementsAndStatsTracker::PlayerLaunchedTentacleRocketFire(m_hActivator);
+	// 		}
+	// 	}
+	// }
+	// BSVR end
 
 	SUB_UseTargets(m_hActivator, USE_TOGGLE, 0);
 }
@@ -898,11 +946,23 @@ void CBaseButton::ButtonBackHome()
 //
 // Rotating button (aka "lever")
 //
-class CRotButton : public CBaseButton
+// BSVR start
+class CRotButton : public CBaseButton, VRRotatableEnt
 {
 public:
 	void Spawn() override;
+
+	// rotatable ent stuff
+	virtual bool CanDoVRDragRotation(CBaseEntity* pPlayer, Vector& angleStart, Vector& angleEnd) override;
+	virtual void StartVRDragRotation() override;
+	virtual bool SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta) override;
+	virtual void StopVRDragRotation() override;
+	virtual float GetVRDragRotationMoveDistance() override { return m_flMoveDistance; }
+
+	virtual CBaseEntity* MyEntityPointer() override { return this; }
+	virtual VRRotatableEnt* MyRotatableEntPtr() override { return this; }
 };
+// BSVR end
 
 LINK_ENTITY_TO_CLASS(func_rot_button, CRotButton);
 
@@ -926,7 +986,15 @@ void CRotButton::Spawn()
 
 	pev->movetype = MOVETYPE_PUSH;
 
-	if ((pev->spawnflags & SF_ROTBUTTON_NOTSOLID) != 0)
+	// BSVR start
+	if (pev->health > 0)
+	{
+		pev->takedamage = DAMAGE_YES;
+	}
+	// BSVR end
+
+	// BSVR added condition
+	if ((pev->spawnflags & SF_ROTBUTTON_NOTSOLID) != 0 || (CVAR_GET_FLOAT("vr_make_levers_nonsolid") != 0.f && pev->takedamage == DAMAGE_NO))
 		pev->solid = SOLID_NOT;
 	else
 		pev->solid = SOLID_BSP;
@@ -939,10 +1007,12 @@ void CRotButton::Spawn()
 	if (m_flWait == 0)
 		m_flWait = 1;
 
-	if (pev->health > 0)
-	{
-		pev->takedamage = DAMAGE_YES;
-	}
+	// BSVR start - moved up
+	// if (pev->health > 0)
+	// {
+	// 	pev->takedamage = DAMAGE_YES;
+	// }
+	// BSVR end
 
 	m_toggle_state = TS_AT_BOTTOM;
 	m_vecAngle1 = pev->angles;
@@ -964,6 +1034,87 @@ void CRotButton::Spawn()
 	//SetTouch( ButtonTouch );
 }
 
+// BSVR start
+bool CRotButton::CanDoVRDragRotation(CBaseEntity* pPlayer, Vector& angleStart, Vector& angleEnd)
+{
+	if (!UTIL_IsMasterTriggered(m_sMaster, pPlayer))
+	{
+		PlayLockSounds(pev, &m_ls, true, true);
+		return false;
+	}
+
+	// don't move levers that reached their final stop
+	if (m_toggle_state == TS_AT_TOP && (m_fStayPushed || !FBitSet(pev->spawnflags, SF_BUTTON_TOGGLE)))
+	{
+		return false;
+	}
+
+	angleStart = m_vecAngle1;
+	angleEnd = m_vecAngle2;
+	m_hActivator = pPlayer;
+
+	return true;
+}
+
+void CRotButton::StartVRDragRotation()
+{
+	PlayLockSounds(pev, &m_ls, false, true);
+
+	SetThink(nullptr);
+	SetTouch(nullptr);
+
+	if (m_toggle_state == TS_AT_TOP)
+	{
+		m_toggle_state = TS_GOING_DOWN;
+	}
+	else if (m_toggle_state == TS_AT_BOTTOM)
+	{
+		m_toggle_state = TS_GOING_UP;
+	}
+}
+
+bool CRotButton::SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta)
+{
+	if (m_toggle_state == TS_GOING_UP && delta >= 1.f)
+	{
+		pev->angles = m_vecAngle2;
+		m_vecFinalAngle = m_vecAngle2;
+
+		SetMoveDone(&CBaseButton::TriggerAndWait);
+		AngularMoveDone();
+		return false;
+	}
+
+	if (m_toggle_state == TS_GOING_DOWN && delta <= 0.f)
+	{
+		pev->angles = m_vecAngle1;
+		m_vecFinalAngle = m_vecAngle1;
+
+		SetMoveDone(&CBaseButton::ButtonBackHome);
+		AngularMoveDone();
+		return false;
+	}
+
+	pev->angles = angles;
+	return true;
+}
+
+void CRotButton::StopVRDragRotation()
+{
+	// when letting go of the lever, move it to its destination
+	if (m_toggle_state == TS_GOING_DOWN)
+	{
+		SetMoveDone(&CBaseButton::ButtonBackHome);
+		AngularMove(m_vecAngle1, pev->speed);
+	}
+	else if (m_toggle_state == TS_GOING_UP)
+	{
+		SetMoveDone(&CBaseButton::TriggerAndWait);
+		AngularMove(m_vecAngle2, pev->speed);
+	}
+}
+// BSVR end
+
 
 // Make this button behave like a door (HACKHACK)
 // This will disable use and make the button solid
@@ -971,7 +1122,8 @@ void CRotButton::Spawn()
 // collision problems with them...
 #define SF_MOMENTARY_DOOR 0x0001
 
-class CMomentaryRotButton : public CBaseToggle
+// BSVR changed class
+class CMomentaryRotButton : public CBaseToggle, VRRotatableEnt
 {
 public:
 	void Spawn() override;
@@ -986,6 +1138,9 @@ public:
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value) override;
 	void EXPORT Off();
 	void EXPORT Return();
+	// BSVR start
+	void VRUpdateSelf(const Vector& angles, float value);  // For direct rotation with  VR controller
+	// BSVR end
 	void UpdateSelf(float value);
 	void UpdateSelfReturn(float value);
 	void UpdateAllButtons(float value, bool start);
@@ -1005,6 +1160,20 @@ public:
 	Vector m_start;
 	Vector m_end;
 	int m_sounds;
+
+	// BSVR start
+	// rotatable ent stuff
+	virtual bool CanDoVRDragRotation(CBaseEntity* pPlayer, Vector& angleStart, Vector& angleEnd) override;
+	virtual void StartVRDragRotation() override;
+	virtual bool SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta) override;
+	virtual void StopVRDragRotation() override;
+	virtual float GetVRDragRotationMoveDistance() override { return m_flMoveDistance; }
+
+	virtual CBaseEntity* MyEntityPointer() override { return this; }
+	virtual VRRotatableEnt* MyRotatableEntPtr() override { return this; }
+
+	bool m_isVRDragging = false;
+	// BSVR end
 };
 TYPEDESCRIPTION CMomentaryRotButton::m_SaveData[] =
 	{
@@ -1082,15 +1251,56 @@ void CMomentaryRotButton::PlaySound()
 // current, not future position.
 void CMomentaryRotButton::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
 {
+	// BSVR start
+	if (m_isVRDragging)
+		return;
+	// BSVR end
+
 	pev->ideal_yaw = CBaseToggle::AxisDelta(pev->spawnflags, pev->angles, m_start) / m_flMoveDistance;
 
 	UpdateAllButtons(pev->ideal_yaw, true);
 
-	// Calculate destination angle and use it to predict value, this prevents sending target in wrong direction on retriggering
-	Vector dest = pev->angles + pev->avelocity * (pev->nextthink - pev->ltime);
-	float value1 = CBaseToggle::AxisDelta(pev->spawnflags, dest, m_start) / m_flMoveDistance;
-	UpdateTarget(value1);
+	// BSVR start - commented out upstream
+	// // Calculate destination angle and use it to predict value, this prevents sending target in wrong direction on retriggering
+	// Vector dest = pev->angles + pev->avelocity * (pev->nextthink - pev->ltime);
+	// float value1 = CBaseToggle::AxisDelta(pev->spawnflags, dest, m_start) / m_flMoveDistance;
+	// UpdateTarget(value1);
+	UpdateTarget(pev->ideal_yaw);
+	// BSVR end
 }
+
+// BSVR start
+bool CMomentaryRotButton::CanDoVRDragRotation(CBaseEntity* pPlayer, Vector& angleStart, Vector& angleEnd)
+{
+	m_hActivator = pPlayer;
+	angleStart = m_start;
+	angleEnd = m_end;
+	return true;
+}
+
+void CMomentaryRotButton::StartVRDragRotation()
+{
+	SetThink(nullptr);
+	m_isVRDragging = true;
+}
+
+bool CMomentaryRotButton::SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta)
+{
+	pev->angles = angles;
+	pev->ideal_yaw = CBaseToggle::AxisDelta(pev->spawnflags, pev->angles, m_start) / m_flMoveDistance;
+	UpdateAllButtons(pev->ideal_yaw, 2);
+	UpdateTarget(pev->ideal_yaw);
+	SetThink(nullptr);
+	return true;
+}
+
+void CMomentaryRotButton::StopVRDragRotation()
+{
+	m_isVRDragging = false;
+	pev->nextthink = pev->ltime + 0.1;
+	SetThink(&CMomentaryRotButton::Off);
+}
+// BSVR end
 
 void CMomentaryRotButton::UpdateAllButtons(float value, bool start)
 {
@@ -1108,7 +1318,12 @@ void CMomentaryRotButton::UpdateAllButtons(float value, bool start)
 			CMomentaryRotButton* pEntity = CMomentaryRotButton::Instance(pentTarget);
 			if (pEntity)
 			{
-				if (start)
+				// BSVR start
+				if (start == 2)
+					pEntity->VRUpdateSelf(pev->angles, value);
+				else if (start == 1)
+				// if (start)
+				// BSVR end
 					pEntity->UpdateSelf(value);
 				else
 					pEntity->UpdateSelfReturn(value);
@@ -1116,6 +1331,44 @@ void CMomentaryRotButton::UpdateAllButtons(float value, bool start)
 		}
 	}
 }
+
+// BSVR start
+void CMomentaryRotButton::VRUpdateSelf(const Vector& angles, float value)
+{
+	bool playsound = false;
+	if (!m_lastUsed)
+	{
+		playsound = true;
+		m_lastUsed = 1;
+	}
+
+	if (value >= 1.f)
+	{
+		pev->avelocity = g_vecZero;
+		pev->angles = m_end;
+		return;
+	}
+	else if (value <= 0.f)
+	{
+		pev->avelocity = g_vecZero;
+		pev->angles = m_start;
+		return;
+	}
+	else
+	{
+		// pev->angles = angles;
+		pev->angles = (m_start * (1.f - value)) + (m_end * value);
+		pev->angles.x = fmodf(pev->angles.x, 360.f);
+		pev->angles.y = fmodf(pev->angles.y, 360.f);
+		pev->angles.z = fmodf(pev->angles.z, 360.f);
+	}
+
+	if (playsound)
+	{
+		PlaySound();
+	}
+}
+// BSVR end
 
 void CMomentaryRotButton::UpdateSelf(float value)
 {

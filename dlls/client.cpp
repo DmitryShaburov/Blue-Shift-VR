@@ -66,6 +66,11 @@ void LinkUserMessages();
  */
 void set_suicide_frame(entvars_t* pev)
 {
+	// BSVR start
+	if (FNullEnt(pev))
+		return;
+	// BSVR end
+
 	if (!FStrEq(STRING(pev->model), "models/player.mdl"))
 		return; // allready gibbed
 
@@ -86,6 +91,25 @@ called when a player connects to a server
 */
 qboolean ClientConnect(edict_t* pEntity, const char* pszName, const char* pszAddress, char szRejectReason[128])
 {
+	// BSVR start
+	// Don't restore entities in game loaded from invalid savegame (see world.cpp RestoreGlobalState)
+	extern bool g_didRestoreSaveGameFail;
+	if (g_didRestoreSaveGameFail)
+		return false;
+
+	if (!pEntity)
+		return false;
+
+	if (!pEntity->pvPrivateData)
+		ClientPutInServer(pEntity);
+
+	if (FNullEnt(pEntity))
+		return false;
+
+	if (!g_pGameRules)
+		return true;
+	// BSVR end
+
 	return static_cast<qboolean>(g_pGameRules->ClientConnected(pEntity, pszName, pszAddress, szRejectReason));
 
 	// a client connecting during an intermission can cause problems
@@ -105,6 +129,11 @@ GLOBALS ASSUMED SET:  g_fGameOver
 */
 void ClientDisconnect(edict_t* pEntity)
 {
+	// BSVR start
+	if (FNullEnt(pEntity))
+		return;
+	// BSVR end
+
 	if (g_fGameOver)
 		return;
 
@@ -150,6 +179,12 @@ void ClientDisconnect(edict_t* pEntity)
 // called by ClientKill and DeadThink
 void respawn(entvars_t* pev, bool fCopyCorpse)
 {
+	// BSVR start
+	if (FNullEnt(pev))
+		return;
+	// BSVR end
+
+
 	if (0 != gpGlobals->coop || 0 != gpGlobals->deathmatch)
 	{
 		if (fCopyCorpse)
@@ -178,9 +213,18 @@ GLOBALS ASSUMED SET:  g_ulModelIndexPlayer
 */
 void ClientKill(edict_t* pEntity)
 {
+	// BSVR start
+	if (FNullEnt(pEntity))
+		return;
+	// BSVR end
+
 	entvars_t* pev = &pEntity->v;
 
 	CBasePlayer* pl = (CBasePlayer*)CBasePlayer::Instance(pev);
+	// BSVR start
+	if (!pl)
+		return;
+	// BSVR end
 
 	if (pl->m_fNextSuicideTime > gpGlobals->time)
 		return; // prevent suiciding too ofter
@@ -205,6 +249,16 @@ called each time a player is spawned
 */
 void ClientPutInServer(edict_t* pEntity)
 {
+	// BSVR start
+	if (!FNullEnt(pEntity))
+	{
+		ALERT(at_console, "ClientPutInServer: Got a player that already spawned!\n");
+		g_engfuncs.pfnFreeEntPrivateData(pEntity);
+		pEntity->pvPrivateData = nullptr;
+		pEntity->v.pContainingEntity = pEntity;
+	}
+	// BSVR end
+
 	CBasePlayer* pPlayer;
 
 	entvars_t* pev = &pEntity->v;
@@ -518,6 +572,10 @@ void ClientCommand(edict_t* pEntity)
 	entvars_t* pev = &pEntity->v;
 
 	auto player = GetClassPtr<CBasePlayer>(reinterpret_cast<CBasePlayer*>(&pEntity->v));
+	// BSVR start
+	if (!player)
+		return;
+	// BSVR end
 
 	if (FStrEq(pcmd, "say"))
 	{
@@ -831,9 +889,9 @@ void ServerActivate(edict_t* pEdictList, int edictCount, int clientMax)
 
 	// BSVR start
 	// Don't activate the server if we loaded from invalid savegame (see world.cpp RestoreGlobalState)
-	// extern bool g_didRestoreSaveGameFail;
-	// if (g_didRestoreSaveGameFail)
-	// 	return;
+	extern bool g_didRestoreSaveGameFail;
+	if (g_didRestoreSaveGameFail)
+		return;
 
 	// VRNetworkManager::InitNetwork();
 
@@ -879,6 +937,11 @@ Called every frame before physics are run
 */
 void PlayerPreThink(edict_t* pEntity)
 {
+	// BSVR start
+	if (!pEntity->pvPrivateData)
+		ClientPutInServer(pEntity);
+	// BSVR end
+
 	entvars_t* pev = &pEntity->v;
 	CBasePlayer* pPlayer = (CBasePlayer*)GET_PRIVATE(pEntity);
 
@@ -1025,18 +1088,18 @@ void StartFrame()
 	VRClearCvarCache();
 
 	// Don't think in game loaded from invalid savegame (see world.cpp RestoreGlobalState)
-	// extern bool g_didRestoreSaveGameFail;
-	// if (g_didRestoreSaveGameFail)
-	// {
-	// 	// We cannot shut down a server, but we can switch to crossfire
-	// 	extern bool g_didRestoreSaveGameFail_MapChangedToSafety;
-	// 	if (!g_didRestoreSaveGameFail_MapChangedToSafety)
-	// 	{
-	// 		CHANGE_LEVEL("crossfire", nullptr);
-	// 		g_didRestoreSaveGameFail_MapChangedToSafety = true;
-	// 	}
-	// 	return;
-	// }
+	extern bool g_didRestoreSaveGameFail;
+	if (g_didRestoreSaveGameFail)
+	{
+		// We cannot shut down a server, but we can switch to crossfire
+		extern bool g_didRestoreSaveGameFail_MapChangedToSafety;
+		if (!g_didRestoreSaveGameFail_MapChangedToSafety)
+		{
+			CHANGE_LEVEL("crossfire", nullptr);
+			g_didRestoreSaveGameFail_MapChangedToSafety = true;
+		}
+		return;
+	}
 
 	UTIL_UpdateSDModels();
 
@@ -1152,6 +1215,9 @@ void ClientPrecache()
 	PRECACHE_SOUND("debris/wood3.wav");
 
 	PRECACHE_SOUND("plats/train_use1.wav"); // use a train
+	// BVVR start
+	PRECACHE_SOUND("plats/train_use2.wav");  // use a train in VR
+	// BSVR end
 
 	PRECACHE_SOUND("buttons/spark5.wav"); // hit computer texture
 	PRECACHE_SOUND("buttons/spark6.wav");
@@ -1194,6 +1260,20 @@ void ClientPrecache()
 
 	if (giPrecacheGrunt)
 		UTIL_PrecacheOther("monster_human_grunt");
+
+	// BSVR start
+	PRECACHE_MODEL("sprites/black.spr");
+
+	// Clear global VR stuff here - Max Makes Mods, 2018-04-02
+	extern GlobalXenMounds gGlobalXenMounds;
+	extern std::unordered_map<EHandleT<CBaseEntity>, EHandleT<CBaseEntity>, EHandleT<CBaseEntity>::Hash, EHandleT<CBaseEntity>::Equal> g_vrRetinaScanners;
+	extern std::unordered_set<EHandleT<CBaseEntity>, EHandleT<CBaseEntity>::Hash, EHandleT<CBaseEntity>::Equal> g_vrRetinaScannerButtons;
+	extern bool g_vrNeedRecheckForSpecialEntities;
+	gGlobalXenMounds.Clear();
+	g_vrRetinaScanners.clear();
+	g_vrRetinaScannerButtons.clear();
+	g_vrNeedRecheckForSpecialEntities = true;
+	// BSVR end
 }
 
 /*
@@ -1208,7 +1288,7 @@ const char* GetGameDescription()
 	if (g_pGameRules) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
-		return "Half-Life";
+		return "Half-Life: Blue Shift VR";
 }
 
 /*
@@ -1317,6 +1397,13 @@ void SpectatorThink(edict_t* pEntity)
 // PAS and PVS routines for client messaging
 //
 
+// BSVR start
+namespace
+{
+	unsigned char* m_pvsCache = nullptr;
+}
+// BSVR end
+
 /*
 ================
 SetupVisibility
@@ -1346,17 +1433,26 @@ void SetupVisibility(edict_t* pViewEntity, edict_t* pClient, unsigned char** pvs
 	{
 		*pvs = NULL; // the spectator proxy sees
 		*pas = NULL; // and hears everything
+		// BSVR start
+		m_pvsCache = nullptr;
+		// BSVR end
 		return;
 	}
 
 	org = pView->v.origin + pView->v.view_ofs;
-	if ((pView->v.flags & FL_DUCKING) != 0)
-	{
-		org = org + (VEC_HULL_MIN - VEC_DUCK_HULL_MIN);
-	}
+	// BSVR start
+	// if ((pView->v.flags & FL_DUCKING) != 0)
+	// {
+	// 	org = org + (VEC_HULL_MIN - VEC_DUCK_HULL_MIN);
+	// }
+	// BSVR end
 
 	*pvs = ENGINE_SET_PVS((float*)&org);
 	*pas = ENGINE_SET_PAS((float*)&org);
+
+	// BSVR start
+	m_pvsCache = *pvs;
+	// BSVR end
 }
 
 #include "entity_state.h"
@@ -1385,6 +1481,21 @@ int AddToFullPack(struct entity_state_s* state, int e, edict_t* ent, edict_t* ho
 		return 0;
 	}
 
+	// BSVR start
+	// If pSet is nullptr, then the test will always succeed and the entity will be added to the update
+	bool isInPVS = ENGINE_CHECK_VISIBILITY(ent, pSet);
+
+	// Remember if entity is in PVS
+	if (m_pvsCache == pSet)
+	{
+		EHandleT<CBaseEntity> hEnt = CBaseEntity::SafeInstance<CBaseEntity>(ent);
+		if (hEnt)
+		{
+			hEnt->m_isInPVS = isInPVS;
+		}
+	}
+	// BSVR end
+
 	int i;
 
 	auto entity = reinterpret_cast<CBaseEntity*>(GET_PRIVATE(ent));
@@ -1408,7 +1519,10 @@ int AddToFullPack(struct entity_state_s* state, int e, edict_t* ent, edict_t* ho
 	// If pSet is NULL, then the test will always succeed and the entity will be added to the update
 	if (ent != host)
 	{
-		if (!ENGINE_CHECK_VISIBILITY((const struct edict_s*)ent, pSet))
+		// BSVR start
+		// if (!ENGINE_CHECK_VISIBILITY((const struct edict_s*)ent, pSet))
+		if (!isInPVS)
+		// BSVR end
 		{
 			return 0;
 		}
@@ -1583,6 +1697,7 @@ int AddToFullPack(struct entity_state_s* state, int e, edict_t* ent, edict_t* ho
 	return 1;
 }
 
+
 /*
 ===================
 CreateBaseline
@@ -1607,18 +1722,28 @@ void CreateBaseline(int player, int eindex, struct entity_state_s* baseline, str
 
 	if (0 != player)
 	{
-		baseline->mins = *player_mins;
-		baseline->maxs = *player_maxs;
+		// BSVR start
+		// baseline->mins = *player_mins; - original
+		// baseline->maxs = *player_maxs; - original
+		baseline->mins = entity->v.mins;
+		baseline->maxs = entity->v.maxs;
+		// BSVR end
 
 		baseline->colormap = eindex;
 		baseline->modelindex = playermodelindex;
 		baseline->friction = 1.0;
-		baseline->movetype = MOVETYPE_WALK;
+		// BSVR start
+		// baseline->movetype = MOVETYPE_WALK; - original
+		baseline->movetype = MOVETYPE_NOCLIP;
+		// BSVR end
 
 		baseline->scale = entity->v.scale;
 		baseline->solid = SOLID_SLIDEBOX;
 		baseline->framerate = 1.0;
-		baseline->gravity = 1.0;
+		// BSVR start
+		// baseline->gravity = 1.0; - original
+		baseline->gravity = 0.0;
+		// BSVR end
 	}
 	else
 	{
@@ -1893,6 +2018,11 @@ int GetWeaponData(struct edict_s* player, struct weapon_data_s* info)
 	memset(info, 0, MAX_WEAPONS * sizeof(weapon_data_t));
 
 #if defined(CLIENT_WEAPONS)
+	// BSVR start
+	if (FNullEnt(player))
+		return 1;
+	// BSVR end
+
 	int i;
 	weapon_data_t* item;
 	entvars_t* pev = &player->v;
@@ -2092,6 +2222,11 @@ This is the time to examine the usercmd for anything extra.  This call happens e
 */
 void CmdStart(const edict_t* player, const struct usercmd_s* cmd, unsigned int random_seed)
 {
+	// BSVR start
+	if (FNullEnt(player))
+		return;
+	// BSVR end
+
 	entvars_t* pev = (entvars_t*)&player->v;
 	CBasePlayer* pl = dynamic_cast<CBasePlayer*>(CBasePlayer::Instance(pev));
 
@@ -2115,6 +2250,11 @@ Each cmdstart is exactly matched with a cmd end, clean up any group trace flags,
 */
 void CmdEnd(const edict_t* player)
 {
+	// BSVR start
+	if (FNullEnt(player))
+		return;
+	// BSVR end
+
 	entvars_t* pev = (entvars_t*)&player->v;
 	CBasePlayer* pl = dynamic_cast<CBasePlayer*>(CBasePlayer::Instance(pev));
 
@@ -2155,9 +2295,45 @@ GetHullBounds
   Engine calls this to enumerate player collision hulls, for prediction.  Return 0 if the hullnumber doesn't exist.
 ================================
 */
+
+// BSVR start
+float* g_pEngineHullMins[4]{ nullptr };
+float* g_pEngineHullMaxs[4]{ nullptr };
+
+int InternalGetHullBounds(int hullnumber, float* mins, float* maxs, bool calledFromPMInit)
+{
+	if (!calledFromPMInit)
+	{
+		g_pEngineHullMins[hullnumber] = mins;
+		g_pEngineHullMaxs[hullnumber] = maxs;
+	}
+
+	switch (hullnumber)
+	{
+	case 0:  // Normal player
+		VEC_HULL_MIN.CopyToArray(mins);
+		VEC_HULL_MAX.CopyToArray(maxs);
+		return 1;
+	case 1:  // Crouched player
+		VEC_DUCK_HULL_MIN.CopyToArray(mins);
+		VEC_DUCK_HULL_MAX.CopyToArray(maxs);
+		return 1;
+	case 2:  // Point based hull
+		Vector{}.CopyToArray(mins);
+		Vector{}.CopyToArray(maxs);
+		return 1;
+	}
+
+	return 0;
+}
+// BSVR end
+
 int GetHullBounds(int hullnumber, float* mins, float* maxs)
 {
-	return static_cast<int>(PM_GetHullBounds(hullnumber, mins, maxs));
+	// BSVR start
+	// return static_cast<int>(PM_GetHullBounds(hullnumber, mins, maxs)); - original
+	return InternalGetHullBounds(hullnumber, mins, maxs, false);
+	// BSVR end
 }
 
 /*

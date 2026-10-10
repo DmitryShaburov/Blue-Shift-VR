@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -97,7 +97,10 @@ bool CMP5::Deploy()
 void CMP5::PrimaryAttack()
 {
 	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
+	// BSVR start
+	// if (m_pPlayer->pev->waterlevel == 3) - original
+	if (m_pPlayer->IsWeaponUnderWater())
+	// BSVR end
 	{
 		PlayEmptySound();
 		m_flNextPrimaryAttack = 0.15;
@@ -160,6 +163,12 @@ void CMP5::PrimaryAttack()
 		m_flNextPrimaryAttack = UTIL_WeaponTimeBase() + 0.1;
 
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.4f);
+#endif
+// BSVR end
 }
 
 
@@ -167,7 +176,10 @@ void CMP5::PrimaryAttack()
 void CMP5::SecondaryAttack()
 {
 	// don't fire underwater
-	if (m_pPlayer->pev->waterlevel == 3)
+	// BSVR start
+	// if (m_pPlayer->pev->waterlevel == 3) - original
+	if (m_pPlayer->IsWeaponUnderWater())
+	// BSVR end
 	{
 		PlayEmptySound();
 		m_flNextPrimaryAttack = 0.15;
@@ -191,12 +203,15 @@ void CMP5::SecondaryAttack()
 	// player "shoot" animation
 	m_pPlayer->SetAnimation(PLAYER_ATTACK1);
 
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle);
+	// BSVR start
+	// UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle); - original
 
 	// we don't add in player velocity anymore.
-	CGrenade::ShootContact(m_pPlayer->pev,
-		m_pPlayer->pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_forward * 16,
-		gpGlobals->v_forward * 800);
+	// CGrenade::ShootContact(m_pPlayer->pev,
+	// 	m_pPlayer->pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_forward * 16,
+	// 	gpGlobals->v_forward * 800);
+	CGrenade::ShootContact(m_pPlayer->pev, m_pPlayer->GetGunPosition(), m_pPlayer->GetAutoaimVector() * 800);
+	// BSVR end
 
 	int flags;
 #if defined(CLIENT_WEAPONS)
@@ -214,6 +229,12 @@ void CMP5::SecondaryAttack()
 	if (0 == m_pPlayer->m_rgAmmo[m_iSecondaryAmmoType])
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", false, 0);
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.8f);
+#endif
+// BSVR end
 }
 
 void CMP5::Reload()

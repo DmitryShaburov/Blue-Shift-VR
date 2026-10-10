@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -364,11 +364,35 @@ TYPEDESCRIPTION gGlobalEntitySaveData[] =
 		DEFINE_FIELD(globalentity_t, state, FIELD_INTEGER),
 };
 
+// BSVR start
+// Marks the current save version of the mod. Prevents loading incompatible savegames.
+// Not to be confused with the mod version itself.
+// Incremented every time the savedata of entities is changed.
+// The mod is not compatible with savegames from vanilla HL, so this protects us from that as well.
+struct HLVRSaveVersionMarker
+{
+public:
+	int magic = 'BSVR'; // Blue Shift VR specific, so saves from Half-Life: VR are rejected as well
+	int version = 1;
+};
 
+HLVRSaveVersionMarker g_hlvrSaveVersionMarker; // not const: CSave::WriteFields takes void* in the Blue Shift SDK
+
+TYPEDESCRIPTION g_hlvrSaveVersionMarkerSaveData[] =
+{
+	DEFINE_FIELD(HLVRSaveVersionMarker, magic, FIELD_INTEGER),
+	DEFINE_FIELD(HLVRSaveVersionMarker, version, FIELD_INTEGER),
+};
+// BSVR end
 bool CGlobalState::Save(CSave& save)
 {
 	int i;
 	globalentity_t* pEntity;
+
+	// BSVR start
+	if (!save.WriteFields("HLVRSaveVersionMarker", &g_hlvrSaveVersionMarker, g_hlvrSaveVersionMarkerSaveData, (int)std::size(g_hlvrSaveVersionMarkerSaveData)))
+		return false;
+	// BSVR end
 
 	if (!save.WriteFields("GLOBAL", this, m_SaveData, ARRAYSIZE(m_SaveData)))
 		return false;
@@ -389,6 +413,15 @@ bool CGlobalState::Restore(CRestore& restore)
 {
 	int i, listCount;
 	globalentity_t tmpEntity;
+
+	// BSVR start
+	HLVRSaveVersionMarker hlvrSaveVersionMarker;
+	int status = restore.ReadFields("HLVRSaveVersionMarker", &hlvrSaveVersionMarker, g_hlvrSaveVersionMarkerSaveData, (int)std::size(g_hlvrSaveVersionMarkerSaveData));
+	if (!status || hlvrSaveVersionMarker.magic != g_hlvrSaveVersionMarker.magic || hlvrSaveVersionMarker.version != g_hlvrSaveVersionMarker.version)
+	{
+		return false;
+	}
+	// BSVR end
 
 
 	ClearStates();
@@ -440,6 +473,10 @@ void SaveGlobalState(SAVERESTOREDATA* pSaveData)
 	gGlobalState.Save(saveHelper);
 }
 
+// BSVR start
+bool g_didRestoreSaveGameFail = false;	// Initially false
+bool g_didRestoreSaveGameFail_MapChangedToSafety = false;
+// BSVR end
 
 void RestoreGlobalState(SAVERESTOREDATA* pSaveData)
 {
@@ -449,7 +486,31 @@ void RestoreGlobalState(SAVERESTOREDATA* pSaveData)
 	}
 
 	CRestore restoreHelper(*pSaveData);
-	gGlobalState.Restore(restoreHelper);
+
+	// BSVR start
+	bool result = gGlobalState.Restore(restoreHelper);
+
+	if (!result)
+	{
+		// if result is negative, we couldn't load the savegame.
+		// the engine doesn't support canceling loads, so we do it in a bit of a hacky way:
+		// we set this global flag and check it in several places:
+		//  - cbase.cpp DispatchSpawn
+		//  - cbase.cpp DispatchRestore
+		//  - client.cpp ClientConnect
+		//  - client.cpp StartFrame
+		g_didRestoreSaveGameFail = true;
+		g_didRestoreSaveGameFail_MapChangedToSafety = false;
+
+		// Inform user
+		g_engfuncs.pfnServerPrint("COULDN'T LOAD SAVEGAME, SAVE FILE IS INCOMPATIBLE WITH HALF-LIFE: BLUE SHIFT VR!\n");
+		ALERT(at_error, "COULDN'T LOAD SAVEGAME, SAVE FILE IS INCOMPATIBLE WITH HALF-LIFE: BLUE SHIFT VR!\n");
+	}
+	else
+	{
+		g_didRestoreSaveGameFail = false;
+		g_didRestoreSaveGameFail_MapChangedToSafety = false;
+	}
 }
 
 
@@ -457,6 +518,13 @@ void ResetGlobalState()
 {
 	gGlobalState.ClearStates();
 	gInitHUD = true; // Init the HUD on a new game / load game
+
+	// BSVR start
+	// Engine calls this on every new game. Clear the failed-restore flag set by
+	// RestoreGlobalState, otherwise ClientConnect keeps rejecting the player.
+	g_didRestoreSaveGameFail = false;
+	g_didRestoreSaveGameFail_MapChangedToSafety = false;
+	// BSVR end
 }
 
 // moved CWorld class definition to cbase.h

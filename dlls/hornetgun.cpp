@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -120,10 +120,16 @@ void CHgun::PrimaryAttack()
 	}
 
 #ifndef CLIENT_DLL
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
+	// BSVR start
+	// UTIL_MakeVectors(m_pPlayer->pev->v_angle); - original
 
-	CBaseEntity* pHornet = CBaseEntity::Create("hornet", m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict());
-	pHornet->pev->velocity = gpGlobals->v_forward * 300;
+	// CBaseEntity* pHornet = CBaseEntity::Create("hornet", m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12, m_pPlayer->pev->v_angle, m_pPlayer->edict()); - original
+	// pHornet->pev->velocity = gpGlobals->v_forward * 300; - original
+	UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
+
+	CBaseEntity* pHornet = CBaseEntity::Create<CBaseEntity>("hornet", m_pPlayer->GetGunPosition(), m_pPlayer->GetAimAngles(), m_pPlayer->edict());
+	pHornet->pev->velocity = m_pPlayer->GetAutoaimVector() * 300;
+	// BSVR end
 
 	m_flRechargeTime = gpGlobals->time + 0.5;
 #endif
@@ -156,6 +162,12 @@ void CHgun::PrimaryAttack()
 	}
 
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.1f);
+#endif
+// BSVR start
 }
 
 
@@ -174,9 +186,14 @@ void CHgun::SecondaryAttack()
 	CBaseEntity* pHornet;
 	Vector vecSrc;
 
-	UTIL_MakeVectors(m_pPlayer->pev->v_angle);
+	// BSVR start
+	// UTIL_MakeVectors(m_pPlayer->pev->v_angle); - original
 
-	vecSrc = m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12;
+	// vecSrc = m_pPlayer->GetGunPosition() + gpGlobals->v_forward * 16 + gpGlobals->v_right * 8 + gpGlobals->v_up * -12; - original
+	UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
+
+	vecSrc = m_pPlayer->GetGunPosition();
+	// BSVR end
 
 	m_iFirePhase++;
 	switch (m_iFirePhase)
@@ -212,9 +229,13 @@ void CHgun::SecondaryAttack()
 		break;
 	}
 
-	pHornet = CBaseEntity::Create("hornet", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict());
-	pHornet->pev->velocity = gpGlobals->v_forward * 1200;
-	pHornet->pev->angles = UTIL_VecToAngles(pHornet->pev->velocity);
+	// BSVR start
+	// pHornet = CBaseEntity::Create("hornet", vecSrc, m_pPlayer->pev->v_angle, m_pPlayer->edict()); - original
+	// pHornet->pev->velocity = gpGlobals->v_forward * 1200; - original
+	// pHornet->pev->angles = UTIL_VecToAngles(pHornet->pev->velocity); - original
+	pHornet = CBaseEntity::Create<CBaseEntity>("hornet", vecSrc, m_pPlayer->GetAimAngles(), m_pPlayer->edict());
+	pHornet->pev->velocity = m_pPlayer->GetAutoaimVector() * 1200;
+	// BSVR end
 
 	pHornet->SetThink(&CHornet::StartDart);
 
@@ -240,6 +261,12 @@ void CHgun::SecondaryAttack()
 
 	m_flNextPrimaryAttack = m_flNextSecondaryAttack = UTIL_WeaponTimeBase() + 0.1;
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
+
+// BSVR start
+#ifdef CLIENT_DLL
+	VRRegisterRecoil(0.2f);
+#endif
+// BSVR start
 }
 
 

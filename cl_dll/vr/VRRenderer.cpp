@@ -50,8 +50,8 @@
 #include "VRRandom.h"
 #include "VRSteamworksManager.h"
 
-#define HARDWARE_MODE
 #include "com_model.h"
+#include "vr/VRComModelHL25.h"
 
 #include "vr_gl.h"
 
@@ -67,25 +67,11 @@ namespace
 {
 	std::unordered_set<std::string> g_handmodels{
 		{
-			"models/v_hand_labcoat.mdl",
-			"models/v_hand_hevsuit.mdl",
-			"models/SD/v_hand_labcoat.mdl",
-			"models/SD/v_hand_hevsuit.mdl",
+			"models/v_hand.mdl",
 		} };
-	std::unordered_set<std::string> g_handskeletalmodels{
-		{
-			"models/vr_hand_labcoat.mdl",
-			"models/vr_hand_hevsuit.mdl",
-			"models/SD/vr_hand_labcoat.mdl",
-			"models/SD/vr_hand_hevsuit.mdl",
-		} };
-	std::unordered_map<std::string, std::string> g_handmodels_to_handskeletalmodels{
-		{
-			{"models/v_hand_labcoat.mdl", "models/vr_hand_labcoat.mdl"},
-			{"models/v_hand_hevsuit.mdl", "models/vr_hand_labcoat.mdl"},
-			{"models/SD/v_hand_labcoat.mdl", "models/vr_hand_labcoat.mdl"},
-			{"models/SD/v_hand_hevsuit.mdl", "models/vr_hand_labcoat.mdl"}
-		} };
+	// Blue Shift ships no skeletal (vr_) hand models; kept empty so the skeletal code paths stay intact but never match.
+	std::unordered_set<std::string> g_handskeletalmodels{};
+	std::unordered_map<std::string, std::string> g_handmodels_to_handskeletalmodels{};
 }
 
 
@@ -386,8 +372,15 @@ void VRRenderer::RenderVRHandsAndHUDAndStuff()
 {
 	extern CGameStudioModelRenderer g_StudioRenderer;
 
+	// BSVR start
+	// While a trigger_camera controls the view, the head is at the camera but the hands (and the
+	// HUD attached to them) are still positioned at the body, so they would appear floating behind
+	// the player. Don't draw them. Screen fades and damage overlays below are view-relative and stay.
+	bool drawHandsAndHUD = !vrHelper->HasViewEntOverride();
+	// BSVR end
+
 	m_numRightControllerAttachments = 0;
-	if (vrHelper->HasValidRightController())
+	if (drawHandsAndHUD && vrHelper->HasValidRightController())
 	{
 		g_StudioRenderer.StudioDrawVRHand(
 			gHUD.m_rightControllerModelData,
@@ -399,7 +392,7 @@ void VRRenderer::RenderVRHandsAndHUDAndStuff()
 	}
 
 	m_numLeftControllerAttachments = 0;
-	if (vrHelper->HasValidLeftController())
+	if (drawHandsAndHUD && vrHelper->HasValidLeftController())
 	{
 		g_StudioRenderer.StudioDrawVRHand(
 			gHUD.m_leftControllerModelData,
@@ -415,7 +408,13 @@ void VRRenderer::RenderVRHandsAndHUDAndStuff()
 		vrHelper->TestRenderControllerPositions();
 	}
 
-	RenderHUDSprites();
+	// BSVR start
+	// RenderHUDSprites(); - original, now skipped while a view entity controls the view (see above)
+	if (drawHandsAndHUD)
+	{
+		RenderHUDSprites();
+	}
+	// BSVR end
 	RenderScreenOverlays();
 }
 
@@ -597,25 +596,26 @@ void VRRenderer::RestoreCullface()
 
 
 
-#define SURF_NOCULL      1    // two-sided polygon (e.g. 'water4b')
-#define SURF_PLANEBACK   2    // plane should be negated
-#define SURF_DRAWSKY     4    // sky surface
-#define SURF_WATERCSG    8    // culled by csg (was SURF_DRAWSPRITE)
-#define SURF_DRAWTURB    16   // warp surface
-#define SURF_DRAWTILED   32   // face without lighmap
-#define SURF_CONVEYOR    64   // scrolled texture (was SURF_DRAWBACKGROUND)
-#define SURF_UNDERWATER  128  // caustics
-#define SURF_TRANSPARENT 256  // it's a transparent texture (was SURF_DONTWARP)
-
 std::unordered_map<std::string, int> m_originalTextureIDs;
 std::unordered_set<std::string> m_noHDTextureExistsIDs;
 void VRRenderer::ReplaceAllTexturesWithHDVersion(struct cl_entity_s* ent, bool enableHD)
 {
 	if (ent != nullptr && ent->model != nullptr)
 	{
+		if (!VRIsModelLayoutValid(ent->model))
+		{
+			static const model_t* lastReportedModel = nullptr;
+			if (lastReportedModel != ent->model)
+			{
+				lastReportedModel = ent->model;
+				gEngfuncs.Con_DPrintf("ERROR: BSP layout doesn't match the engine, HD textures disabled for %s.\n", ent->model->name);
+			}
+			return;
+		}
+
 		for (int i = 0; i < ent->model->numtextures; i++)
 		{
-			texture_t* texture = ent->model->textures[i];
+			texture_hl25_t* texture = VRGetTexture(ent->model, i);
 
 			// Replace textures with HD versions (created by Cyril Paulus using ESRGAN)
 			if (texture != nullptr && texture->name != nullptr && strcmp("sky", texture->name) != 0 && texture->name[0] != '{'  // skip transparent textures, they are broken
@@ -684,7 +684,7 @@ void VRRenderer::CheckAndIfNecessaryReplaceHDTextures(struct cl_entity_s* map)
 			{
 				for (int i = 0; !replaceHDTextures && i < map->model->numtextures; i++)
 				{
-					texture_t* texture = map->model->textures[i];
+					texture_hl25_t* texture = VRGetTexture(map->model, i);
 					if (texture != nullptr && texture->name != nullptr && strcmp("sky", texture->name) != 0 && texture->name[0] != '{'  // skip transparent textures, they are broken
 						)
 					{

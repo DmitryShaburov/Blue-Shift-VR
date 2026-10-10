@@ -293,6 +293,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClInclude Include="..\..\cl_dll\vr\Vectors.h" />
     <ClInclude Include="..\..\cl_dll\vr\vr_gl.h" />
     <ClInclude Include="..\..\game_shared\vr\VRShared.h" />
+    <ClInclude Include="..\..\game_shared\vr\VRComModelHL25.h" />
     <ClInclude Include="..\..\common\beamdef.h" />
     <ClInclude Include="..\..\common\cl_entity.h" />
     <ClInclude Include="..\..\common\common_types.h" />

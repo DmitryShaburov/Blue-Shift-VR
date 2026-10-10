@@ -31,8 +31,6 @@ var halfLifeVrDir = AskFolder(
     Steam.IsHalfLifeVr,
     "Half-Life: VR Mod was not found in Steam. It is free and provides the VR assets; install it or enter its folder.");
 
-var hdTextures = AskYesNo("Also copy HD world textures (about 3 GB)?", defaultYes: false);
-
 var modDir = Path.Combine(halfLifeDir, "bsvr");
 Console.WriteLine();
 Console.WriteLine($"Installing to {modDir}");
@@ -44,7 +42,7 @@ if (!AskYesNo("Continue?", defaultYes: true))
 Console.WriteLine();
 try
 {
-    Assets.Install(halfLifeDir, halfLifeVrDir, modDir, hdTextures);
+    Assets.Install(halfLifeDir, halfLifeVrDir, modDir);
 }
 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 {

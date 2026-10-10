@@ -28,6 +28,7 @@
 
 #include "ammohistory.h"
 #include "vgui_TeamFortressViewport.h"
+
 #include "vr/VRRenderer.h" // BSVR: VR HUD rendering (VRHUDDrawBegin / VRHUDDrawFinished)
 
 WEAPON* gpActiveSel; // NULL means off, 1 means just the menu bar, otherwise
@@ -859,10 +860,14 @@ bool CHudAmmo::Draw(float flTime)
 		return true;
 
 	// Draw Weapon Menu
-	DrawWList(flTime);
+	// BSVR start
+	// Don't draw HUD weapons in VR - Max Makes Mods, 2018-01-07
+	// DrawWList(flTime);
 
 	// Draw ammo pickup history
-	gHR.DrawAmmoHistory(flTime);
+	// Don't draw ammo pick up history in VR - Max Makes Mods, 2018-01-07
+	// gHR.DrawAmmoHistory(flTime);
+	// BSVR end
 
 	if ((m_iFlags & HUD_ACTIVE) == 0)
 		return false;
@@ -959,6 +964,7 @@ bool CHudAmmo::Draw(float flTime)
 			SPR_DrawAdditive(0, x, y - iOffset, &m_pWeapon->rcAmmo2);
 		}
 	}
+
 	gVRRenderer.VRHUDDrawFinished(); // BSVR
 
 	return true;

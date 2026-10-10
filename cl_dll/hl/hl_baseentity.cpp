@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -29,6 +29,12 @@ This file contains "stubs" of class member implementations so that we can predic
 #include "nodes.h"
 #include "soundent.h"
 #include "skill.h"
+// BSVR start
+#include "cl_entity.h"
+#include "cl_dll.h"
+#include "vr/VRHelper.h"
+#include "vr/VRRenderer.h"
+// BSVR end
 
 void EMIT_SOUND_DYN(edict_t* entity, int channel, const char* sample, float volume, float attenuation, int flags, int pitch) {}
 
@@ -47,6 +53,9 @@ bool CBaseEntity::ShouldToggle(USE_TYPE useType, bool currentState) { return fal
 int CBaseEntity::DamageDecal(int bitsDamageType) { return -1; }
 CBaseEntity* CBaseEntity::Create(const char* szName, const Vector& vecOrigin, const Vector& vecAngles, edict_t* pentOwner) { return NULL; }
 void CBaseEntity::SUB_Remove() {}
+// BSVR start
+void CBaseEntity::UpdateOnRemove() {}
+// BSVR end
 
 // CBaseDelay Stubs
 bool CBaseDelay::KeyValue(struct KeyValueData_s*) { return false; }
@@ -69,6 +78,9 @@ void UTIL_GunshotDecalTrace(TraceResult* pTrace, int decalNumber) {}
 void UTIL_MakeVectors(const Vector& vecAngles) {}
 bool UTIL_IsValidEntity(edict_t* pent) { return true; }
 void UTIL_SetOrigin(entvars_t*, const Vector& org) {}
+// BSVR start
+// bool UTIL_GetNextBestWeapon(CBasePlayer* pPlayer, CBasePlayerItem* pCurrentWeapon) { return true; }
+// BSVR end
 void UTIL_LogPrintf(char*, ...) {}
 void UTIL_ClientPrintAll(int, char const*, char const*, char const*, char const*, char const*) {}
 void ClientPrint(entvars_t* client, int msg_dest, const char* msg_name, const char* param1, const char* param2, const char* param3, const char* param4) {}
@@ -91,6 +103,13 @@ void CGrenade::Spawn() {}
 CGrenade* CGrenade::ShootTimed(entvars_t* pevOwner, Vector vecStart, Vector vecVelocity, float time) { return 0; }
 CGrenade* CGrenade::ShootContact(entvars_t* pevOwner, Vector vecStart, Vector vecVelocity) { return 0; }
 void CGrenade::DetonateUse(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value) {}
+// BSVR start
+bool CGrenade::IsDraggable() { return false; }
+void CGrenade::HandleDragStart() { }
+void CGrenade::HandleDragStop() { }
+void CGrenade::HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles) { }
+void CGrenade::BaseBalled(CBaseEntity* pPlayer, const Vector& velocity) { }
+// BSVR end
 
 void UTIL_Remove(CBaseEntity* pEntity) {}
 void UTIL_SetSize(entvars_t* pev, const Vector& vecMin, const Vector& vecMax) {}
@@ -256,9 +275,13 @@ void CBasePlayer::Precache() {}
 bool CBasePlayer::Save(CSave& save) { return false; }
 void CBasePlayer::RenewItems() {}
 bool CBasePlayer::Restore(CRestore& restore) { return false; }
-void CBasePlayer::SelectNextItem(int iItem) {}
+// BSVR start
+// void CBasePlayer::SelectNextItem(int iItem) {} - original
+// BSVR end
 bool CBasePlayer::HasWeapons() { return false; }
-void CBasePlayer::SelectPrevItem(int iItem) {}
+// BSVR start
+// void CBasePlayer::SelectPrevItem(int iItem) {} - original
+// BSVR end
 bool CBasePlayer::FlashlightIsOn() { return false; }
 void CBasePlayer::FlashlightTurnOn() {}
 void CBasePlayer::FlashlightTurnOff() {}
@@ -278,7 +301,9 @@ void CBasePlayer::BarnacleVictimBitten(entvars_t* pevBarnacle) {}
 void CBasePlayer::BarnacleVictimReleased() {}
 int CBasePlayer::Illumination() { return 0; }
 void CBasePlayer::EnableControl(bool fControl) {}
-Vector CBasePlayer::GetAutoaimVector(float flDelta) { return g_vecZero; }
+// BSVR start
+// Vector CBasePlayer::GetAutoaimVector(float flDelta) { return g_vecZero; }
+// BSVR end
 Vector CBasePlayer::AutoaimDeflection(Vector& vecSrc, float flDist, float flDelta) { return g_vecZero; }
 void CBasePlayer::ResetAutoaim() {}
 void CBasePlayer::SetCustomDecalFrames(int nFrames) {}
@@ -286,12 +311,66 @@ int CBasePlayer::GetCustomDecalFrames() { return -1; }
 void CBasePlayer::DropPlayerItem(char* pszItemName) {}
 bool CBasePlayer::HasPlayerItem(CBasePlayerItem* pCheckItem) { return false; }
 bool CBasePlayer::SwitchWeapon(CBasePlayerItem* pWeapon) { return false; }
-Vector CBasePlayer::GetGunPosition() { return g_vecZero; }
+// BSVR start
+// Vector CBasePlayer::GetGunPosition() { return g_vecZero; }
+// BSVR end
 const char* CBasePlayer::TeamID() { return ""; }
 int CBasePlayer::GiveAmmo(int iCount, const char* szName, int iMax) { return 0; }
 void CBasePlayer::AddPoints(int score, bool bAllowNegativeScore) {}
 void CBasePlayer::AddPointsToTeam(int score, bool bAllowNegativeScore) {}
 void CBasePlayer::TabulateAmmo() {}
+
+// BSVR start
+Vector CBasePlayer::GetGunPosition(void)
+{
+	return gVRRenderer.GetHelper()->GetGunPosition();
+}
+Vector CBasePlayer::GetAutoaimVector(float flDelta)
+{
+	return gVRRenderer.GetHelper()->GetAutoaimVector();
+}
+Vector CBasePlayer::GetAimAngles()
+{
+	return UTIL_VecToAngles(GetAutoaimVector());
+}
+const Vector CBasePlayer::GetWeaponPosition()
+{
+	return gVRRenderer.GetHelper()->GetWeaponPosition();
+}
+const Vector CBasePlayer::GetWeaponAngles()
+{
+	return gVRRenderer.GetHelper()->GetWeaponAngles();
+}
+const Vector CBasePlayer::GetWeaponViewAngles()
+{
+	Vector angles = GetWeaponAngles();
+	angles.x = -angles.x;
+	return angles;
+}
+bool CBasePlayer::IsWeaponUnderWater()
+{
+	extern cl_enginefunc_t gEngfuncs;
+	float weaponPos[3];
+	GetWeaponPosition().CopyToArray(weaponPos);
+	return gEngfuncs.PM_PointContents(weaponPos, nullptr) == CONTENTS_WATER;
+}
+bool CBasePlayer::IsWeaponPositionValid()
+{
+	extern cl_enginefunc_t gEngfuncs;
+	float weaponPos[3];
+	GetWeaponPosition().CopyToArray(weaponPos);
+	int weaponOriginContent = gEngfuncs.PM_PointContents(weaponPos, nullptr);
+	return weaponOriginContent == CONTENTS_EMPTY || weaponOriginContent == CONTENTS_WATER;
+}
+float CBasePlayer::GetAnalogFire()
+{
+	return gVRRenderer.GetHelper()->GetAnalogFire();
+}
+bool CBasePlayer::VRCanAttack()
+{
+	return gVRRenderer.GetHelper()->CanAttack();
+}
+// BSVR end
 
 void ClearMultiDamage() {}
 void ApplyMultiDamage(entvars_t* pevInflictor, entvars_t* pevAttacker) {}

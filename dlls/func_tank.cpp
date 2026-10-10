@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2001, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -189,7 +189,18 @@ void CFuncTank::Spawn()
 	Precache();
 
 	pev->movetype = MOVETYPE_PUSH; // so it doesn't get pushed by anything
-	pev->solid = SOLID_BSP;
+
+	// BSVR start - only else is upstream
+	if (FBitSet(pev->spawnflags, SF_TANK_CANCONTROL) && CVAR_GET_FLOAT("vr_make_mountedguns_nonsolid") != 0.f)
+	{
+		pev->solid = SOLID_NOT;
+	}
+	else
+	{
+		pev->solid = SOLID_BSP;
+	}
+	// BSVR end
+
 	SET_MODEL(ENT(pev), STRING(pev->model));
 
 	m_yawCenter = pev->angles.y;
@@ -368,7 +379,11 @@ bool CFuncTank::StartControl(CBasePlayer* pController)
 	{
 		m_pController->m_pActiveItem->Holster();
 		m_pController->pev->weaponmodel = 0;
-		m_pController->pev->viewmodel = 0;
+
+		// BSVR start
+		// m_pController->pev->viewmodel = 0; - original
+		m_pController->pev->viewmodel = MAKE_STRING("models/v_hand.mdl");
+		// BSVR end
 	}
 
 	m_pController->m_iHideHUD |= HIDEHUD_WEAPONS;
@@ -401,12 +416,20 @@ void CFuncTank::StopControl()
 // Called each frame by the player's ItemPostFrame
 void CFuncTank::ControllerPostFrame()
 {
-	ASSERT(m_pController != NULL);
+	// BSVR start
+	// ASSERT(m_pController != NULL); - original
+	if (!m_pController)
+		return;
+	// BSVR end
 
 	if (gpGlobals->time < m_flNextAttack)
 		return;
 
-	if ((m_pController->pev->button & IN_ATTACK) != 0)
+	// BSVR start added additional checks
+	if (((m_pController->pev->button & IN_ATTACK) != 0)
+		|| (m_pController->GetAnalogFire() > 0.f)
+		|| m_pController->IsAnyControllerFiringAndHoldingThisTank(this))
+	// BSVR end
 	{
 		Vector vecForward;
 		UTIL_MakeVectorsPrivate(pev->angles, vecForward, NULL, NULL);
@@ -439,8 +462,20 @@ void CFuncTank::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useT
 		}
 		else if (!m_pController && useType != USE_OFF)
 		{
-			((CBasePlayer*)pActivator)->m_pTank = this;
-			StartControl((CBasePlayer*)pActivator);
+			// BSVR start
+			// ((CBasePlayer*)pActivator)->m_pTank = this; - original
+			// StartControl((CBasePlayer*)pActivator); - original
+			// value == 1337 is hacky way used by CBasePlayer::VRUseOrUnuseTank() to tell us that this is a VR initiated control
+			if (CVAR_GET_FLOAT("vr_legacy_tankcontrols_enabled") != 0.f || value == 1337)
+			{
+				CBasePlayer* pPlayer = dynamic_cast<CBasePlayer*>(pActivator);
+				if (pPlayer)
+				{
+					pPlayer->m_pTank = this;
+					StartControl(pPlayer);
+				}
+			}
+			// BSVR end
 		}
 		else
 		{
@@ -501,8 +536,11 @@ void CFuncTank::TrackTarget()
 	if (m_pController)
 	{
 		// Tanks attempt to mirror the player's angles
-		angles = m_pController->pev->v_angle;
-		angles[0] = 0 - angles[0];
+		// BSVR start
+		// angles = m_pController->pev->v_angle; - original
+		// angles[0] = 0 - angles[0]; - original
+		angles = m_pController->GetTankControlAngles();
+		// BSVR end
 		pev->nextthink = pev->ltime + 0.05;
 	}
 	else
@@ -518,6 +556,13 @@ void CFuncTank::TrackTarget()
 				pev->nextthink = pev->ltime + 2; // Wait 2 secs
 			return;
 		}
+
+		// BSVR start
+		// func_tanks ignored notarget in vanilla HL - Max Makes Mods, 2019-10-24
+		if (FBitSet(pPlayer->v.flags, FL_NOTARGET))
+			return;
+		// BSVR end
+
 		pTarget = FindTarget(pPlayer);
 		if (!pTarget)
 			return;
@@ -558,6 +603,9 @@ void CFuncTank::TrackTarget()
 	}
 
 	angles.x = -angles.x;
+	// BSVR start
+	angles.z = 0.f;
+	// BSVR end
 
 	// Force the angles to be relative to the center position
 	angles.y = m_yawCenter + UTIL_AngleDistance(angles.y, m_yawCenter);
@@ -601,8 +649,17 @@ void CFuncTank::TrackTarget()
 	else if (pev->avelocity.x < -m_pitchRate)
 		pev->avelocity.x = -m_pitchRate;
 
+	// BSVR added body
 	if (m_pController)
+	{
+		if (CVAR_GET_FLOAT("vr_tankcontrols_instant_turn") != 0.f)
+		{
+			pev->avelocity = Vector{};
+			pev->angles = angles;
+		}
 		return;
+	}
+	// BSVR end
 
 	if (CanFire() && ((fabs(distX) < m_pitchTolerance && fabs(distY) < m_yawTolerance) || (pev->spawnflags & SF_TANK_LINEOFSIGHT) != 0))
 	{

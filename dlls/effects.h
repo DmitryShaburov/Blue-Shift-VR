@@ -100,6 +100,10 @@ public:
 private:
 	float m_lastTime;
 	float m_maxFrame;
+
+	// BSVR start
+	bool m_fSetAnimtime{ false };
+	// BSVR end
 };
 
 
