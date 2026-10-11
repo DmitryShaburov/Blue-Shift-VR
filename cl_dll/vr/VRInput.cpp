@@ -162,13 +162,14 @@ void VRInput::RegisterActionSets()
 		RegisterAction("move", "Crouch", &VR::Input::Movement::HandleCrouch);
 	}
 
-	if (RegisterActionSet("interact", false))
+	// handleWhenNotInGame: the Teleport action also recenters the menu while in a menu
+	if (RegisterActionSet("interact", true))
 	{
 		RegisterAction("interact", "Grab", &VR::Input::Interact::HandleGrab, false, true);
 		RegisterAction("interact", "LegacyUse", &VR::Input::Interact::HandleLegacyUse);
 
 		// TODO: MISSING IN VIVE BINDINGS!!!
-		RegisterAction("interact", "Teleport", &VR::Input::Interact::HandleTeleport);
+		RegisterAction("interact", "Teleport", &VR::Input::Interact::HandleTeleport, true);
 
 		// TODO: MISSING IN ALL BINDINGS!!!!
 		RegisterAction("interact", "Flashlight", &VR::Input::Interact::HandleFlashlight);

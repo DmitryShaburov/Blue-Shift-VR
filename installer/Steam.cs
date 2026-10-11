@@ -51,6 +51,26 @@ static class Steam
         return null;
     }
 
+    // Blue Shift pulls Half-Life's files onto the disk as a dependency (depots 1, 2, 3 and 96), with a manifest
+    // that looks installed even when Half-Life itself is not. Depot 71 appears only once Half-Life is installed
+    // as its own game and disappears again on uninstall. This is a heuristic based on observed manifests
+    // (English only so far).
+    const string HalfLifeOwnDepot = "71";
+
+    public static bool IsOwnedAndInstalled(string steamRoot, int appId)
+    {
+        foreach (var library in LibraryFolders(steamRoot))
+        {
+            var manifest = Path.Combine(library, "steamapps", $"appmanifest_{appId}.acf");
+            if (File.Exists(manifest) &&
+                Regex.IsMatch(File.ReadAllText(manifest), "\"InstalledDepots\"\\s*\\{[\\s\\S]*?\"" + HalfLifeOwnDepot + "\"\\s*\\{"))
+            {
+                return FindApp(steamRoot, appId) is not null;
+            }
+        }
+        return false;
+    }
+
     static IEnumerable<string> LibraryFolders(string steamRoot)
     {
         yield return steamRoot;

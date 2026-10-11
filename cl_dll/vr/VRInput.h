@@ -129,6 +129,7 @@ public:
 
 	inline bool IsInGame() { return m_isInGame; }
 	inline bool IsInMenu() { return m_isInMenu; }
+	void RecenterHLMenu();
 
 private:
 	class FingerSkeletalData

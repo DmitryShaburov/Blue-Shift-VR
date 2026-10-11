@@ -276,6 +276,13 @@ void VRControllerTeleporter::TouchTriggersInTeleportPath(CBasePlayer* pPlayer)
 			{
 				if (UTIL_TraceBBox(segment.startPoint, segment.endPoint, hEntity->pev->absmin, hEntity->pev->absmax))
 				{
+					// The bounding box is only a broad phase: triggers with complex shapes (e.g. Xen abyss death triggers
+					// that wrap around an island) have boxes much larger than their brushes, so check the real brush.
+					TraceResult trModel;
+					UTIL_TraceModel(segment.startPoint, segment.endPoint, 0, hEntity->edict(), &trModel);
+					if (trModel.flFraction >= 1.f && !trModel.fStartSolid)
+						continue;
+
 					if (FClassnameIs(hEntity->pev, "trigger_changelevel"))
 					{
 						pPlayer->vr_didJustTeleportThroughChangeLevel = true;

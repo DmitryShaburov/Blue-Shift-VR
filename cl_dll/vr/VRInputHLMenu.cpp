@@ -1,4 +1,5 @@
 
+#include <cmath>
 #include <iostream>
 #include <filesystem>
 #include <string>
@@ -44,6 +45,54 @@ namespace
 	{
 		//return gVRRenderer.GetHelper()->GetHLMenuTexture();
 		return gVRRenderer.GetHelper()->GetVRGLGUITexture();
+	}
+
+	// Places the menu overlay at a fixed spot in the tracking space, in front of where the HMD is
+	// looking right now (yaw only, so the menu stays upright). It stays there until it is shown again.
+	void PlaceHLMenuInWorld(vr::VROverlayHandle_t overlay)
+	{
+		float scale = CVAR_GET_FLOAT("vr_menu_scale");
+		if (scale < 0.1f) scale = 0.1f;
+		if (scale > 10.f) scale = 10.f;
+		const float distance = 1.f;
+		const float heightBelowEyes = 0.3f;  // menu center sits below eye level, so the eyes aren't at its lower border
+
+		vr::TrackedDevicePose_t hmdPose;
+		vr::VRSystem()->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseStanding, 0.f, &hmdPose, 1);
+		if (!hmdPose.bPoseIsValid)
+			return;
+
+		const vr::HmdMatrix34_t& hmd = hmdPose.mDeviceToAbsoluteTracking;
+
+		// HMD forward projected onto the floor plane (OpenVR is Y-up, the HMD looks along its -Z)
+		float fx = -hmd.m[0][2];
+		float fz = -hmd.m[2][2];
+		const float len = sqrtf(fx * fx + fz * fz);
+		if (len < 0.001f)
+		{
+			// looking straight up/down, fall back to the tracking space's forward
+			fx = 0.f;
+			fz = -1.f;
+		}
+		else
+		{
+			fx /= len;
+			fz /= len;
+		}
+
+		// Overlay faces +Z, so its +Z points back at the viewer. X = Y x Z, Y is up.
+		vr::HmdMatrix34_t transform =
+		{
+			-fz * scale, 0.f,   -fx * scale, hmd.m[0][3] + fx * distance,
+			0.f,         scale,  0.f,        hmd.m[1][3] - heightBelowEyes,
+			fx * scale,  0.f,   -fz * scale, hmd.m[2][3] + fz * distance
+		};
+
+		auto error = vr::VROverlay()->SetOverlayTransformAbsolute(overlay, vr::TrackingUniverseStanding, &transform);
+		if (error != vr::VROverlayError_None)
+		{
+			gEngfuncs.Con_DPrintf("Could not set absolute transform for HL menu overlay: %s\n", vr::VROverlay()->GetOverlayErrorNameFromEnum(error));
+		}
 	}
 
 }  // namespace
@@ -112,10 +161,14 @@ void VRInput::CreateHLMenu()
 		break;
 	}
 
-	error = vr::VROverlay()->SetOverlayTransformTrackedDeviceRelative(m_hlMenu, menuDeviceIndex, &transform);
-	if (error != vr::VROverlayError_None)
+	// Placement 0 (in front of the player) is world-locked, it is positioned in ShowHLMenu every time the menu opens.
+	if (vr_menu_placement != 0)
 	{
-		gEngfuncs.Con_DPrintf("Could not set transform for HL menu overlay: %s\n", vr::VROverlay()->GetOverlayErrorNameFromEnum(error));
+		error = vr::VROverlay()->SetOverlayTransformTrackedDeviceRelative(m_hlMenu, menuDeviceIndex, &transform);
+		if (error != vr::VROverlayError_None)
+		{
+			gEngfuncs.Con_DPrintf("Could not set transform for HL menu overlay: %s\n", vr::VROverlay()->GetOverlayErrorNameFromEnum(error));
+		}
 	}
 
 	error = vr::VROverlay()->SetOverlayInputMethod(m_hlMenu, vr::VROverlayInputMethod_Mouse);
@@ -129,6 +182,14 @@ void VRInput::CreateHLMenu()
 	if (error != vr::VROverlayError_None)
 	{
 		gEngfuncs.Con_DPrintf("Could not set mouse scale for HL menu overlay: %s\n", vr::VROverlay()->GetOverlayErrorNameFromEnum(error));
+	}
+}
+
+void VRInput::RecenterHLMenu()
+{
+	if (m_isHLMenuShown && m_hlMenu != vr::k_ulOverlayHandleInvalid && (int)CVAR_GET_FLOAT("vr_menu_placement") == 0)
+	{
+		PlaceHLMenuInWorld(m_hlMenu);
 	}
 }
 
@@ -273,6 +334,11 @@ void VRInput::ShowHLMenu()
 			//vr::VROverlay()->HideKeyboard();
 		}
 		m_vrMenuKeyboardOpen = false;
+	}
+
+	if (!m_isHLMenuShown && (int)CVAR_GET_FLOAT("vr_menu_placement") == 0)
+	{
+		PlaceHLMenuInWorld(m_hlMenu);
 	}
 
 	auto error = vr::VROverlay()->ShowOverlay(m_hlMenu);

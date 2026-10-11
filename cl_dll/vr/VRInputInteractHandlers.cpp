@@ -43,6 +43,16 @@ namespace VR
 
 		void Interact::HandleTeleport(const vr::InputDigitalActionData_t& data, const std::string& action)
 		{
+			if (g_vrInput.IsInMenu())
+			{
+				// Teleport button re-centers the menu in front of the player
+				if (data.bActive && data.bState && data.bChanged)
+				{
+					g_vrInput.RecenterHLMenu();
+				}
+				return;
+			}
+
 			if (data.bChanged)
 			{
 				bool on = data.bActive && data.bState;

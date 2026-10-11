@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using BsvrInstaller;
 
 Console.WriteLine("Half-Life: VR Mod - Blue Shift installer");
@@ -15,15 +16,7 @@ var halfLifeDir = AskFolder(
     Steam.IsHalfLifeWithBlueShift,
     "Half-Life: Blue Shift was not found in Steam. Install it and run it once, or enter its folder.");
 
-if (steam is not null && Steam.FindApp(steam, Steam.HalfLifeAppId) is null)
-{
-    Console.WriteLine();
-    Console.WriteLine("Half-Life itself is not installed. Steam lists mods only under Half-Life, so the mod will not");
-    Console.WriteLine("appear in the library until Half-Life is installed. Until then it can be started by adding");
-    Console.WriteLine("    -game bsvr");
-    Console.WriteLine("to the launch options of Half-Life: Blue Shift in Steam.");
-    Console.WriteLine();
-}
+WaitForHalfLife(steam);
 
 var halfLifeVrDir = AskFolder(
     "Half-Life: VR Mod folder (contains hl.exe and valve\\actions\\)",
@@ -38,6 +31,8 @@ if (!AskYesNo("Continue?", defaultYes: true))
 {
     return 1;
 }
+
+WaitForSteamToExit();
 
 Console.WriteLine();
 try
@@ -54,24 +49,27 @@ catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 }
 
 Console.WriteLine();
-Console.WriteLine("Done. Restart Steam, then start \"Half-Life: VR Mod - Blue Shift\" from the library.");
+Console.WriteLine("Done. Start Steam, then start \"Half-Life: VR Mod - Blue Shift\" from the library.");
 Pause();
 return 0;
 
 static string AskFolder(string what, string? suggestion, Func<string, bool> looksRight, string notFoundHint)
 {
-    if (suggestion is null)
+    if (suggestion is not null && Directory.Exists(suggestion) && looksRight(suggestion))
     {
-        Console.WriteLine(notFoundHint);
-        Console.WriteLine("Press Enter without a folder to quit.");
+        var found = Path.GetFullPath(suggestion);
+        Console.WriteLine($"{what}: {found} (found via Steam)");
+        return found;
     }
+
+    Console.WriteLine(notFoundHint);
+    Console.WriteLine("Press Enter without a folder to quit.");
 
     while (true)
     {
-        Console.Write(suggestion is null ? $"{what}: " : $"{what} [{suggestion}]: ");
-        var answer = ReadLine().Trim().Trim('"');
-        var folder = answer.Length > 0 ? answer : suggestion;
-        if (folder is null)
+        Console.Write($"{what}: ");
+        var folder = ReadLine().Trim().Trim('"');
+        if (folder.Length == 0)
         {
             Console.WriteLine("Nothing to install without it, quitting.");
             Environment.Exit(1);
@@ -81,6 +79,42 @@ static string AskFolder(string what, string? suggestion, Func<string, bool> look
             return Path.GetFullPath(folder);
         }
         Console.WriteLine("That folder does not look right, please try again.");
+    }
+}
+
+static bool IsSteamRunning() =>
+    Process.GetProcessesByName("steam").Length > 0 || Process.GetProcessesByName("steamwebhelper").Length > 0;
+
+// Steam lists mods only under Half-Life, so the mod will not show up in the library without it.
+static void WaitForHalfLife(string? steam)
+{
+    if (steam is null)
+    {
+        return;
+    }
+
+    while (!Steam.IsOwnedAndInstalled(steam, Steam.HalfLifeAppId))
+    {
+        Console.WriteLine();
+        Console.WriteLine("Half-Life is not installed. Steam lists mods only under Half-Life, so the mod will not");
+        Console.WriteLine("appear in the library without it. Add Half-Life to your Steam library, install it as its own game");
+        Console.WriteLine("(Blue Shift alone is not enough) and wait for the download to finish.");
+        Console.Write("Press Enter to check again (close this window to cancel): ");
+        ReadLine();
+    }
+}
+
+// Steam reads the list of mods only at startup, and closing its window just minimizes it to the tray.
+static void WaitForSteamToExit()
+{
+    while (IsSteamRunning())
+    {
+        Console.WriteLine();
+        Console.WriteLine("Steam is running. It must be fully exited for the mod to appear in the library:");
+        Console.WriteLine("    Steam menu -> Exit, or right-click the Steam tray icon -> Exit.");
+        Console.WriteLine("(Closing the Steam window is not enough, it keeps running in the tray.)");
+        Console.Write("Press Enter once Steam has exited (close this window to cancel): ");
+        ReadLine();
     }
 }
 
