@@ -6,6 +6,7 @@
 
 #include "VRTextureHelper.h"
 #include "VRGUIRenderer.h"
+#include "VRGameFunctions.h"
 
 #include "Matrices.h"
 
@@ -46,7 +47,6 @@
 #include "VRHelper.h"
 #include "VRInput.h"
 #include "VRSettings.h"
-// #include "VRSound.h"
 #include "VRRandom.h"
 #include "VRSteamworksManager.h"
 
@@ -63,15 +63,24 @@ extern globalvars_t* gpGlobals;
 
 VRRenderer gVRRenderer;
 
+// Set when the menu starts a new game or loads a save, the menu stays hidden until the game is running
+// (or this much time has passed, in case the load failed or froze)
+static double gVR_GameLoadingStartTime = 0.0;
+constexpr double VR_GAME_LOADING_MAX_MENU_HIDE_SECONDS = 5.0;
+
+void VRNotifyGameLoading()
+{
+	gVR_GameLoadingStartTime = gVRRenderer.m_clientTime;
+	VRGameFunctions::StopMenuMusic();
+}
+
 namespace
 {
 	std::unordered_set<std::string> g_handmodels{
 		{
 			"models/v_hand.mdl",
 		} };
-	// Blue Shift ships no skeletal (vr_) hand models; kept empty so the skeletal code paths stay intact but never match.
 	std::unordered_set<std::string> g_handskeletalmodels{};
-	std::unordered_map<std::string, std::string> g_handmodels_to_handskeletalmodels{};
 }
 
 
@@ -115,8 +124,8 @@ void VRRenderer::Frame(double frametime)
 
 	if (m_isVeryFirstFrameEver)
 	{
-		g_vrSettings.InitialUpdateCVARSFromFile();
 		m_isVeryFirstFrameEver = false;
+		vrHelper->SetMaxFps();
 		ResetOffsetThingies();
 	}
 
@@ -124,27 +133,30 @@ void VRRenderer::Frame(double frametime)
 
 	UpdateGameRenderState();
 
+	bool isMenuVisible = false;
 	if (m_isInMenu || !IsInGame())
 	{
 		vrHelper->PollEvents(false, m_isInMenu);
 
 		// don't show menu during levelchange (we show it after 2 seconds, in case the load failed or froze)
-		if (gVR_LastLevelChangeTime != 0.0 && gVR_LastLevelChangeTime > (m_clientTime - 2.f))
+		const bool isGameLoading = gVR_GameLoadingStartTime != 0.0 && m_clientTime - gVR_GameLoadingStartTime < VR_GAME_LOADING_MAX_MENU_HIDE_SECONDS;
+		if (isGameLoading || (gVR_LastLevelChangeTime != 0.0 && gVR_LastLevelChangeTime > (m_clientTime - 2.f)))
 		{
 			g_vrInput.HideHLMenu();
 		}
 		else
 		{
 			g_vrInput.ShowHLMenu();
+			isMenuVisible = true;
 		}
 
-// 		VRSoundUpdate(true, frametime);
 		ResetOffsetThingies();
 	}
 	else
 	{
+		gVR_GameLoadingStartTime = 0.0;  // game is running
+		VRGameFunctions::StopMenuMusic();  // also covers games that were not started from the menu
 		g_vrInput.HideHLMenu();
-// 		VRSoundUpdate(false, frametime);
 	}
 
 	if (!IsInGame() || (m_isInMenu && m_wasMenuJustRendered))
@@ -179,20 +191,47 @@ void VRRenderer::Frame(double frametime)
 	}
 
 
-	glClearColor(0, 0, 0, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
+	// Only render the GUI while the menu overlay is shown.
+	// Render the GUI into its own texture instead of the window, the window's framebuffer has no alpha channel
+	// and the menu needs to be transparent around the boxes.
+	// every time the menu is opened it starts at the main page
+	static bool wasMenuVisible = false;
+	if (isMenuVisible && !wasMenuVisible)
+	{
+		VRGUIRenderer::Instance().ResetMenu();
+		VRGameFunctions::StartMenuMusic();
+	}
+	wasMenuVisible = isMenuVisible;
 
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	VRGUIRenderer::Instance().UpdateGUI(vrHelper->GetVRGLGUITextureWidth(), vrHelper->GetVRGLGUITextureHeight(), IsInGame());
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glPopAttrib();
+	if (isMenuVisible)
+	{
+		const GLuint guiTexture = vrHelper->GetVRGLGUITexture();  // (re)creates the texture if the viewport size changed
+		static GLuint guiFramebuffer = 0;
+		constexpr GLenum GL_FRAMEBUFFER_BINDING_ENUM = 0x8CA6;
+		GLint previousFramebuffer = 0;
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING_ENUM, &previousFramebuffer);
+		if (guiFramebuffer == 0)
+		{
+			glGenFramebuffers(1, &guiFramebuffer);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, guiFramebuffer);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, guiTexture, 0);
 
-	CaptureCurrentScreenToTexture(vrHelper->GetVRGLGUITexture());
+		glClearColor(0, 0, 0, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glPushAttrib(GL_ALL_ATTRIB_BITS);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		VRGUIRenderer::Instance().UpdateGUI(vrHelper->GetVRGLGUITextureWidth(), vrHelper->GetVRGLGUITextureHeight(), IsInGame());
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glPopAttrib();
+
+		glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
+	}
 
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -255,7 +294,7 @@ void VRRenderer::CalcRefdef(struct ref_params_s* pparams)
 		}
 
 		VRTextureHelper::Instance().Init();
-		CheckAndIfNecessaryReplaceHDTextures();
+		UpdateSkyboxForMap();
 	}
 
 	// skip second eye if m_eyeMode is not Both
@@ -341,26 +380,9 @@ bool VRRenderer::IsHandSkeletalModel(const char* modelname) const
 	return (g_handskeletalmodels.find(modelname) != g_handskeletalmodels.end());
 }
 
-const char* VRRenderer::HandModelToHandSkeletalModel(const char* modelname) const
-{
-	if (IsHandModel(modelname))
-	{
-		return g_handmodels_to_handskeletalmodels[modelname].c_str();
-	}
-	else
-	{
-		return modelname;
-	}
-}
-
 bool VRRenderer::HasFingerDataForHand(bool isMirrored, float fingerCurl[5]) const
 {
 	return g_vrInput.HasFingerDataForHand(isMirrored ? vr::TrackedControllerRole_LeftHand : vr::TrackedControllerRole_RightHand, fingerCurl);
-}
-
-bool VRRenderer::HasSkeletalDataForHand(bool isMirrored) const
-{
-	return g_vrInput.HasSkeletalDataForHand(isMirrored ? vr::TrackedControllerRole_LeftHand : vr::TrackedControllerRole_RightHand);
 }
 
 bool VRRenderer::HasSkeletalDataForHand(bool isMirrored, VRQuaternion* bone_quaternions, Vector* bone_positions) const
@@ -522,19 +544,6 @@ void VRRenderer::DrawTransparent()
 	}
 	else
 	{
-		// DrawHDSkyBox();
-
-		/*
-		if (CVAR_GET_FLOAT("vr_debug_controllers") != 0.f)
-		{
-			vrHelper->TestRenderControllerPositions();
-		}
-
-		RenderHUDSprites();
-
-		RenderScreenOverlays();
-		*/
-
 		m_wasMenuJustRendered = false;
 	}
 
@@ -594,136 +603,23 @@ void VRRenderer::RestoreCullface()
 	glFrontFace(GL_CCW);
 }
 
-
-
-std::unordered_map<std::string, int> m_originalTextureIDs;
-std::unordered_set<std::string> m_noHDTextureExistsIDs;
-void VRRenderer::ReplaceAllTexturesWithHDVersion(struct cl_entity_s* ent, bool enableHD)
-{
-	if (ent != nullptr && ent->model != nullptr)
-	{
-		if (!VRIsModelLayoutValid(ent->model))
-		{
-			static const model_t* lastReportedModel = nullptr;
-			if (lastReportedModel != ent->model)
-			{
-				lastReportedModel = ent->model;
-				gEngfuncs.Con_DPrintf("ERROR: BSP layout doesn't match the engine, HD textures disabled for %s.\n", ent->model->name);
-			}
-			return;
-		}
-
-		for (int i = 0; i < ent->model->numtextures; i++)
-		{
-			texture_hl25_t* texture = VRGetTexture(ent->model, i);
-
-			// Replace textures with HD versions (created by Cyril Paulus using ESRGAN)
-			if (texture != nullptr && texture->name != nullptr && strcmp("sky", texture->name) != 0 && texture->name[0] != '{'  // skip transparent textures, they are broken
-				)
-			{
-				// Backup
-				if (m_originalTextureIDs.count(texture->name) == 0)
-				{
-					m_originalTextureIDs[texture->name] = texture->gl_texturenum;
-				}
-
-				if (m_noHDTextureExistsIDs.count(texture->name) > 0)
-				{
-					continue;
-				}
-
-				// Replace
-				if (enableHD)
-				{
-					unsigned int hdTex = VRTextureHelper::Instance().GetHDGameTexture(texture->name);
-					if (hdTex)
-					{
-						texture->gl_texturenum = int(hdTex);
-					}
-					else
-					{
-						m_noHDTextureExistsIDs.insert(texture->name);
-					}
-				}
-				// Restore
-				else
-				{
-					texture->gl_texturenum = m_originalTextureIDs[texture->name];
-				}
-			}
-		}
-	}
-}
-
-void VRRenderer::CheckAndIfNecessaryReplaceHDTextures(struct cl_entity_s* map)
-{
-	bool replaceHDTextures = false;
-	if (map->model != m_currentMapModel)
-	{
-		m_originalTextureIDs.clear();
-		m_currentMapModel = map->model;
-		replaceHDTextures = true;
-		vrHelper->SetSkyboxFromMap(map->model->name);
-	}
-	bool hdTexturesEnabled = CVAR_GET_FLOAT("vr_hd_textures_enabled") != 0.f;
-	if (hdTexturesEnabled != m_hdTexturesEnabled)
-	{
-		m_hdTexturesEnabled = hdTexturesEnabled;
-		replaceHDTextures = true;
-	}
-	if (m_hdTexturesEnabled && !replaceHDTextures)
-	{
-		if (m_originalTextureIDs.empty())
-		{
-			replaceHDTextures = true;
-		}
-		else
-		{
-			// Check if map uses different textures than it should (can happen after loading the same map again)
-			if (map->model != nullptr)
-			{
-				for (int i = 0; !replaceHDTextures && i < map->model->numtextures; i++)
-				{
-					texture_hl25_t* texture = VRGetTexture(map->model, i);
-					if (texture != nullptr && texture->name != nullptr && strcmp("sky", texture->name) != 0 && texture->name[0] != '{'  // skip transparent textures, they are broken
-						)
-					{
-						if (m_noHDTextureExistsIDs.count(texture->name) > 0)
-						{
-							continue;
-						}
-
-						if (m_originalTextureIDs.count(texture->name) == 0 || m_originalTextureIDs[texture->name] == texture->gl_texturenum)
-						{
-							replaceHDTextures = true;
-							break;
-						}
-					}
-				}
-			}
-		}
-	}
-	if (replaceHDTextures)
-	{
-		vrHelper->SetSkyboxFromMap(map->model->name);
-		ReplaceAllTexturesWithHDVersion(map, m_hdTexturesEnabled);
-	}
-}
-
-void VRRenderer::CheckAndIfNecessaryReplaceHDTextures()
+// Sets the VR skybox whenever a different map is loaded
+void VRRenderer::UpdateSkyboxForMap()
 {
 	cl_entity_s* map = gEngfuncs.GetEntityByIndex(0);
 	if (map != nullptr && map->model != nullptr)
 	{
-		CheckAndIfNecessaryReplaceHDTextures(map);
+		if (map->model != m_currentMapModel)
+		{
+			m_currentMapModel = map->model;
+			vrHelper->SetSkyboxFromMap(map->model->name);
+		}
 	}
 	else
 	{
 		m_currentMapModel = nullptr;
 	}
 }
-
-
 
 // for studiomodelrenderer
 
@@ -766,182 +662,12 @@ vr::IVRSystem* VRRenderer::GetVRSystem()
 	return vrHelper->GetVRSystem();
 }
 
-
-void VRRenderer::DrawHDSkyBox()
-{
-	// TODO: Current implementation is buggy
-}
-
-#if 0
-
-void VRRenderer::DrawHDSkyBox()
-{
-	bool hdTexturesEnabled = CVAR_GET_FLOAT("vr_hd_textures_enabled") != 0.f;
-	if (!hdTexturesEnabled)
-		return;
-
-	float size = 2048.f;
-	extern playermove_t* pmove;
-	if (pmove)
-	{
-		size = (std::max)(size, pmove->movevars->zmax * 0.5f);
-	}
-	float nsize = size - 8.f;
-
-	/*
-	{"rt"},
-	{ "bk" },
-	{ "lf" },
-	{ "ft" },
-	{ "up" },
-	{ "dn" }
-	*/
-
-	/*
-	0,1
-	1,1
-	1,0
-	0,0
-	*/
-
-	const Vector skyboxbounds[6][4] = {
-		{
-			// right
-			{nsize, size, -size},
-			{nsize, -size, -size},
-			{nsize, -size, size},
-			{nsize, size, size},
-		},
-		{
-			// back
-			{-size, nsize, -size},
-			{size, nsize, -size},
-			{size, nsize, size},
-			{-size, nsize, size},
-		},
-		{
-			// left
-			{-nsize, -size, -size},
-			{-nsize, size, -size},
-			{-nsize, size, size},
-			{-nsize, -size, size},
-		},
-		{
-			// front
-			{size, -nsize, -size},
-			{-size, -nsize, -size},
-			{-size, -nsize, size},
-			{size, -nsize, size},
-		},
-		{
-			// up
-			{nsize, size, nsize},
-			{nsize, -size, nsize},
-			{-nsize, -size, nsize},
-			{-nsize, size, nsize},
-		},
-		{
-			// down
-			{-nsize, size, -nsize},
-			{-nsize, -size, -nsize},
-			{nsize, -size, -nsize},
-			{nsize, size, -nsize},
-		},
-	};
-
-	Vector skyboxorigin;
-	vrHelper->GetViewOrg(skyboxorigin);
-
-	DrawMapSkyFacesIntoStencilBuffer();
-
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-
-	ClearGLErrors();
-
-	try
-	{
-		//TryGLCall(glDisable, GL_FOG);
-		TryGLCall(glDisable, GL_BLEND);
-		TryGLCall(glDisable, GL_ALPHA_TEST);
-		TryGLCall(glDisable, GL_DEPTH_TEST);
-		TryGLCall(glDisable, GL_CULL_FACE);
-		TryGLCall(glDepthMask, GL_FALSE);
-		TryGLCall(glTexEnvi, GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-		TryGLCall(glEnable, GL_STENCIL_TEST);
-		TryGLCall(glStencilFunc, GL_EQUAL, 1, 0xFF);
-		TryGLCall(glStencilOp, GL_KEEP, GL_KEEP, GL_KEEP);
-		TryGLCall(glStencilMask, 0x00);
-
-		TryGLCall(glColor4f, 1.f, 1.f, 1.f, 1.f);
-
-		TryGLCall(glEnable, GL_TEXTURE_2D);
-		TryGLCall(glActiveTexture, GL_TEXTURE0);
-
-		for (int i = 0; i < 6; i++)
-		{
-			TryGLCall(glBindTexture, GL_TEXTURE_2D, VRTextureHelper::Instance().GetHLHDSkyboxTexture(VRTextureHelper::Instance().GetCurrentSkyboxName(), i));
-
-			glBegin(GL_QUADS);
-
-			glTexCoord2f(0.f, 1.f);
-			glVertex3fv(skyboxorigin + skyboxbounds[i][0]);
-
-			glTexCoord2f(1.f, 1.f);
-			glVertex3fv(skyboxorigin + skyboxbounds[i][1]);
-
-			glTexCoord2f(1.f, 0.f);
-			glVertex3fv(skyboxorigin + skyboxbounds[i][2]);
-
-			glTexCoord2f(0.f, 0.f);
-			glVertex3fv(skyboxorigin + skyboxbounds[i][3]);
-
-			glEnd();
-		}
-	}
-	catch (const OGLErrorException & e)
-	{
-		gEngfuncs.Con_DPrintf("Failed to render HD sky: %s\n", e.what());
-	}
-
-	glDisable(GL_STENCIL_TEST);
-	glStencilMask(0x00);
-
-	glPopAttrib();
-}
-
-
-void DrawMapSkyFacesIntoStencilBuffer()
-{
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-
-	ClearGLErrors();
-
-	try
-	{
-		glClear(GL_STENCIL_BUFFER_BIT);
-		// TryGLCall(glEnable, GL_STENCIL_TEST);
-		// TryGLCall(glStencilMask, 0xFF);
-		// TryGLCall(glStencilFunc, GL_ALWAYS, 1, 0xFF);
-		// TryGLCall(glStencilOp, GL_KEEP, GL_KEEP, GL_KEEP);
-	}
-	catch (const OGLErrorException & e)
-	{
-		gEngfuncs.Con_DPrintf("Failed to render HD sky: %s\n", e.what());
-	}
-
-	glPopAttrib();
-}
-
-#endif
-
-
-
 // For ev_common.cpp
 Vector VRGlobalGetGunPosition()
 {
 	return gVRRenderer.GetHelper()->GetGunPosition();
 }
+
 void VRGlobalGetGunAim(Vector& forward, Vector& right, Vector& up, Vector& angles)
 {
 	gVRRenderer.GetHelper()->GetGunAim(forward, right, up, angles);

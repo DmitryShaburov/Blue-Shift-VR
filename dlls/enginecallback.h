@@ -23,13 +23,13 @@ inline enginefuncs_t g_engfuncs;
 
 // The actual engine callbacks
 #define GETPLAYERUSERID (*g_engfuncs.pfnGetPlayerUserId)
-// BSVR start - raw engine calls renamed; the stock names are intercepted in util.h / VRSDModelHelper.cpp for SD model support
+// BSVR start - raw engine calls renamed; the stock names are intercepted in util.h / VRAnimatedModelHelper.cpp to precache the animated weapon models
 #define PRECACHE_MODEL3 (*g_engfuncs.pfnPrecacheModel3)
 #define PRECACHE_SOUND (*g_engfuncs.pfnPrecacheSound)
 #define PRECACHE_GENERIC3 (*g_engfuncs.pfnPrecacheGeneric3)
-#define SET_MODEL2 (*g_engfuncs.pfnSetModel2)
-#define MODEL_INDEX2 (*g_engfuncs.pfnModelIndex2)
 // BSVR end
+#define SET_MODEL (*g_engfuncs.pfnSetModel)
+#define MODEL_INDEX (*g_engfuncs.pfnModelIndex)
 #define MODEL_FRAMES (*g_engfuncs.pfnModelFrames)
 #define SET_SIZE (*g_engfuncs.pfnSetSize)
 // BSVR start

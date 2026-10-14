@@ -654,12 +654,6 @@ bool VRInput::HasFingerDataForHand(vr::ETrackedControllerRole controllerRole, fl
 	return false;
 }
 
-bool VRInput::HasSkeletalDataForHand(vr::ETrackedControllerRole controllerRole) const
-{
-	auto it = m_fingerSkeletalData.find(controllerRole);
-	return it != m_fingerSkeletalData.end() && it->second && it->second->hasBones;
-}
-
 bool VRInput::HasSkeletalDataForHand(vr::ETrackedControllerRole controllerRole, VRQuaternion* bone_quaternions, Vector* bone_positions) const
 {
 	auto it = m_fingerSkeletalData.find(controllerRole);

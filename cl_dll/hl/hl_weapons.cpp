@@ -440,7 +440,7 @@ void HUD_InitClientWeapons()
 	g_engfuncs.pfnPrecacheSound = stub_PrecacheSound;
 	g_engfuncs.pfnPrecacheEvent = stub_PrecacheEvent;
 	g_engfuncs.pfnNameForFunction = stub_NameForFunction;
-	g_engfuncs.pfnSetModel2 = stub_SetModel; // BSVR: field renamed in eiface.h
+	g_engfuncs.pfnSetModel = stub_SetModel;
 	g_engfuncs.pfnSetClientMaxspeed = HUD_SetMaxSpeed;
 
 	// Handled locally

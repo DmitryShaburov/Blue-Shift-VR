@@ -12,11 +12,7 @@ public:
 
 	unsigned int GetTexture(const std::string& name);
 	unsigned int GetTexture(const std::string& name, unsigned int& width, unsigned int& height);
-	unsigned int GetHDGameTexture(const std::string& name);
 	unsigned int GetVRSkyboxTexture(const std::string& name, int index);
-	unsigned int GetVRHDSkyboxTexture(const std::string& name, int index);
-	unsigned int GetHLSkyboxTexture(const std::string& name, int index);
-	unsigned int GetHLHDSkyboxTexture(const std::string& name, int index);
 
 	const char* GetSkyboxNameFromMapName(const std::string& mapName);
 	const char* GetCurrentSkyboxName();
@@ -42,7 +38,6 @@ private:
 
 	static const std::unordered_map<std::string, std::string> m_mapSkyboxNames;
 	static const std::array<std::string, 6> m_vrMapSkyboxIndices;
-	static const std::array<std::string, 6> m_hlMapSkyboxIndices;
 
 	bool m_isInitialized{ false };
 

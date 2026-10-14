@@ -96,7 +96,6 @@ HL1_OBJS = \
 	$(HL1_OBJ_DIR)/vr/VRInputWeaponsHandlers.o \
 	$(HL1_OBJ_DIR)/vr/VRSettings.o \
 	$(HL1_OBJ_DIR)/vr/VRGameFunctions.o \
-	$(HL1_OBJ_DIR)/vr/VRSound.o \
 	$(HL1_OBJ_DIR)/vr/VRSteamworksManager.o \
 	$(HL1_OBJ_DIR)/vr/VRModExtraDataCacheHook.o \
 	$(HL1_OBJ_DIR)/vr/VRDebugPhysicsRenderer.o \

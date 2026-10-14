@@ -139,18 +139,9 @@ private:
 
 	std::vector<StudioHitBox> m_hitboxes;
 	std::vector<Vector> m_attachments;
-	string_t m_hitboxModelName{ 0 };
-	int m_hitboxSequence{ 0 };
-	float m_hitboxFrame{ 0.f };
-	float m_hitboxLastUpdateTime{ 0.f };
-	bool m_hitboxMirrored{ false };
 	inline void ClearHitBoxes()
 	{
 		m_hitboxes.clear();
-		m_hitboxModelName = 0;
-		m_hitboxSequence = 0;
-		m_hitboxFrame = 0.f;
-		m_hitboxLastUpdateTime = 0.f;
 		m_radius = 0.f;
 		m_attachments.clear();
 	}

@@ -51,22 +51,6 @@ namespace
 		{"models/v_shotgun.mdl", "models/animov/v_shotgun.mdl"},
 		{"models/v_squeak.mdl", "models/animov/v_squeak.mdl"},
 		{"models/v_tripmine.mdl", "models/animov/v_tripmine.mdl"},
-
-		{"models/SD/v_357.mdl", "models/SD/animov/v_357.mdl"},
-		{"models/SD/v_9mmar.mdl", "models/SD/animov/v_9mmar.mdl"},
-		{"models/SD/v_9mmhandgun.mdl", "models/SD/animov/v_9mmhandgun.mdl"},
-		{"models/SD/v_crossbow.mdl", "models/SD/animov/v_crossbow.mdl"},
-		{"models/SD/v_crowbar.mdl", "models/SD/animov/v_crowbar.mdl"},
-		{"models/SD/v_egon.mdl", "models/SD/animov/v_egon.mdl"},
-		{"models/SD/v_gauss.mdl", "models/SD/animov/v_gauss.mdl"},
-		{"models/SD/v_grenade.mdl", "models/SD/animov/v_grenade.mdl"},
-		{"models/SD/v_hgun.mdl", "models/SD/animov/v_hgun.mdl"},
-		{"models/SD/v_rpg.mdl", "models/SD/animov/v_rpg.mdl"},
-		{"models/SD/v_satchel.mdl", "models/SD/animov/v_satchel.mdl"},
-		{"models/SD/v_satchel_radio.mdl", "models/SD/animov/v_satchel_radio.mdl"},
-		{"models/SD/v_shotgun.mdl", "models/SD/animov/v_shotgun.mdl"},
-		{"models/SD/v_squeak.mdl", "models/SD/animov/v_squeak.mdl"},
-		{"models/SD/v_tripmine.mdl", "models/SD/animov/v_tripmine.mdl"},
 	};
 
 	string_t GetAnimatedWeaponModelName(string_t modelName)
@@ -373,23 +357,10 @@ void VRController::UpdateHitBoxes()
 		return;
 	}
 
-	// for more accurate weapon handling we should update every frame
-#if 0
-	if (m_hitboxes.size() == numhitboxes
-		&& FStrEq(STRING(m_hitboxModelName), STRING(pModel->pev->model))
-		&& m_hitboxFrame == pModel->pev->frame
-		&& m_hitboxSequence == pModel->pev->sequence
-		&& m_hitboxMirrored == m_isMirrored
-		&& std::fabs(m_hitboxLastUpdateTime - gpGlobals->time) < 0.1f)
-		return;
-#endif
-
 	int numattachments = GetNumAttachments(pmodel);
 
 	m_hitboxes.clear();
 	m_attachments.clear();
-
-	m_radius = 0.f;
 
 	float radiusSquared = 0.f;
 	std::vector<StudioHitBox> studiohitboxes;
@@ -401,7 +372,6 @@ void VRController::UpdateHitBoxes()
 		for (const auto& studiohitbox : studiohitboxes)
 		{
 			float distance = (studiohitbox.abscenter - GetPosition()).Length();
-			float radius = (studiohitbox.maxs - studiohitbox.mins).Length();
 
 			// Skip hitboxes too far away
 			if (distance > 512.f)
@@ -423,11 +393,6 @@ void VRController::UpdateHitBoxes()
 		}
 	}
 	m_radius = std::sqrt(radiusSquared);
-	m_hitboxModelName = pModel->pev->model;
-	m_hitboxFrame = pModel->pev->frame;
-	m_hitboxSequence = pModel->pev->sequence;
-	m_hitboxMirrored = m_isMirrored;
-	m_hitboxLastUpdateTime = gpGlobals->time;
 }
 
 CVRControllerModel* VRController::GetModel() const

@@ -71,6 +71,25 @@ public:
 	{
 		return m_vrMenuClickStatus;
 	}
+	// Pointer (tip) pose of a hand in standing tracking space, this is where SteamVR aims its own pointer from
+	inline void SetPointerPose(bool rightHand, const vr::InputPoseActionData_t& data)
+	{
+		const int index = rightHand ? 1 : 0;
+		m_hasPointerPose[index] = data.bActive && data.pose.bPoseIsValid;
+		if (m_hasPointerPose[index])
+		{
+			m_pointerPose[index] = data.pose.mDeviceToAbsoluteTracking;
+		}
+	}
+	inline bool GetPointerPose(bool rightHand, vr::HmdMatrix34_t& pose) const
+	{
+		const int index = rightHand ? 1 : 0;
+		if (m_hasPointerPose[index])
+		{
+			pose = m_pointerPose[index];
+		}
+		return m_hasPointerPose[index];
+	}
 	inline bool IsFiring(vr::ETrackedControllerRole controllerRole) const
 	{
 		const auto& state = m_isControllerFiring.find(controllerRole);
@@ -97,7 +116,6 @@ public:
 
 	void SetFingerSkeletalData(vr::ETrackedControllerRole controllerRole, const float fingerCurl[vr::VRFinger_Count], const float fingerSplay[vr::VRFingerSplay_Count], const vr::VRBoneTransform_t* bones, bool hasFingers, bool hasBones);
 	bool HasFingerDataForHand(vr::ETrackedControllerRole controllerRole, float fingerCurl[5]) const;
-	bool HasSkeletalDataForHand(vr::ETrackedControllerRole controllerRole) const;
 	bool HasSkeletalDataForHand(vr::ETrackedControllerRole controllerRole, VRQuaternion* bone_quaternions, Vector* bone_positions) const;
 
 	void ExecuteCustomAction(const std::string& action);
@@ -170,7 +188,6 @@ private:
 
 	vr::VROverlayHandle_t m_hlMenu{ vr::k_ulOverlayHandleInvalid };
 	bool m_isHLMenuShown{ false };
-	bool m_vrMenuKeyboardOpen{ false };
 	void CreateHLMenu();
 	void HandleHLMenuInput();
 
@@ -187,6 +204,8 @@ private:
 	bool m_isVRDucking{ false };
 	bool m_letGoOffLadder{ false };
 	bool m_vrMenuClickStatus{ false };
+	vr::HmdMatrix34_t m_pointerPose[2]{};
+	bool m_hasPointerPose[2]{};
 
 	std::unordered_map<std::string, ActionSet> m_actionSets;
 	std::unordered_map<std::string, CustomAction> m_customActions;

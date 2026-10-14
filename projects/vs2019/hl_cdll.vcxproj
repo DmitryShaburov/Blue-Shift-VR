@@ -196,7 +196,6 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\cl_dll\vr\VRInputWeaponsHandlers.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRSettings.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRGameFunctions.cpp" />
-    <ClCompile Include="..\..\cl_dll\vr\VRSound.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRSteamworksManager.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRModExtraDataCacheHook.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRDebugPhysicsRenderer.cpp" />
@@ -280,14 +279,12 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClInclude Include="..\..\cl_dll\vr\lodepng.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRRandom.h" />
     <ClInclude Include="..\..\cl_dll\vr\VROpenGLInterceptor.h" />
-    <ClInclude Include="..\..\cl_dll\vr\IGameConsole.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRInput.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRInputAction.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRInputHandlers.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRSettings.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRAchievements.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRGameFunctions.h" />
-    <ClInclude Include="..\..\cl_dll\vr\VRSound.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRSteamworksManager.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRRenderer.h" />
     <ClInclude Include="..\..\cl_dll\vr\Vectors.h" />

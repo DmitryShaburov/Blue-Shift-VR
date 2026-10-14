@@ -93,10 +93,10 @@ typedef struct
 // Engine hands this to DLLs for functionality callbacks
 typedef struct enginefuncs_s
 {
-	int (*pfnPrecacheModel3)(const char* s); // BSVR: renamed from pfnPrecacheModel, stock name is now an interceptor (see util.h / VRSDModelHelper.cpp)
+	int (*pfnPrecacheModel3)(const char* s); // BSVR: renamed from pfnPrecacheModel, stock name is now an interceptor (see util.h / VRAnimatedModelHelper.cpp)
 	int (*pfnPrecacheSound)(const char* s);
-	void (*pfnSetModel2)(edict_t* e, const char* m); // BSVR: renamed from pfnSetModel
-	int (*pfnModelIndex2)(const char* m); // BSVR: renamed from pfnModelIndex
+	void (*pfnSetModel)(edict_t* e, const char* m);
+	int (*pfnModelIndex)(const char* m);
 	int (*pfnModelFrames)(int modelIndex);
 	void (*pfnSetSize)(edict_t* e, const float* rgflMin, const float* rgflMax);
 	void (*pfnChangeLevel)(const char* s1, const char* s2);

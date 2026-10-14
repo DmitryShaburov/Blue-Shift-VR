@@ -17,15 +17,15 @@ public:
 	void UpdateGUI(int guiWidth, int guiHeight, bool isInGame);
 	void ShutDown();
 
+	// Go back to the main page of the menu
+	void ResetMenu();
+
 	void UpdateControllerState(VRControllerState& state);
 
 private:
 	void UpdateVRCursor();
 	void UpdateGUIElements(bool isInGame);
 	void DrawGUI();
-
-	void VerticalSpacer(int height);
-	void HorizontalSpacer(int width);
 
 	int m_guiWidth{ 2048 };
 	int m_guiHeight{ 2048 };

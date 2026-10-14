@@ -390,9 +390,6 @@
     <ClCompile Include="..\..\cl_dll\vr\VRGameFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\cl_dll\vr\VRSound.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRSteamworksManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -740,9 +737,6 @@
     <ClInclude Include="..\..\cl_dll\vr\lodepng.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\cl_dll\vr\IGameConsole.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\cl_dll\vr\VRInput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -759,9 +753,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\cl_dll\vr\VRGameFunctions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\cl_dll\vr\VRSound.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\cl_dll\vr\VRSteamworksManager.h">

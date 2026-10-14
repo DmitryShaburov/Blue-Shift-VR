@@ -43,11 +43,6 @@ void VRTextureHelper::Init()
 	m_isInitialized = true;
 }
 
-unsigned int VRTextureHelper::GetHDGameTexture(const std::string& name)
-{
-	return GetTexture("game/" + name + ".png");
-}
-
 unsigned int VRTextureHelper::GetVRSkyboxTexture(const std::string& name, int index)
 {
 	unsigned int texture = GetTexture("skybox/" + name + m_vrMapSkyboxIndices[index] + ".png");
@@ -55,39 +50,6 @@ unsigned int VRTextureHelper::GetVRSkyboxTexture(const std::string& name, int in
 	{
 		gEngfuncs.Con_DPrintf("Skybox texture %s not found, falling back to desert.\n", (name + m_vrMapSkyboxIndices[index]).data());
 		texture = GetTexture("skybox/desert" + m_vrMapSkyboxIndices[index] + ".png");
-	}
-	return texture;
-}
-
-unsigned int VRTextureHelper::GetVRHDSkyboxTexture(const std::string& name, int index)
-{
-	unsigned int texture = GetTexture("skybox/hd/" + name + m_vrMapSkyboxIndices[index] + ".png");
-	if (!texture)
-	{
-		gEngfuncs.Con_DPrintf("HD skybox texture %s not found, falling back to SD.\n", (name + m_vrMapSkyboxIndices[index]).data());
-		texture = GetVRSkyboxTexture(name, index);
-	}
-	return texture;
-}
-
-unsigned int VRTextureHelper::GetHLSkyboxTexture(const std::string& name, int index)
-{
-	unsigned int texture = GetTexture("skybox/" + name + m_hlMapSkyboxIndices[index] + ".png");
-	if (!texture && name != "desert")
-	{
-		gEngfuncs.Con_DPrintf("Skybox texture %s not found, falling back to desert.\n", (name + m_hlMapSkyboxIndices[index]).data());
-		texture = GetTexture("skybox/desert" + m_hlMapSkyboxIndices[index] + ".png");
-	}
-	return texture;
-}
-
-unsigned int VRTextureHelper::GetHLHDSkyboxTexture(const std::string& name, int index)
-{
-	unsigned int texture = GetTexture("skybox/hd/" + name + m_hlMapSkyboxIndices[index] + ".png");
-	if (!texture)
-	{
-		gEngfuncs.Con_DPrintf("HD skybox texture %s not found, falling back to SD.\n", (name + m_hlMapSkyboxIndices[index]).data());
-		texture = GetHLSkyboxTexture(name, index);
 	}
 	return texture;
 }
@@ -261,111 +223,42 @@ const std::array<std::string, 6> VRTextureHelper::m_vrMapSkyboxIndices{
 	 {"dn"}}
 };
 
-// order of skybox as used by Half-Life
-const std::array<std::string, 6> VRTextureHelper::m_hlMapSkyboxIndices{
-	{{"rt"},
-	 {"bk"},
-	 {"lf"},
-	 {"ft"},
-	 {"up"},
-	 {"dn"}}
-};
-
 const std::unordered_map<std::string, std::string> VRTextureHelper::m_mapSkyboxNames{
-	{{"maps/c0a0.bsp", "desert"},
-	 {"maps/c0a0a.bsp", "desert"},
-	 {"maps/c0a0b.bsp", "2desert"},
-	 {"maps/c0a0c.bsp", "desert"},
-	 {"maps/c0a0d.bsp", "desert"},
-	 {"maps/c0a0e.bsp", "desert"},
-	 {"maps/c1a0.bsp", "desert"},
-	 {"maps/c1a0a.bsp", "desert"},
-	 {"maps/c1a0b.bsp", "desert"},
-	 {"maps/c1a0c.bsp", "desert"},
-	 {"maps/c1a0d.bsp", "desert"},
-	 {"maps/c1a0e.bsp", "xen9"},
-	 {"maps/c1a1.bsp", "desert"},
-	 {"maps/c1a1a.bsp", "desert"},
-	 {"maps/c1a1b.bsp", "desert"},
-	 {"maps/c1a1c.bsp", "desert"},
-	 {"maps/c1a1d.bsp", "desert"},
-	 {"maps/c1a1f.bsp", "desert"},
-	 {"maps/c1a2.bsp", "desert"},
-	 {"maps/c1a2a.bsp", "desert"},
-	 {"maps/c1a2b.bsp", "desert"},
-	 {"maps/c1a2c.bsp", "desert"},
-	 {"maps/c1a2d.bsp", "desert"},
-	 {"maps/c1a3.bsp", "desert"},
-	 {"maps/c1a3a.bsp", "desert"},
-	 {"maps/c1a3b.bsp", "dusk"},
-	 {"maps/c1a3c.bsp", "dusk"},
-	 {"maps/c1a3d.bsp", "desert"},
-	 {"maps/c1a4.bsp", "desert"},
-	 {"maps/c1a4b.bsp", "desert"},
-	 {"maps/c1a4d.bsp", "desert"},
-	 {"maps/c1a4e.bsp", "desert"},
-	 {"maps/c1a4f.bsp", "desert"},
-	 {"maps/c1a4g.bsp", "desert"},
-	 {"maps/c1a4i.bsp", "desert"},
-	 {"maps/c1a4j.bsp", "desert"},
-	 {"maps/c1a4k.bsp", "desert"},
-	 {"maps/c2a1.bsp", "desert"},
-	 {"maps/c2a1a.bsp", "desert"},
-	 {"maps/c2a1b.bsp", "desert"},
-	 {"maps/c2a2.bsp", "night"},
-	 {"maps/c2a2a.bsp", "day"},
-	 {"maps/c2a2b1.bsp", "desert"},
-	 {"maps/c2a2b2.bsp", "desert"},
-	 {"maps/c2a2c.bsp", "desert"},
-	 {"maps/c2a2d.bsp", "desert"},
-	 {"maps/c2a2e.bsp", "night"},
-	 {"maps/c2a2f.bsp", "desert"},
-	 {"maps/c2a2g.bsp", "night"},
-	 {"maps/c2a2h.bsp", "night"},
-	 {"maps/c2a3.bsp", "desert"},
-	 {"maps/c2a3a.bsp", "desert"},
-	 {"maps/c2a3b.bsp", "desert"},
-	 {"maps/c2a3c.bsp", "dawn"},
-	 {"maps/c2a3d.bsp", "2desert"},
-	 {"maps/c2a3e.bsp", "desert"},
-	 {"maps/c2a4.bsp", "morning"},
-	 {"maps/c2a4a.bsp", "desert"},
-	 {"maps/c2a4b.bsp", "desert"},
-	 {"maps/c2a4c.bsp", "desert"},
-	 {"maps/c2a4d.bsp", "desert"},
-	 {"maps/c2a4e.bsp", "desert"},
-	 {"maps/c2a4f.bsp", "desert"},
-	 {"maps/c2a4g.bsp", "desert"},
-	 {"maps/c2a5.bsp", "desert"},
-	 {"maps/c2a5a.bsp", "cliff"},
-	 {"maps/c2a5b.bsp", "desert"},
-	 {"maps/c2a5c.bsp", "desert"},
-	 {"maps/c2a5d.bsp", "desert"},
-	 {"maps/c2a5e.bsp", "desert"},
-	 {"maps/c2a5f.bsp", "desert"},
-	 {"maps/c2a5g.bsp", "desert"},
-	 {"maps/c2a5w.bsp", "desert"},
-	 {"maps/c2a5x.bsp", "desert"},
-	 {"maps/c3a1.bsp", "desert"},
-	 {"maps/c3a1a.bsp", "desert"},
-	 {"maps/c3a1b.bsp", "desert"},
-	 {"maps/c3a2.bsp", "desert"},
-	 {"maps/c3a2a.bsp", "desert"},
-	 {"maps/c3a2b.bsp", "desert"},
-	 {"maps/c3a2c.bsp", "desert"},
-	 {"maps/c3a2d.bsp", "desert"},
-	 {"maps/c3a2e.bsp", "desert"},
-	 {"maps/c3a2f.bsp", "desert"},
-	 {"maps/c4a1.bsp", "neb7"},
-	 {"maps/c4a1a.bsp", "neb7"},
-	 {"maps/c4a1b.bsp", "alien1"},
-	 {"maps/c4a1c.bsp", "xen8"},
-	 {"maps/c4a1d.bsp", "xen8"},
-	 {"maps/c4a1e.bsp", "xen8"},
-	 {"maps/c4a1f.bsp", "black"},
-	 {"maps/c4a2.bsp", "neb6"},
-	 {"maps/c4a2a.bsp", "neb6"},
-	 {"maps/c4a2b.bsp", "neb6"},
-	 {"maps/c4a3.bsp", "black"},
-	 {"maps/c5a1.bsp", "xen10"}}
+	{{"maps/ba_canal1.bsp", "desert"},
+	 {"maps/ba_canal1b.bsp", "desert"},
+	 {"maps/ba_canal2.bsp", "desert"},
+	 {"maps/ba_canal3.bsp", "desert"},
+	 {"maps/ba_elevator.bsp", "desert"},
+	 {"maps/ba_hazard1.bsp", "desert"},
+	 {"maps/ba_hazard2.bsp", "desert"},
+	 {"maps/ba_hazard3.bsp", "desert"},
+	 {"maps/ba_hazard4.bsp", "desert"},
+	 {"maps/ba_hazard5.bsp", "desert"},
+	 {"maps/ba_hazard6.bsp", "desert"},
+	 {"maps/ba_maint.bsp", "desert"},
+	 {"maps/ba_outro.bsp", "2desert"},
+	 {"maps/ba_power1.bsp", "desert"},
+	 {"maps/ba_power2.bsp", "desert"},
+	 {"maps/ba_security1.bsp", "desert"},
+	 {"maps/ba_security2.bsp", "desert"},
+	 {"maps/ba_teleport1.bsp", "desert"},
+	 {"maps/ba_teleport2.bsp", "desert"},
+	 {"maps/ba_tram1.bsp", "desert"},
+	 {"maps/ba_tram2.bsp", "desert"},
+	 {"maps/ba_tram3.bsp", "desert"},
+	 {"maps/ba_xen1.bsp", "alien1"},
+	 {"maps/ba_xen2.bsp", "alien1"},
+	 {"maps/ba_xen3.bsp", "alien1"},
+	 {"maps/ba_xen4.bsp", "alien1"},
+	 {"maps/ba_xen5.bsp", "alien1"},
+	 {"maps/ba_xen6.bsp", "alien1"},
+	 {"maps/ba_yard1.bsp", "desert"},
+	 {"maps/ba_yard2.bsp", "desert"},
+	 {"maps/ba_yard3.bsp", "desert"},
+	 {"maps/ba_yard3a.bsp", "desert"},
+	 {"maps/ba_yard3b.bsp", "desert"},
+	 {"maps/ba_yard4.bsp", "desert"},
+	 {"maps/ba_yard4a.bsp", "desert"},
+	 {"maps/ba_yard5.bsp", "desert"},
+	 {"maps/ba_yard5a.bsp", "desert"}}
 };

@@ -417,7 +417,7 @@
     <ClCompile Include="..\..\dlls\vr\VRRotatableEnt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\dlls\vr\VRSDModelHelper.cpp">
+    <ClCompile Include="..\..\dlls\vr\VRAnimatedModelHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

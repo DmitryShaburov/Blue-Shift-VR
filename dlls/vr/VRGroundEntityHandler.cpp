@@ -26,13 +26,12 @@ namespace
 		"func_door_rotating",
 		//"func_rotating"
 	};
-	const std::unordered_set<std::string> IntroTrainRideMapNames =
-	{
-		"maps/c0a0.bsp",
-		"maps/c0a0a.bsp",
-		"maps/c0a0b.bsp",
-		"maps/c0a0c.bsp",
-		"maps/c0a0d.bsp" };
+	const std::unordered_map<std::string, const char*> IntroTrainRideMapNames = {};
+	// {
+	// 	{ "maps/ba_tram1.bsp", "barney_tram" },
+	// 	{ "maps/ba_tram2.bsp", "barney_tram" },
+	// 	{ "maps/ba_tram3.bsp", "barney_tram" },
+	// 	{ "maps/ba_elevator.bsp", "elevator" } };
 
 	// BSVR start
 	// Brush entities that must never be used as ground entity on specific maps.
@@ -82,13 +81,14 @@ void VRGroundEntityHandler::DetectAndSetGroundEntity()
 
 	// Take train if conditions are met
 	std::string mapName{ STRING(INDEXENT(0)->v.model) };
-	if (IntroTrainRideMapNames.count(mapName) != 0)
+	auto introTrain = IntroTrainRideMapNames.find(mapName);
+	if (introTrain != IntroTrainRideMapNames.end())
 	{
-		pentground = FIND_ENTITY_BY_STRING(nullptr, "targetname", "train");
-		if (!FNullEnt(pentground) && FClassnameIs(pentground, "func_tracktrain"))
+		pentground = FIND_ENTITY_BY_STRING(nullptr, "targetname", introTrain->second);
+		if (!FNullEnt(pentground) && (FClassnameIs(pentground, "func_tracktrain") || FClassnameIs(pentground, "func_train")))
 		{
 			CFuncTrackTrain* pTrain = CBaseEntity::SafeInstance<CFuncTrackTrain>(pentground);
-			if (pTrain->m_ppath) // only do this if the train is actually on a path
+			if (!pTrain || pTrain->m_ppath) // only do this if the train is actually on a path (func_train has none)
 			{
 				if (!UTIL_PointInsideBBox(m_pPlayer->pev->origin, pentground->v.absmin, pentground->v.absmax) || m_pPlayer->pev->origin.z < (pentground->v.origin.z + pentground->v.mins.z))
 				{

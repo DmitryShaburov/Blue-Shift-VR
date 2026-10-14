@@ -29,6 +29,7 @@ public:
 	~VRHelper();
 
 	void Init();
+	void SetMaxFps();
 
 	enum class VRSceneMode
 	{

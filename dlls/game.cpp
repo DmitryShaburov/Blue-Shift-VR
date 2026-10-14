@@ -929,10 +929,6 @@ void GameDLLInit()
 
 	InitMapLoadingUtils();
 
-	// BSVR start
-	gSDModelsEnabled = CVAR_GET_FLOAT("vr_use_hd_models") == 0.f;
-	// BSVR end
-
 	SERVER_COMMAND("exec skill.cfg\n");
 
 	// BSVR start

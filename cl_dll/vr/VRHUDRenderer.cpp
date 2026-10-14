@@ -407,7 +407,7 @@ void VRRenderer::InterceptSPR_DrawAdditive(int frame, int x, int y, const Rect* 
 	int texture = 0;
 
 	// "sprites/640hud7.spr" -> "hud/640hud7.png"
-	std::string hudTextureName = std::regex_replace(pSpriteModel->name, std::regex{ "^sprites/([a-z0-9_]+)\\.spr$" }, m_hdTexturesEnabled ? "/hud/HD/$1.png" : "/hud/$1.png");
+	std::string hudTextureName = std::regex_replace(pSpriteModel->name, std::regex{ "^sprites/([a-z0-9_]+)\\.spr$" }, "/hud/$1.png");
 	if (hudTextureName.find("320_train") != std::string::npos)
 	{
 		hudTextureName = std::regex_replace(hudTextureName, std::regex{ "^(.+)320_train(.+)$" }, "$1640_train$2");

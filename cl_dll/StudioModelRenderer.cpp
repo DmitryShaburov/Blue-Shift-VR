@@ -1612,18 +1612,6 @@ void CStudioModelRenderer::StudioDrawVRHand(const ControllerModelData& controlle
 {
 	std::string controllermodelname = controllerModelData.controller.modelname;
 
-	// TODO: Skeleton hand models not properly working yet
-#if 0
-	if (gVRRenderer.IsHandModel(controllermodelname.c_str()) && gVRRenderer.HasSkeletalDataForHand(mirrored))
-	{
-		std::string skeletalModel = gVRRenderer.HandModelToHandSkeletalModel(controllermodelname.c_str());
-		if (std::filesystem::exists(GetPathFor("/" + skeletalModel)))
-		{
-			controllermodelname = skeletalModel;
-		}
-	}
-#endif
-
 	if (DrawVREntity(controllermodelname.c_str(),
 		origin, angles,
 		controllerModelData.controller.body, controllerModelData.controller.skin, controllerModelData.controller.scale,

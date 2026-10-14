@@ -1101,8 +1101,6 @@ void StartFrame()
 		return;
 	}
 
-	UTIL_UpdateSDModels();
-
 	VRPhysicsHelper::Instance().StartFrame();
 
 	// BSVR end

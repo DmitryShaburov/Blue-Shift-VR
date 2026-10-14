@@ -39,6 +39,7 @@ static class Assets
 
     // Embedded resource "payload/dlls/hl.dll" goes to "<mod>/dlls/hl.dll", and so on.
     // "halflife/openvr_api.dll" goes next to hl.exe, where Windows resolves client.dll's imports.
+    // "halflife/bsvr_hd/models/v_357.mdl" goes to the HD game folder next to the mod, "<Half-Life>/bsvr_hd/models/v_357.mdl".
     static void ExtractPayload(string modDir, string halfLifeDir)
     {
         var assembly = Assembly.GetExecutingAssembly();

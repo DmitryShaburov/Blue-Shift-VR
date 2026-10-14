@@ -1,6 +1,7 @@
 
 #include <string>
 #include <algorithm>
+#include <cmath>
 #include <unordered_set>
 #include <mutex>
 #include <thread>
@@ -135,7 +136,6 @@ VRHelper::~VRHelper()
 
 // TODO: Make member
 vr::Texture_t m_skyboxTextures[6]{ 0 };
-vr::Texture_t m_skyboxHDTextures[6]{ 0 };
 
 constexpr const float MAGIC_HL_TO_VR_FACTOR = 3.75f;
 constexpr const float MAGIC_VR_TO_HL_FACTOR = 10.f;
@@ -384,6 +384,23 @@ std::string GetHLVRModVersion()
 	return "Unknown";
 }
 
+// The physics break above 90 fps, so the frame rate is the refresh rate of the headset, but never more
+// than 90. It is 90 if the refresh rate can't be read. (Changing the refresh rate needs a SteamVR restart.)
+// This runs on the first frame and not in Init, so that the engine's own startup config (config.cfg) can't override it.
+void VRHelper::SetMaxFps()
+{
+	float maxFps = 90.f;
+	vr::ETrackedPropertyError propertyError = vr::TrackedProp_Success;
+	const float headsetFrequency = vrSystem->GetFloatTrackedDeviceProperty(vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_DisplayFrequency_Float, &propertyError);
+	if (propertyError == vr::TrackedProp_Success && headsetFrequency > 0.f)
+	{
+		maxFps = (std::min)(90.f, std::round(headsetFrequency));
+	}
+	gEngfuncs.Con_Printf("Headset refresh rate: %.0f Hz (property error %d), setting fps_max %d\n", headsetFrequency, (int)propertyError, static_cast<int>(maxFps));
+	gEngfuncs.pfnClientCmd(("fps_max " + std::to_string(static_cast<int>(maxFps))).c_str());
+	gEngfuncs.pfnClientCmd("fps_override 1");
+}
+
 void VRHelper::Init()
 {
 	std::string version = GetHLVRModVersion();
@@ -455,24 +472,9 @@ void VRHelper::Init()
 	// Set skybox
 	SetSkybox("desert");
 
-// 	extern bool VRHookSoundFunctions();
-// 	if (VRHookSoundFunctions())
-// 	{
-// 		if (CVAR_GET_FLOAT("vr_use_fmod") != 0.f)
-// 		{
-// 			extern bool VRInitFMOD();
-// 			VRInitFMOD();
-// 		}
-// 	}
-
 	if (!VREngineInterceptor::HookEngineFunctions())
 	{
 		gEngfuncs.Con_DPrintf("Warning: Failed to intercept game engine functions. Visual effects will look... weird.\n");
-	}
-
-	if (!VREngineInterceptor::HookIOFunctions())
-	{
-		gEngfuncs.Con_DPrintf("Warning: Failed to intercept system IO functions. Levelchanges might cause crashes.\n");
 	}
 }
 
@@ -1829,20 +1831,9 @@ void VRHelper::SetSkybox(const char* name)
 		m_skyboxTextures[i].eType = vr::TextureType_OpenGL;
 		m_skyboxTextures[i].eColorSpace = vr::ColorSpace_Auto;
 		m_skyboxTextures[i].handle = reinterpret_cast<void*>(VRTextureHelper::Instance().GetVRSkyboxTexture(name, i));
-
-		m_skyboxHDTextures[i].eType = vr::TextureType_OpenGL;
-		m_skyboxHDTextures[i].eColorSpace = vr::ColorSpace_Auto;
-		m_skyboxHDTextures[i].handle = reinterpret_cast<void*>(VRTextureHelper::Instance().GetVRHDSkyboxTexture(name, i));
 	}
 
-	if (CVAR_GET_FLOAT("vr_hd_textures_enabled") != 0.f)
-	{
-		vrCompositor->SetSkyboxOverride(m_skyboxHDTextures, 6);
-	}
-	else
-	{
-		vrCompositor->SetSkyboxOverride(m_skyboxTextures, 6);
-	}
+	vrCompositor->SetSkyboxOverride(m_skyboxTextures, 6);
 }
 
 void VRHelper::SetSkyboxFromMap(const char* mapName)

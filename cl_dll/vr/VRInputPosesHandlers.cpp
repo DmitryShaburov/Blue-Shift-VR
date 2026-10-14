@@ -42,6 +42,7 @@ namespace VR
 
 		void Poses::HandleHandPointerLeft(const vr::InputPoseActionData_t& data, const std::string& action)
 		{
+			g_vrInput.SetPointerPose(false, data);
 			if (data.bActive)
 			{
 				gVRRenderer.GetHelper()->SetPose(VRPoseType::LEFT_POINTER, data.pose, g_vrInput.GetRole(data.activeOrigin));
@@ -54,6 +55,7 @@ namespace VR
 
 		void Poses::HandleHandPointerRight(const vr::InputPoseActionData_t& data, const std::string& action)
 		{
+			g_vrInput.SetPointerPose(true, data);
 			if (data.bActive)
 			{
 				gVRRenderer.GetHelper()->SetPose(VRPoseType::RIGHT_POINTER, data.pose, g_vrInput.GetRole(data.activeOrigin));

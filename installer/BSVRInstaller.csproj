@@ -22,6 +22,11 @@
   -->
   <ItemGroup>
     <EmbeddedResource Include="payload\**" LogicalName="payload/%(RecursiveDir)%(Filename)%(Extension)" />
+    <!--
+      The HD weapon view models go to a separate game folder, "<Half-Life>/bsvr_hd/", which the engine puts ahead of
+      "bsvr" when HD models are on. The SD set is in payload/models.
+    -->
+    <EmbeddedResource Include="payload_hd\**" LogicalName="halflife/bsvr_hd/%(RecursiveDir)%(Filename)%(Extension)" />
     <EmbeddedResource Include="..\network\delta.lst" LogicalName="payload/delta.lst" />
     <EmbeddedResource Include="..\LICENSE" LogicalName="payload/LICENSE" />
     <EmbeddedResource Include="..\THIRD_PARTY_LICENSES\**" LogicalName="payload/THIRD_PARTY_LICENSES/%(RecursiveDir)%(Filename)%(Extension)" />

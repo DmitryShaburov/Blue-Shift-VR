@@ -529,25 +529,19 @@ float TEXTURETYPE_PlaySound(TraceResult* ptr, Vector vecSrc, Vector vecEnd, int 
 void EMIT_SOUND_DYN(edict_t* entity, int channel, const char* sample, float volume, float attenuation,
 	int flags, int pitch);
 
-// BSVR start - Half-Life-VR intercepts the model engine calls to support SD model variants.
-// The raw engine calls are PRECACHE_MODEL3 / PRECACHE_GENERIC3 / SET_MODEL2 / MODEL_INDEX2 (enginecallback.h).
+// BSVR start - Half-Life-VR intercepts the model precache engine calls to precache the animated weapon models too.
+// The raw engine calls are PRECACHE_MODEL3 / PRECACHE_GENERIC3 (enginecallback.h).
 #ifdef CLIENT_DLL
 inline int PRECACHE_MODEL(const char* s) { return PRECACHE_MODEL3(s); }
 inline int PRECACHE_GENERIC(const char* s) { return PRECACHE_GENERIC3(s); }
 inline int PRECACHE_MODEL2(const char* s) { return PRECACHE_MODEL3(s); }
 inline int PRECACHE_GENERIC2(const char* s) { return PRECACHE_GENERIC3(s); }
-inline void SET_MODEL(edict_t* e, const char* m) { SET_MODEL2(e, m); }
-inline int MODEL_INDEX(const char* m) { return MODEL_INDEX2(m); }
 #else
-// Implemented in vr/VRSDModelHelper.cpp
+// Implemented in vr/VRAnimatedModelHelper.cpp
 int PRECACHE_MODEL(const char* s);
 int PRECACHE_GENERIC(const char* s);
 int PRECACHE_MODEL2(const char* s);
 int PRECACHE_GENERIC2(const char* s);
-void SET_MODEL(edict_t* e, const char* m);
-int MODEL_INDEX(const char* m);
-extern bool gSDModelsEnabled;
-void UTIL_UpdateSDModels();
 #endif
 // BSVR end
 

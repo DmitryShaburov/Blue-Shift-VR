@@ -48,7 +48,6 @@ public:
 
 	void DrawTransparent();
 	void DrawNormal();
-	void DrawHDSkyBox();
 
 	void InterceptHUDRedraw(float time, int intermission);
 
@@ -117,9 +116,7 @@ public:
 
 	bool IsHandModel(const char* modelname) const;
 	bool IsHandSkeletalModel(const char* modelname) const;
-	const char* HandModelToHandSkeletalModel(const char* modelname) const;
 	bool HasFingerDataForHand(bool isMirrored, float fingerCurl[5]) const;
-	bool HasSkeletalDataForHand(bool isMirrored) const;
 	bool HasSkeletalDataForHand(bool isMirrored, VRQuaternion* bone_quaternions, Vector* bone_positions) const;
 
 	bool GetLeftControllerAttachment(Vector& out, int attachment);
@@ -135,13 +132,8 @@ private:
 	int m_numRightControllerAttachments{ 0 };
 
 	struct model_s* m_currentMapModel{ nullptr };
-	bool m_hdTexturesEnabled{ false };
-	void CheckAndIfNecessaryReplaceHDTextures();
-	void ReplaceAllTexturesWithHDVersion(struct cl_entity_s* ent, bool enableHD);
-	void CheckAndIfNecessaryReplaceHDTextures(struct cl_entity_s* ent);
-
+	void UpdateSkyboxForMap();
 	void RenderVRHandsAndHUDAndStuff();
-
 	void DebugRenderPhysicsPolygons();
 
 	bool m_fIsOnlyClientDraw = false;
