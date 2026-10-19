@@ -408,6 +408,9 @@
     <ClCompile Include="..\..\cl_dll\vr\VRHUDRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRWeaponWheel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRTextureHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -537,6 +540,9 @@
       <Filter>VR\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\cl_dll\vr\VRRenderer.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\VRWeaponWheel.h">
       <Filter>VR\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\cl_dll\vr\Vectors.h">

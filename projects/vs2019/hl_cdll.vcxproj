@@ -202,6 +202,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\cl_dll\vr\VRGUIRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRIntermissionAndMenuRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRHUDRenderer.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRWeaponWheel.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRTextureHelper.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\lodepng.cpp" />
@@ -287,6 +288,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClInclude Include="..\..\cl_dll\vr\VRGameFunctions.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRSteamworksManager.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRRenderer.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRWeaponWheel.h" />
     <ClInclude Include="..\..\cl_dll\vr\Vectors.h" />
     <ClInclude Include="..\..\cl_dll\vr\vr_gl.h" />
     <ClInclude Include="..\..\game_shared\vr\VRShared.h" />

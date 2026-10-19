@@ -11,6 +11,7 @@
 #include "eiface.h"
 
 #include "VRRenderer.h"
+#include "VRWeaponWheel.h"
 
 extern WEAPON* gpActiveSel;
 
@@ -109,22 +110,17 @@ namespace VR
 
 		void Weapons::HandleNext(const vr::InputDigitalActionData_t& data, const std::string& action)
 		{
-			if (data.bActive && data.bState && data.bChanged)
+			// Hold to show the weapon selection wheel
+			if (data.bActive && data.bChanged)
 			{
-				if (gHUD.m_Ammo.IsCurrentWeaponLastWeapon())
-				{
-					// Select hand when current weapon is last weapon
-					ServerCmd("weapon_barehand");
-					PlaySound("common/wpn_select.wav", 1);
-					//PlaySound("common/wpn_hudon.wav", 1);
-					gHUD.m_Ammo.m_pWeapon = nullptr;
-				}
+				if (data.bState)
+					WeaponWheel::Open();
 				else
-				{
-					gHUD.m_Ammo.UserCmd_NextWeapon();
-					gHUD.m_iKeyBits |= IN_ATTACK;
-					gHUD.m_Ammo.Think();
-				}
+					WeaponWheel::Close();
+			}
+			else if (!data.bActive)
+			{
+				WeaponWheel::Close();
 			}
 		}
 
