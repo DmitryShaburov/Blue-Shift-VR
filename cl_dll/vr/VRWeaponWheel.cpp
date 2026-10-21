@@ -23,6 +23,7 @@ namespace
 	constexpr float PI = 3.14159265358979f;
 
 	bool g_isOpen = false;
+	bool g_renderPrinted = false; // TEMP
 
 	// Fixed when the wheel is opened
 	Vector g_center;
@@ -43,15 +44,23 @@ namespace VR
 				return;
 			}
 
+			if (g_isOpen)
+				gEngfuncs.Con_Printf("WeaponWheel: Open called while already open (missed release?)\n"); // TEMP
+
 			Vector forward;
 			helper->GetViewVectors(forward, g_right, g_up);
 			g_center = helper->GetWeaponPosition();
 			g_isOpen = true;
-			gEngfuncs.Con_Printf("WeaponWheel: opened at %.1f %.1f %.1f\n", g_center.x, g_center.y, g_center.z); // TEMP
+			g_renderPrinted = false; // TEMP
+			gEngfuncs.Con_Printf("WeaponWheel: opened at %.1f %.1f %.1f, right %.2f %.2f %.2f (len %.2f), up %.2f %.2f %.2f (len %.2f)\n", // TEMP
+				g_center.x, g_center.y, g_center.z,
+				g_right.x, g_right.y, g_right.z, g_right.Length(),
+				g_up.x, g_up.y, g_up.z, g_up.Length());
 		}
 
 		void Close()
 		{
+			gEngfuncs.Con_Printf("WeaponWheel: Close (was open=%d)\n", (int)g_isOpen); // TEMP
 			g_isOpen = false;
 		}
 
@@ -67,10 +76,9 @@ namespace VR
 
 			glPushAttrib(GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT);
 
-			static bool printed = false; // TEMP
-			if (!printed)
+			if (!g_renderPrinted) // TEMP
 			{
-				printed = true;
+				g_renderPrinted = true;
 				gEngfuncs.Con_Printf("WeaponWheel: Render reached\n");
 			}
 

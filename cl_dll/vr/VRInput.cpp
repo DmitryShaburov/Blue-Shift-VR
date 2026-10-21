@@ -42,6 +42,7 @@ namespace
 #include "VRCommon.h"
 #include "VRRenderer.h"
 #include "VRHelper.h"
+#include "VRWeaponWheel.h" // TEMP
 
 VRInput g_vrInput;
 
@@ -524,6 +525,21 @@ void VRInput::HandleInput(bool isInGame, bool isInMenu)
 {
 	m_isInGame = isInGame;
 	m_isInMenu = isInMenu;
+
+	// TEMP
+	static bool s_loggedMissedRelease = false;
+	if ((!isInGame || isInMenu) && VR::WeaponWheel::IsOpen())
+	{
+		if (!s_loggedMissedRelease)
+		{
+			s_loggedMissedRelease = true;
+			gEngfuncs.Con_Printf("WeaponWheel: still open while not polling weapon input (inGame=%d inMenu=%d)\n", (int)isInGame, (int)isInMenu);
+		}
+	}
+	else
+	{
+		s_loggedMissedRelease = false;
+	}
 
 	m_vrInputThisFrame = false;
 	m_fingerSkeletalData.clear();

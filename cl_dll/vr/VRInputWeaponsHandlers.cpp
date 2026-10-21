@@ -119,10 +119,6 @@ namespace VR
 				else
 					WeaponWheel::Close();
 			}
-			else if (!data.bActive)
-			{
-				WeaponWheel::Close();
-			}
 		}
 
 		void Weapons::HandlePrevious(const vr::InputDigitalActionData_t& data, const std::string& action)
