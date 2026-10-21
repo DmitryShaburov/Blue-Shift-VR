@@ -2663,7 +2663,10 @@ physent_t* PM_Ladder2(void)
 						}
 
 						// Subtract dir from the test point and check again
-						VectorAdd(test, dir, test2);
+						// BSVR start
+						// VectorAdd(test, dir, test2); - orignal
+						VectorSubtract(test, dir, test2)
+						// BSVR end
 						if (pmove->PM_HullPointContents(hull, hull->firstclipnode, test2) != CONTENTS_EMPTY)
 						{
 							return pe;
@@ -3902,6 +3905,11 @@ void PM_PlayerMove(qboolean server)
 		}
 		else
 		{
+			// BSVR: Just left a ladder: drop ladder velocity so the player isn't flung off
+			if (pmove->movetype == MOVETYPE_FLY)
+			{
+				VectorClear(pmove->velocity);
+			}
 			pmove->movetype = MOVETYPE_NOCLIP;
 		}
 		// BSVR end

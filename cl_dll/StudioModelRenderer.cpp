@@ -1420,6 +1420,44 @@ void CStudioModelRenderer::StudioMergeBones(model_t* m_pSubModel)
 }
 
 // BSVR start
+// The engine only fires client side studio events (e.g. reload sounds) for entities it draws itself, not for
+// the controller models drawn by DrawVREntity, so play the sound events (5004) crossed since the last frame here.
+void CStudioModelRenderer::StudioDispatchVRSoundEvents(const char* modelname, const Vector& origin, bool mirrored)
+{
+	struct EventState
+	{
+		std::string modelname;
+		int sequence = -1;
+		float frame = -1.f;
+	};
+	static EventState states[2];
+	EventState& state = states[mirrored ? 1 : 0];
+
+	if (m_pCurrentEntity->curstate.sequence >= m_pStudioHeader->numseq)
+		return;
+
+	mstudioseqdesc_t* pseqdesc = reinterpret_cast<mstudioseqdesc_t*>(reinterpret_cast<byte*>(m_pStudioHeader) + m_pStudioHeader->seqindex) + m_pCurrentEntity->curstate.sequence;
+	float f = StudioEstimateFrame(pseqdesc);
+
+	// New model or sequence, or the sequence restarted/looped: events from the start are due again
+	float lastFrame = state.frame;
+	if (state.sequence != m_pCurrentEntity->curstate.sequence || state.modelname != modelname || f < lastFrame)
+		lastFrame = -1.f;
+
+	state.modelname = modelname;
+	state.sequence = m_pCurrentEntity->curstate.sequence;
+	state.frame = f;
+
+	mstudioevent_t* pevent = reinterpret_cast<mstudioevent_t*>(reinterpret_cast<byte*>(m_pStudioHeader) + pseqdesc->eventindex);
+	for (int i = 0; i < pseqdesc->numevents; i++)
+	{
+		if (pevent[i].event == 5004 && pevent[i].frame > lastFrame && pevent[i].frame <= f)
+		{
+			gEngfuncs.pfnPlaySoundByNameAtLocation(pevent[i].options, 1.0f, const_cast<float*>(&origin.x));
+		}
+	}
+}
+
 bool CStudioModelRenderer::DrawVREntity(
 	const char* modelname,
 	const Vector& origin, const Vector& angles,
@@ -1576,6 +1614,11 @@ bool CStudioModelRenderer::DrawVREntity(
 	else
 	{
 		StudioSetupBones();
+
+		if (isController)
+		{
+			StudioDispatchVRSoundEvents(modelname, origin, mirrored);
+		}
 	}
 	StudioSaveBones();
 

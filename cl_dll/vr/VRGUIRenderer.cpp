@@ -21,8 +21,7 @@
 #define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
 #define NK_INCLUDE_FONT_BAKING
 #define NK_IMPLEMENTATION
-// Buttons click when the pointer button is released. The trigger is also the fire button, so when a click closes the menu
-// the trigger must not still be held down, or the weapon would fire.
+// Click on release: the trigger is also fire, so it must already be up when a click closes the menu
 #define NK_BUTTON_TRIGGER_ON_RELEASE
 
 #pragma warning(push)
@@ -107,6 +106,12 @@ namespace
         #undef NK_COLOR
     };
 #undef HLVR_COLOR_MAP
+
+    // For the parts of the menu that are drawn by hand
+    const struct nk_color ColorLight = hlvr_color_style[NK_COLOR_BORDER];
+    const struct nk_color ColorPanel = hlvr_color_style[NK_COLOR_BUTTON];
+    const struct nk_color ColorDark = hlvr_color_style[NK_COLOR_HEADER];
+    const struct nk_color ColorDimText = { 117, 128, 106, 255 };
 }
 
 VRGUIRenderer VRGUIRenderer::instance;
@@ -174,12 +179,12 @@ void VRGUIRenderer::Init(int guiWidth, int guiHeight)
     nk_style_load_all_cursors(&ctx, atlas.cursors);
     nk_style_hide_cursor(&ctx);  // the laser beam shows where we point
 
-    // Menu panels are placed manually in a free layout space, everything around them is transparent
+    // Panels are placed by hand in a free layout, the window around them is transparent
     ctx.style.window.padding = nk_vec2(0, 0);
     ctx.style.window.spacing = nk_vec2(0, 0);
     ctx.style.window.fixed_background = nk_style_item_color(nk_rgba(0, 0, 0, 0));
 
-    // The 1 px default button border is thinner than a texel of the overlay as seen in the headset and breaks up
+    // The default 1 px border is thinner than an overlay texel in the headset and breaks up
     ctx.style.button.border = 3.f;
 
     /*
@@ -289,8 +294,7 @@ void VRGUIRenderer::UpdateVRCursor()
 
 namespace
 {
-    // Menu panels ("boxes") are stacked left to right. The newest one is on top and sits at the anchor
-    // position, older ones are shifted left. Opening a page slides a new box in, going back slides it out.
+    // Menu panels ("boxes") are stacked left to right, the newest is on top. Opening a page slides a box in, going back slides it out.
     enum class MenuPage { Main, NewGame, Load, Options, Game, Graphics, Controls, Interaction, Comfort, Interface, Quit };
 
     struct MenuPanel
@@ -299,6 +303,7 @@ namespace
         float x;
         float w;
         bool leaving;
+        std::string opener;  // the button clicked in this box, it stays highlighted while a newer box is on top
     };
 
     enum class MenuItemType { Button, Choice, Stepper };
@@ -310,7 +315,7 @@ namespace
         bool enabled = true;
         bool smallFont = false;
 
-        // Choice: getValue/setValue use the index into options (one button per option). Stepper: they use the value.
+        // Choice: getValue/setValue use the option index. Stepper: they use the value.
         MenuItemType type = MenuItemType::Button;
         std::function<float()> getValue;
         std::function<void(float)> setValue;
@@ -320,27 +325,31 @@ namespace
         float min = 0.f;
         float max = 1.f;
         float step = 0.1f;
-        int decimals = 1;
         std::string suffix;
         float displayScale = 1.f;
 
-        // Shown as a tooltip when the pointer rests on the row. A choice can also describe each option.
+        // Tooltip of the row, a choice can also describe each option
         std::string description;
         std::vector<std::string> optionDescriptions;
+
+        MenuItem& Tip(std::string text, std::vector<std::string> optionTexts = {})
+        {
+            description = std::move(text);
+            optionDescriptions = std::move(optionTexts);
+            return *this;
+        }
     };
 
-    MenuItem MakeStepper(const std::string& label, std::function<float()> getValue, std::function<void(float)> setValue,
-        float min, float max, float step, int decimals, const std::string& suffix = "", float displayScale = 1.f)
+    MenuItem MakeCvarStepper(const std::string& label, const std::string& cvar, float min, float max, float step, const std::string& suffix = "", float displayScale = 1.f)
     {
         MenuItem item;
         item.label = label;
         item.type = MenuItemType::Stepper;
-        item.getValue = std::move(getValue);
-        item.setValue = std::move(setValue);
+        item.getValue = [cvar] { return VRGameFunctions::GetCVar(cvar.c_str()); };
+        item.setValue = [cvar](float value) { VRGameFunctions::SetCVar(cvar.c_str(), value); };
         item.min = min;
         item.max = max;
         item.step = step;
-        item.decimals = decimals;
         item.suffix = suffix;
         item.displayScale = displayScale;
         return item;
@@ -357,7 +366,7 @@ namespace
         return item;
     }
 
-    // Choice that sets a cvar to the index of the option (0, 1, 2...), for an On/Off setting use { "Off", "On" }
+    // Choice that sets a cvar to the option index, an On/Off setting is { "Off", "On" }
     MenuItem MakeCvarChoice(const std::string& label, const std::string& cvar, std::vector<std::string> options)
     {
         return MakeChoice(label, std::move(options),
@@ -366,17 +375,17 @@ namespace
     }
 
     std::vector<MenuPanel> menuPanels;
-    std::function<void()> menuPendingAction;  // run after drawing, actions modify menuPanels
+    std::function<void()> menuPendingAction;  // run after drawing, because actions change menuPanels
     bool menuWasInGame = false;
     float menuSpawnX = 0.f;
-    std::string menuDragKey;  // the slider that is being dragged (it was pressed, and the button is still held)
+    std::string menuDragKey;  // the slider being dragged
 
     constexpr size_t SavesPerPage = 5;
     int menuLoadPage = 0;
     std::vector<VRGameFunctions::SaveFile> menuSaves;
     bool menuSavesDirty = true;
 
-    // The save list is cached, it is read again whenever the menu is opened (see MenuReset) or the Load page is
+    // Cached, read again when the menu is opened (see MenuReset) or the Load page is
     const std::vector<VRGameFunctions::SaveFile>& GetMenuSaves()
     {
         if (menuSavesDirty)
@@ -422,90 +431,6 @@ namespace
         menuPanels.clear();
     }
 
-    // Tooltip texts of the settings, found by the label of the row (and the page it is on)
-    struct MenuTip
-    {
-        const char* label;
-        const char* text;
-        std::vector<const char*> optionTexts;  // optional, one per option
-    };
-
-    const std::vector<MenuTip>& GetMenuTips(MenuPage page)
-    {
-        static const std::vector<MenuTip> none;
-        static const std::vector<MenuTip> game = {
-            { "Difficulty", "How hard the enemies hit. Applies from the next map or new game.", {} },
-            { "Volume", "Volume of sound effects and voices.", {} },
-            { "Music", "Volume of the music.", {} },
-        };
-        static const std::vector<MenuTip> controls = {
-            { "Left-handed", "Swap the hands: the weapon goes into your left hand.", {} },
-            { "Move direction", "Walking follows where your off hand, weapon hand or head points.", {} },
-            { "Flashlight", "Which hand, or your head, the flashlight beam comes from.", {} },
-            { "Teleporter", "Which hand, or your head, the teleporter aims with.", {} },
-        };
-        static const std::vector<MenuTip> interaction = {
-            { "Grenade speed", "How fast grenades fly when you let go.", { "Grenades fly with the speed of your hand.", "Grenades always fly at the same speed, as in the original game." } },
-            { "Laser sight", "Shows a laser from ranged weapons to help you aim.", {} },
-            { "Ladders", "How you climb ladders.", { "Grab the ladder with your hands or climb with the movement stick.", "Climb ladders only by pulling yourself up with your hands.", "Climb ladders only with the movement stick, as in the original game." } },
-            { "Aim at NPCs", "How friendly NPCs react when you point a weapon at them.", { "They do not react.", "They react but do not get angry.", "They react and get angry." } },
-            { "Melee speed", "The slowest swing that still hurts enemies. Lower values are more sensitive.", {} },
-        };
-        static const std::vector<MenuTip> comfort = {
-            { "Turning", "How the view turns with the turn stick.", { "Turn smoothly while the stick is pushed.", "Turn in fixed steps, which helps against motion sickness." } },
-            { "Snap angle", "How far each snap turn rotates the view.", {} },
-            { "Turn speed", "How fast smooth turning is, in degrees per second.", {} },
-            { "Instant move", "On: you start and stop moving instantly instead of sliding. Helps against motion sickness.", {} },
-            { "Turn with trains", "What happens to your view on trains and platforms that rotate.", { "Your view turns together with the train or platform.", "Your view direction stays fixed while the train or platform turns." } },
-            { "Height offset", "Raises or lowers your view, in game units. Useful when sitting.", {} },
-            { "Real crouch", "Crouch in the game when you crouch in real life.", {} },
-            { "Crouch height", "The game crouches when your headset is lower than this, in game units.", {} },
-            { "Auto crouch", "Crouch automatically where you would not fit standing.", {} },
-        };
-        static const std::vector<MenuTip> graphics = {
-            { "Models", "Look of characters, weapons and objects. Changing it restarts the game.", { "The standard models. Selecting it restarts the game.", "HD models. Selecting it restarts the game." } },
-            { "Textures", "How textures are filtered.", { "The original pixelated look.", "Smooth filtering." } },
-            { "World scale", "Size of the world compared to you. Larger values make the world bigger.", {} },
-            { "Grab debris", "Debris from broken objects that you can pick up and throw. Turn off for better performance.", {} },
-        };
-        static const std::vector<MenuTip> interfaceTips = {
-            { "HUD", "Where the health and ammo display is shown.", { "No HUD.", "Shown on your controllers." } },
-            { "Health", "Show the health display.", {} },
-            { "Ammo", "Show the ammo display.", {} },
-            { "Menu size", "Size of this menu. Applies when the menu is opened or recentered.", {} },
-            { "Menu opacity", "How see-through this menu is.", {} },
-            { "Menu height", "Height of this menu relative to your eyes. Applies when the menu is opened or recentered.", {} },
-        };
-
-        switch (page)
-        {
-        case MenuPage::Game: return game;
-        case MenuPage::Controls: return controls;
-        case MenuPage::Interaction: return interaction;
-        case MenuPage::Comfort: return comfort;
-        case MenuPage::Graphics: return graphics;
-        case MenuPage::Interface: return interfaceTips;
-        default: return none;
-        }
-    }
-
-    void AddMenuTips(MenuPage page, std::vector<MenuItem>& items)
-    {
-        for (MenuItem& item : items)
-        {
-            for (const MenuTip& tip : GetMenuTips(page))
-            {
-                if (item.label == tip.label)
-                {
-                    item.description = tip.text;
-                    for (const char* optionText : tip.optionTexts)
-                        item.optionDescriptions.push_back(optionText);
-                    break;
-                }
-            }
-        }
-    }
-
     std::vector<MenuItem> BuildMenuItems(MenuPage page, bool isInGame)
     {
         std::vector<MenuItem> items;
@@ -527,7 +452,7 @@ namespace
             items.push_back({ "Load game", [] { menuLoadPage = 0; menuSavesDirty = true; MenuPush(MenuPage::Load); } });
             if (VRGameFunctions::IsGameLoaded())
             {
-                // shown but disabled when saving is not possible (dead, intermission)
+                // disabled when saving is not possible (dead, intermission)
                 items.push_back({ "Save game", [] { VRGameFunctions::SaveGame(); VRGameFunctions::CloseMenu(); MenuReset(); }, isInGame });
             }
             items.push_back({ "Options", [] { MenuPush(MenuPage::Options); } });
@@ -592,18 +517,21 @@ namespace
         {
             items.push_back(MakeChoice("Models", { "SD", "HD" },
                 [] { return (float)VRGameFunctions::GetModelsMode(); },
-                [](float index) { VRGameFunctions::SetModelsMode((int)index); }));
+                [](float index) { VRGameFunctions::SetModelsMode((int)index); })
+                .Tip("Look of characters, weapons and objects. Changing it restarts the game.",
+                    { "The standard models. Selecting it restarts the game.",
+                      "HD models. Selecting it restarts the game." }));
 
             items.push_back(MakeChoice("Textures", { "Classic", "Smooth" },
                 [] { return (float)VRGameFunctions::GetTexturesMode(); },
-                [](float index) { VRGameFunctions::SetTexturesMode((int)index); }));
+                [](float index) { VRGameFunctions::SetTexturesMode((int)index); })
+                .Tip("How textures are filtered.", { "The original pixelated look.", "Smooth filtering." }));
 
-            items.push_back(MakeStepper("World scale",
-                [] { return VRGameFunctions::GetCVar("vr_world_scale"); },
-                [](float value) { VRGameFunctions::SetCVar("vr_world_scale", value); },
-                0.5f, 1.5f, 0.01f, 0, "%", 100.f));
+            items.push_back(MakeCvarStepper("World scale", "vr_world_scale", 0.5f, 1.5f, 0.01f, "%", 100.f)
+                .Tip("Size of the world compared to you. Larger values make the world bigger."));
 
-            items.push_back(MakeCvarChoice("Grab debris", "vr_enable_interactive_debris", { "Off", "On" }));
+            items.push_back(MakeCvarChoice("Grab debris", "vr_enable_interactive_debris", { "Off", "On" })
+                .Tip("Debris from broken objects that you can pick up and throw. Turn off for better performance."));
 
             items.push_back({ "Back", [] { MenuBack(); } });
             break;
@@ -611,24 +539,38 @@ namespace
 
         case MenuPage::Controls:
         {
-            items.push_back(MakeCvarChoice("Left-handed", "vr_lefthand_mode", { "Off", "On" }));
-            items.push_back(MakeCvarChoice("Move direction", "vr_movement_attachment", { "Off Hand", "Weapon", "Head" }));
-            items.push_back(MakeCvarChoice("Flashlight", "vr_flashlight_attachment", { "Off Hand", "Weapon", "Head" }));
-            items.push_back(MakeCvarChoice("Teleporter", "vr_teleport_attachment", { "Off Hand", "Weapon", "Head" }));
+            items.push_back(MakeCvarChoice("Left-handed", "vr_lefthand_mode", { "Off", "On" })
+                .Tip("Swap the hands: the weapon goes into your left hand."));
+            items.push_back(MakeCvarChoice("Move direction", "vr_movement_attachment", { "Off Hand", "Weapon", "Head" })
+                .Tip("Walking follows where your off hand, weapon hand or head points."));
+            items.push_back(MakeCvarChoice("Flashlight", "vr_flashlight_attachment", { "Off Hand", "Weapon", "Head" })
+                .Tip("Which hand, or your head, the flashlight beam comes from."));
+            items.push_back(MakeCvarChoice("Teleporter", "vr_teleport_attachment", { "Off Hand", "Weapon", "Head" })
+                .Tip("Which hand, or your head, the teleporter aims with."));
             items.push_back({ "Back", [] { MenuBack(); } });
             break;
         }
 
         case MenuPage::Interaction:
         {
-            items.push_back(MakeCvarChoice("Grenade speed", "vr_weapon_grenade_mode", { "Hand", "Fixed" }));  // thrown with the speed of the hand, or at a fixed speed
-            items.push_back(MakeCvarChoice("Laser sight", "vr_enable_aim_laser", { "Off", "On" }));
-            items.push_back(MakeCvarChoice("Ladders", "vr_ladder_mode", { "Both", "Hands", "Classic" }));  // combined, immersive, legacy
-            items.push_back(MakeCvarChoice("Aim at NPCs", "vr_npc_gunpoint", { "Ignore", "React", "Angry" }));  // how NPCs react when aimed at
-            items.push_back(MakeStepper("Melee speed",  // the slowest swing that still hurts
-                [] { return VRGameFunctions::GetCVar("vr_melee_swing_speed"); },
-                [](float value) { VRGameFunctions::SetCVar("vr_melee_swing_speed", value); },
-                20.f, 300.f, 10.f, 0));
+            items.push_back(MakeCvarChoice("Grenade speed", "vr_weapon_grenade_mode", { "Hand", "Fixed" })
+                .Tip("How fast grenades fly when you let go.",
+                    { "Grenades fly with the speed of your hand.",
+                      "Grenades always fly at the same speed, as in the original game." }));
+            items.push_back(MakeCvarChoice("Laser sight", "vr_enable_aim_laser", { "Off", "On" })
+                .Tip("Shows a laser from ranged weapons to help you aim."));
+            items.push_back(MakeCvarChoice("Ladders", "vr_ladder_mode", { "Both", "Hands", "Classic" })
+                .Tip("How you climb ladders.",
+                    { "Grab the ladder with your hands or climb with the movement stick.",
+                      "Climb ladders only by pulling yourself up with your hands.",
+                      "Climb ladders only with the movement stick, as in the original game." }));
+            items.push_back(MakeCvarChoice("Aim at NPCs", "vr_npc_gunpoint", { "Ignore", "React", "Angry" })
+                .Tip("How friendly NPCs react when you point a weapon at them.",
+                    { "They do not react.",
+                      "They react but do not get angry.",
+                      "They react and get angry." }));
+            items.push_back(MakeCvarStepper("Melee speed", "vr_melee_swing_speed", 20.f, 300.f, 10.f)
+                .Tip("The slowest swing that still hurts enemies. Lower values are more sensitive."));
             items.push_back({ "Back", [] { MenuBack(); } });
             break;
         }
@@ -636,20 +578,19 @@ namespace
         case MenuPage::Comfort:
         {
             const bool snapTurn = VRGameFunctions::GetCVar("vr_move_snapturn_enabled") != 0.f;
-            items.push_back(MakeCvarChoice("Turning", "vr_move_snapturn_enabled", { "Smooth", "Snap" }));
+            items.push_back(MakeCvarChoice("Turning", "vr_move_snapturn_enabled", { "Smooth", "Snap" })
+                .Tip("How the view turns with the turn stick.",
+                    { "Turn smoothly while the stick is pushed.",
+                      "Turn in fixed steps, which helps against motion sickness." }));
             if (snapTurn)
             {
-                items.push_back(MakeStepper("Snap angle",
-                    [] { return VRGameFunctions::GetCVar("vr_move_snapturn_angle"); },
-                    [](float value) { VRGameFunctions::SetCVar("vr_move_snapturn_angle", value); },
-                    15.f, 90.f, 15.f, 0, "\xC2\xB0"));
+                items.push_back(MakeCvarStepper("Snap angle", "vr_move_snapturn_angle", 15.f, 90.f, 15.f, "\xC2\xB0")
+                    .Tip("How far each snap turn rotates the view."));
             }
             else
             {
-                items.push_back(MakeStepper("Turn speed",
-                    [] { return VRGameFunctions::GetCVar("vr_yawspeed"); },
-                    [](float value) { VRGameFunctions::SetCVar("vr_yawspeed", value); },
-                    60.f, 360.f, 10.f, 0));
+                items.push_back(MakeCvarStepper("Turn speed", "vr_yawspeed", 60.f, 360.f, 10.f)
+                    .Tip("How fast smooth turning is, in degrees per second."));
             }
 
             // acceleration and deceleration are one setting here
@@ -658,26 +599,26 @@ namespace
                 [](float index) {
                     VRGameFunctions::SetCVar("vr_move_instant_accelerate", index > 0.5f ? 1.f : 0.f);
                     VRGameFunctions::SetCVar("vr_move_instant_decelerate", index > 0.5f ? 1.f : 0.f);
-                }));
+                })
+                    .Tip("On: you start and stop moving instantly instead of sliding. Helps against motion sickness."));
 
-            // standing on rotating trains and platforms: turn with them or keep the view direction
-            items.push_back(MakeCvarChoice("Turn with trains", "vr_dont_rotate_with_trains", { "On", "Off" }));
+            items.push_back(MakeCvarChoice("Turn with trains", "vr_dont_rotate_with_trains", { "On", "Off" })
+                .Tip("What happens to your view on trains and platforms that rotate.",
+                    { "Your view turns together with the train or platform.",
+                      "Your view direction stays fixed while the train or platform turns." }));
 
-            // both of these are in game units
-            items.push_back(MakeStepper("Height offset",
-                [] { return VRGameFunctions::GetCVar("vr_headset_offset"); },
-                [](float value) { VRGameFunctions::SetCVar("vr_headset_offset", value); },
-                -50.f, 50.f, 1.f, 0));
+            items.push_back(MakeCvarStepper("Height offset", "vr_headset_offset", -50.f, 50.f, 1.f)
+                .Tip("Raises or lowers your view, in game units. Useful when sitting."));
 
-            items.push_back(MakeCvarChoice("Real crouch", "vr_rl_ducking_enabled", { "Off", "On" }));
+            items.push_back(MakeCvarChoice("Real crouch", "vr_rl_ducking_enabled", { "Off", "On" })
+                .Tip("Crouch in the game when you crouch in real life."));
             if (VRGameFunctions::GetCVar("vr_rl_ducking_enabled") != 0.f)
             {
-                items.push_back(MakeStepper("Crouch height",
-                    [] { return VRGameFunctions::GetCVar("vr_rl_duck_height"); },
-                    [](float value) { VRGameFunctions::SetCVar("vr_rl_duck_height", value); },
-                    10.f, 60.f, 1.f, 0));
+                items.push_back(MakeCvarStepper("Crouch height", "vr_rl_duck_height", 10.f, 60.f, 1.f)
+                    .Tip("The game crouches when your headset is lower than this, in game units."));
             }
-            items.push_back(MakeCvarChoice("Auto crouch", "vr_autocrouch_enabled", { "Off", "On" }));
+            items.push_back(MakeCvarChoice("Auto crouch", "vr_autocrouch_enabled", { "Off", "On" })
+                .Tip("Crouch automatically where you would not fit standing."));
             items.push_back({ "Back", [] { MenuBack(); } });
             break;
         }
@@ -687,26 +628,25 @@ namespace
             // vr_hud_mode: 0 off, 1 in view (not offered), 2 on the controllers
             items.push_back(MakeChoice("HUD", { "Off", "On" },
                 [] { return VRGameFunctions::GetCVar("vr_hud_mode") != 0.f ? 1.f : 0.f; },
-                [](float index) { VRGameFunctions::SetCVar("vr_hud_mode", index != 0.f ? 2.f : 0.f); }));
+                [](float index) { VRGameFunctions::SetCVar("vr_hud_mode", index != 0.f ? 2.f : 0.f); })
+                .Tip("Where the health and ammo display is shown.",
+                    { "No HUD.",
+                      "Shown on your controllers." }));
             if (VRGameFunctions::GetCVar("vr_hud_mode") != 0.f)
             {
-                items.push_back(MakeCvarChoice("Health", "vr_hud_health", { "Off", "On" }));
-                items.push_back(MakeCvarChoice("Ammo", "vr_hud_ammo", { "Off", "On" }));
+                items.push_back(MakeCvarChoice("Health", "vr_hud_health", { "Off", "On" })
+                    .Tip("Show the health display."));
+                items.push_back(MakeCvarChoice("Ammo", "vr_hud_ammo", { "Off", "On" })
+                    .Tip("Show the ammo display."));
             }
 
-            // Size and height are applied when the menu is placed again (opened or recentered), the opacity at once
-            items.push_back(MakeStepper("Menu size",
-                [] { return VRGameFunctions::GetCVar("vr_menu_scale"); },
-                [](float value) { VRGameFunctions::SetCVar("vr_menu_scale", value); },
-                0.5f, 2.f, 0.1f, 0, "%", 100.f));
-            items.push_back(MakeStepper("Menu opacity",
-                [] { return VRGameFunctions::GetCVar("vr_menu_opacity"); },
-                [](float value) { VRGameFunctions::SetCVar("vr_menu_opacity", value); },
-                0.3f, 1.f, 0.05f, 0, "%", 100.f));
-            items.push_back(MakeStepper("Menu height",  // relative to eye level
-                [] { return VRGameFunctions::GetCVar("vr_menu_height"); },
-                [](float value) { VRGameFunctions::SetCVar("vr_menu_height", value); },
-                -0.6f, 0.3f, 0.05f, 0, " cm", 100.f));
+            // Size and height apply when the menu is placed again (opened or recentered), the opacity at once
+            items.push_back(MakeCvarStepper("Menu size", "vr_menu_scale", 0.5f, 2.f, 0.1f, "%", 100.f)
+                .Tip("Size of this menu. Applies when the menu is opened or recentered."));
+            items.push_back(MakeCvarStepper("Menu opacity", "vr_menu_opacity", 0.3f, 1.f, 0.05f, "%", 100.f)
+                .Tip("How see-through this menu is."));
+            items.push_back(MakeCvarStepper("Menu height", "vr_menu_height", -0.6f, 0.3f, 0.05f, " cm", 100.f)
+                .Tip("Height of this menu relative to your eyes. Applies when the menu is opened or recentered."));
             items.push_back({ "Back", [] { MenuBack(); } });
             break;
         }
@@ -716,20 +656,16 @@ namespace
             // Difficulty only takes effect when the next map is loaded
             items.push_back(MakeChoice("Difficulty", { "Easy", "Medium", "Hard" },
                 [] { return (float)(std::clamp((int)VRGameFunctions::GetCVar("skill"), 1, 3) - 1); },
-                [](float index) { VRGameFunctions::SetCVar("skill", index + 1.f); }));
-            items.push_back(MakeStepper("Volume",
-                [] { return VRGameFunctions::GetCVar("volume"); },
-                [](float value) { VRGameFunctions::SetCVar("volume", value); },
-                0.f, 1.f, 0.05f, 0, "%", 100.f));
-            items.push_back(MakeStepper("Music",
-                [] { return VRGameFunctions::GetCVar("mp3volume"); },
-                [](float value) { VRGameFunctions::SetCVar("mp3volume", value); },
-                0.f, 1.f, 0.05f, 0, "%", 100.f));
+                [](float index) { VRGameFunctions::SetCVar("skill", index + 1.f); })
+                .Tip("How hard the enemies hit. Applies from the next map or new game."));
+            items.push_back(MakeCvarStepper("Volume", "volume", 0.f, 1.f, 0.05f, "%", 100.f)
+                .Tip("Volume of sound effects and voices."));
+            items.push_back(MakeCvarStepper("Music", "mp3volume", 0.f, 1.f, 0.05f, "%", 100.f)
+                .Tip("Volume of the music."));
             items.push_back({ "Back", [] { MenuBack(); } });
             break;
         }
         }
-        AddMenuTips(page, items);
         return items;
     }
 }
@@ -738,14 +674,12 @@ namespace
 {
     // Classic Steam style bevel: light top/left edge, dark bottom/right edge, swapped when sunken
     constexpr float BevelThickness = 3.f;
-    const struct nk_color BevelLight = { 136, 145, 128, 255 };
-    const struct nk_color BevelDark = { 40, 46, 34, 255 };
 
     void DrawBevel(struct nk_command_buffer* out, struct nk_rect r, bool raised)
     {
         const float t = BevelThickness;
-        const struct nk_color topLeft = raised ? BevelLight : BevelDark;
-        const struct nk_color bottomRight = raised ? BevelDark : BevelLight;
+        const struct nk_color topLeft = raised ? ColorLight : ColorDark;
+        const struct nk_color bottomRight = raised ? ColorDark : ColorLight;
         nk_fill_rect(out, nk_rect(r.x, r.y, r.w, t), 0.f, topLeft);
         nk_fill_rect(out, nk_rect(r.x, r.y, t, r.h), 0.f, topLeft);
         nk_fill_rect(out, nk_rect(r.x, r.y + r.h - t, r.w, t), 0.f, bottomRight);
@@ -772,8 +706,7 @@ namespace
         return shown;
     }
 
-    // Replacement for nk_button_label with a bevel, uses the colors of the button style.
-    // Place it with nk_layout_space_push first. A selected button is drawn sunken (for a choice of options).
+    // nk_button_label with a bevel. Place it with nk_layout_space_push first, a selected button is drawn sunken
     bool BevelButton(struct nk_command_buffer* out, const char* label, bool selected = false)
     {
         struct nk_rect bounds;
@@ -806,7 +739,7 @@ namespace
 
 namespace
 {
-    // Draws a tooltip box next to the pointer, the text is wrapped to the width of the box
+    // Tooltip box next to the pointer
     void DrawTooltip(struct nk_command_buffer* out, const std::string& tip, float W, float H)
     {
         SafeSetFont(font_text_smol);
@@ -858,7 +791,7 @@ namespace
         y = (std::max)(4.f, std::round(y));
 
         const struct nk_rect box = nk_rect(x, y, boxW, boxH);
-        nk_fill_rect(out, box, 0.f, nk_rgba(40, 46, 34, 255));
+        nk_fill_rect(out, box, 0.f, ColorDark);
         DrawBevel(out, box, true);
 
         struct nk_text text;
@@ -880,14 +813,13 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
     const float W = (float)m_guiWidth;
     const float H = (float)m_guiHeight;
 
-    // Layout, relative to the texture size
-    // Everything is snapped to whole pixels, edges at fractional positions look uneven
+    // Layout relative to the texture size, snapped to whole pixels (fractional edges look uneven)
     const float pad = std::round(0.025f * H);
     const float baseRowH = std::round(0.085f * H);
     const float baseRowGap = std::round(0.017f * H);
     const float gapX = std::round(0.025f * W);
     const float topY = std::round(0.12f * H);
-    const float compactW = std::round(0.24f * W);  // width of the boxes that are not the newest one
+    const float compactW = std::round(0.24f * W);  // width of the older boxes
     const float maxTotalW = 0.99f * W;
     menuSpawnX = W;
 
@@ -972,7 +904,7 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
         nk_layout_space_begin(&ctx, NK_STATIC, H, 64);
         struct nk_command_buffer* canvas = nk_window_get_canvas(&ctx);
 
-        // The description of the row or option the pointer is on, shown after it rested there for a moment
+        // Tooltip of the row or option under the pointer, shown after it rested there for a moment
         std::string hoveredTipKey;
         std::string hoveredTip;
 
@@ -982,7 +914,7 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
             const bool interactive = (i == topIndex);
             const std::vector<MenuItem> items = BuildMenuItems(panel.page, isInGame);
 
-            // A box with many rows gets smaller rows so it still fits into the texture
+            // Many rows get smaller so the box fits into the texture
             const float neededH = 2.f * pad + items.size() * baseRowH + (items.size() - 1) * baseRowGap;
             const float fit = (std::min)(1.f, (H - topY - std::round(0.02f * H)) / neededH);
             const float rowH = std::round(baseRowH * fit);
@@ -992,10 +924,10 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
             const float pageW = std::round(panel.w);
             const float panelH = 2.f * pad + items.size() * rowH + (items.size() - 1) * rowGap;
             const struct nk_rect panelRect = nk_rect(panelX, topY, pageW, panelH);
-            nk_fill_rect(canvas, panelRect, 0.f, nk_rgba(76, 88, 68, 255));
+            nk_fill_rect(canvas, panelRect, 0.f, ColorPanel);
             DrawBevel(canvas, panelRect, true);
 
-            // The label column of choices and steppers fits the longest label of the box, so all their controls line up
+            // The label column fits the longest label, so the controls line up
             float choiceLabelW = 0.f;
             SafeSetFont(font_text_smol);
             for (const MenuItem& item : items)
@@ -1029,20 +961,32 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
                     {
                         nk_layout_space_push(&ctx, nk_rect(rowX, rowY, rowW, rowH));
                         if (BevelButton(canvas, item.label.c_str()))
+                        {
                             menuPendingAction = item.action;
+                            menuPanels[i].opener = item.label;
+                        }
+                    }
+                    else if (item.type == MenuItemType::Button && !interactive && item.label == panel.opener)
+                    {
+                        // the button that opened the newer box stays sunken
+                        const struct nk_rect bounds = nk_rect(rowX, rowY, rowW, rowH);
+                        nk_layout_space_push(&ctx, bounds);
+                        nk_fill_rect(canvas, bounds, 0.f, ctx.style.button.active.data.color);
+                        DrawBevel(canvas, bounds, false);
+                        nk_label_colored(&ctx, FitText(item.label.c_str(), rowW).c_str(), NK_TEXT_CENTERED, ctx.style.button.text_active);
                     }
                     else if (item.type == MenuItemType::Button)
                     {
-                        // older boxes and unavailable entries are shown dimmed and are not clickable
+                        // older boxes and unavailable entries: dimmed, not clickable
                         nk_layout_space_push(&ctx, nk_rect(rowX, rowY, rowW, rowH));
-                        nk_label_colored(&ctx, FitText(item.label.c_str(), rowW).c_str(), NK_TEXT_CENTERED, nk_rgba(117, 128, 106, 255));
+                        nk_label_colored(&ctx, FitText(item.label.c_str(), rowW).c_str(), NK_TEXT_CENTERED, ColorDimText);
                     }
                     else
                     {
-                        // inactive choice/stepper: only the dimmed label, at the same place as when active
+                        // inactive choice/stepper: only the dimmed label
                         SafeSetFont(font_text_smol);
                         nk_layout_space_push(&ctx, nk_rect(rowX, rowY, labelW, rowH));
-                        nk_label_colored(&ctx, FitText(item.label.c_str(), labelW).c_str(), NK_TEXT_LEFT, nk_rgba(117, 128, 106, 255));
+                        nk_label_colored(&ctx, FitText(item.label.c_str(), labelW).c_str(), NK_TEXT_LEFT, ColorDimText);
                     }
                     continue;
                 }
@@ -1054,7 +998,7 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
 
                 if (item.type == MenuItemType::Stepper)
                 {
-                    // [-] slider [+]: the small buttons change the value by one step, the bar can be dragged
+                    // [-] slider [+]
                     const float buttonW = std::round(0.8f * rowH);
                     const float value = item.getValue();
                     const struct nk_rect barRect = nk_rect(fieldRect.x + buttonW, rowY, fieldRect.w - 2.f * buttonW, rowH);
@@ -1072,8 +1016,7 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
                     if (BevelButton(canvas, "+"))
                         setSnapped(value + item.step);
 
-                    // Dragging starts with the press on the bar (so a bar that moves under an already held pointer
-                    // is not grabbed) and follows the pointer until the button is released.
+                    // Dragging starts with a press on the bar (not with a held pointer sliding onto it) and lasts until release
                     const std::string dragKey = std::to_string(i) + item.label;
                     if (nk_input_is_mouse_pressed(&ctx.input, NK_BUTTON_LEFT) && nk_input_is_mouse_hovering_rect(&ctx.input, barRect))
                         menuDragKey = dragKey;
@@ -1093,7 +1036,7 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
                     const float shown = item.getValue();
                     const float fill = std::clamp((shown - item.min) / (item.max - item.min), 0.f, 1.f);
                     nk_layout_space_push(&ctx, barRect);
-                    // colors of the slider style: normal, hovered, being dragged (the old nk_progress look, with its padding)
+                    // slider style colors: normal, hovered, dragged
                     const struct nk_style_progress& sliderStyle = ctx.style.progress;
                     const bool dragging = (menuDragKey == dragKey);
                     const bool hovered = nk_input_is_mouse_hovering_rect(&ctx.input, barRect);
@@ -1104,7 +1047,7 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
                     DrawBevel(canvas, barRect, false);
 
                     char valueText[32];
-                    snprintf(valueText, sizeof(valueText), "%.*f%s", item.decimals, shown * item.displayScale + 0.f, item.suffix.c_str());  // + 0 turns -0 into 0
+                    snprintf(valueText, sizeof(valueText), "%.0f%s", shown * item.displayScale + 0.f, item.suffix.c_str());  // + 0 turns -0 into 0
                     struct nk_text text;
                     text.padding = nk_vec2(0, 0);
                     text.background = nk_rgba(0, 0, 0, 0);
@@ -1113,7 +1056,7 @@ void VRGUIRenderer::UpdateGUIElements(bool isInGame)
                 }
                 else
                 {
-                    // one button per option, as wide as its text needs (scaled to fill the row), the current one is shown pressed
+                    // one button per option, wide as its text, the current one is pressed
                     const int current = (int)std::lround(item.getValue());  // out of range: no option is selected
                     const struct nk_user_font* optionFont = ctx.style.font;
                     std::vector<float> optionWidths;

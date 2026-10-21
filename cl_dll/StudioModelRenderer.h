@@ -34,6 +34,7 @@ public:
 // BSVR start
 private:
 
+	void StudioDispatchVRSoundEvents(const char* modelname, const Vector& origin, bool mirrored);
 	bool DrawVREntity(
 		const char* modelname,
 		const Vector& origin, const Vector& angles,

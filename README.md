@@ -45,6 +45,27 @@ Beta. Most of the code is ported from Half-Life: VR Mod onto the latest SDK. For
 - Restart the Steam client (via tray icon right click → Exit Steam or Steam → Exit top menu).
 - Mod will appear in your Steam library as Half-Life: VR Mod - Blue Shift.
 
+# Credits
+
+## Half-Life: VR Mod
+
+The VR code in this mod (`dlls/vr`, `cl_dll/vr`, `game_shared/vr` and the `BSVR` sections) comes from [Half-Life: VR Mod](https://github.com/maxmakesmods/Half-Life-VR), (c) 2017-2022 Max Makes Mods, reused with the authors' permission. Contributors to its repository:
+
+- Max Makes Mods
+- Devin (formicsapien)
+- rorincloud
+- Cyril Paulus
+
+Thanks to the Half-Life: VR Mod supporters and beta testers listed in its [README](https://github.com/maxmakesmods/Half-Life-VR/blob/main/docs/README.md).
+
+## Blue Shift Updated
+
+This mod is built on the [Blue Shift Updated](https://github.com/twhl-community/halflife-bs-updated) SDK by the TWHL community. The Blue Shift game code there is a community reimplementation, not Gearbox or Valve source. Thanks to everyone who contributed to it:
+
+Sam Vanheer, JoelTroch, malortie, dtugend, Revenant100, fel1x-developer, LogicAndTrick, FreeSlave, zpl-zak, edgarbarney, Toodles2You, Jengerer, thefoofighter, Maxxiii, johndrinkwater, anchurcn, DanielOaks, MegaBrutal, suXinjke, IntriguingTiles, Oxofemple, YaLTeR, Ronin4862, the man, vasiavasiavasia95, NongBenz, Hezus, Anton, ArroganceJustified, a1batross, zaklaus, Uncle Mike, Bacontsu, L453rh4wk, P38TaKjYzY, hammermaps, LuckNukeHunter99, Veinhelm, jay!, BryanHaley, λλλλλλ, Streit, rbar1um43, LambdaLuke87, almix, sabian.
+
+Special thanks: Valve Software, Gearbox Software, Alfred Reynolds, mikela-valve, the TWHL community, Knockout, Gamebanana, ModDB.
+
 # Development
 
 For building and installing follow the upstream [Blue Shift Updated](https://github.com/twhl-community/halflife-bs-updated#readme) documentation.
