@@ -18,12 +18,11 @@ namespace
 	constexpr float WHEEL_OUTER_RADIUS = 7.f;
 	constexpr float WHEEL_SEGMENT_GAP_DEGREES = 3.f;
 	constexpr int WHEEL_SEGMENT_STEPS = 12;
-	constexpr float WHEEL_ALPHA = 0.6f;
+	constexpr float WHEEL_ALPHA = 0.7f;
 
 	constexpr float PI = 3.14159265358979f;
 
 	bool g_isOpen = false;
-	bool g_renderPrinted = false; // TEMP
 
 	// Fixed when the wheel is opened
 	Vector g_center;
@@ -40,27 +39,18 @@ namespace VR
 			VRHelper* helper = gVRRenderer.GetHelper();
 			if (helper == nullptr || !helper->HasValidWeaponController())
 			{
-				gEngfuncs.Con_Printf("WeaponWheel: Open failed, no valid weapon controller\n"); // TEMP
+				gEngfuncs.Con_DPrintf("WeaponWheel: Open failed, no valid weapon controller\n");
 				return;
 			}
-
-			if (g_isOpen)
-				gEngfuncs.Con_Printf("WeaponWheel: Open called while already open (missed release?)\n"); // TEMP
 
 			Vector forward;
 			helper->GetViewVectors(forward, g_right, g_up);
 			g_center = helper->GetWeaponPosition();
 			g_isOpen = true;
-			g_renderPrinted = false; // TEMP
-			gEngfuncs.Con_Printf("WeaponWheel: opened at %.1f %.1f %.1f, right %.2f %.2f %.2f (len %.2f), up %.2f %.2f %.2f (len %.2f)\n", // TEMP
-				g_center.x, g_center.y, g_center.z,
-				g_right.x, g_right.y, g_right.z, g_right.Length(),
-				g_up.x, g_up.y, g_up.z, g_up.Length());
 		}
 
 		void Close()
 		{
-			gEngfuncs.Con_Printf("WeaponWheel: Close (was open=%d)\n", (int)g_isOpen); // TEMP
 			g_isOpen = false;
 		}
 
@@ -76,12 +66,6 @@ namespace VR
 
 			glPushAttrib(GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT);
 
-			if (!g_renderPrinted) // TEMP
-			{
-				g_renderPrinted = true;
-				gEngfuncs.Con_Printf("WeaponWheel: Render reached\n");
-			}
-
 			// The engine may leave any of this on; plain colored geometry needs it all off
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -96,7 +80,7 @@ namespace VR
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			glColor4f(0.9f, 0.9f, 0.9f, WHEEL_ALPHA); // TEMP bright
+			glColor4f(0.5f, 0.5f, 0.5f, WHEEL_ALPHA);
 
 			const float segmentAngle = 2.f * PI / NUM_CATEGORIES;
 			const float gap = WHEEL_SEGMENT_GAP_DEGREES * PI / 180.f;
