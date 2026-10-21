@@ -50,6 +50,10 @@ namespace
 	// Pixels below this brightness count as empty when looking for the visible part of an icon
 	constexpr int ICON_VISIBLE_THRESHOLD = 40;
 
+	// The HUD sheets have no alpha, their background is dark grey (about 21-29) with scanlines.
+	// Brightness up to this value is treated as transparent, the rest is scaled to 0..1 alpha.
+	constexpr int ICON_BACKGROUND_FLOOR = 30;
+
 	constexpr float PI = 3.14159265358979f;
 
 	bool g_isOpen = false;
@@ -132,6 +136,41 @@ namespace
 		return bounds;
 	}
 
+	// Returns a copy of the sheet texture that is white with alpha from the pixel brightness, so the
+	// dark background doesn't show up as a lighter rectangle. The sprite color is applied when drawing.
+	unsigned int GetMaskedTexture(unsigned int texture, int textureWidth, int textureHeight)
+	{
+		static std::unordered_map<unsigned int, unsigned int> cache;
+
+		auto it = cache.find(texture);
+		if (it != cache.end())
+			return it->second;
+
+		std::vector<unsigned char> pixels(static_cast<size_t>(textureWidth) * textureHeight * 4);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+		for (size_t i = 0; i < pixels.size(); i += 4)
+		{
+			const int brightness = (std::max)({ pixels[i], pixels[i + 1], pixels[i + 2] });
+			const int alpha = (std::max)(0, brightness - ICON_BACKGROUND_FLOOR) * 255 / (255 - ICON_BACKGROUND_FLOOR);
+			pixels[i] = pixels[i + 1] = pixels[i + 2] = 255;
+			pixels[i + 3] = static_cast<unsigned char>(alpha);
+		}
+
+		unsigned int masked = 0;
+		glGenTextures(1, &masked);
+		glBindTexture(GL_TEXTURE_2D, masked);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, textureWidth, textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		cache[texture] = masked;
+		return masked;
+	}
+
 	// Draws a HUD sprite rect as a quad in the wheel plane, centered at the given point
 	void DrawSprite(HSPRITE sprite, const Rect& rc, const Vector& position, float unitsPerPixel, int r, int g, int b, bool centerOnVisible)
 	{
@@ -175,8 +214,12 @@ namespace
 			glVertex3f(pos.x, pos.y, pos.z);
 		};
 
+		const unsigned int maskedTexture = GetMaskedTexture(texture, textureWidth, textureHeight);
+		if (maskedTexture == 0)
+			return;
+
 		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, texture);
+		glBindTexture(GL_TEXTURE_2D, maskedTexture);
 		glColor4f(r / 255.f, g / 255.f, b / 255.f, 1.f);
 		glBegin(GL_QUADS);
 		vertex(u0, v0, left, top);
@@ -271,6 +314,10 @@ namespace VR
 			glDisable(GL_TEXTURE_2D);
 			glDisable(GL_CULL_FACE);
 			glDisable(GL_DEPTH_TEST);
+			// On Windows the glDisable hook ignores GL_DEPTH_TEST while the VR scene is drawn (VROpenGLInterceptor.cpp),
+			// so also make the test always pass and don't write depth. Otherwise the coplanar sprites z-fight with the segments.
+			glDepthFunc(GL_ALWAYS);
+			glDepthMask(GL_FALSE);
 			glDisable(GL_LIGHTING);
 			glDisable(GL_FOG);
 			glDisable(GL_ALPHA_TEST);
