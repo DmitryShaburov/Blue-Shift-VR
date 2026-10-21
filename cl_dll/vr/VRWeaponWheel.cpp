@@ -67,9 +67,24 @@ namespace VR
 
 			glPushAttrib(GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT);
 
+			static bool printed = false; // TEMP
+			if (!printed)
+			{
+				printed = true;
+				gEngfuncs.Con_Printf("WeaponWheel: Render reached\n");
+			}
+
+			// The engine may leave any of this on; plain colored geometry needs it all off
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glDisable(GL_TEXTURE_2D);
 			glDisable(GL_CULL_FACE);
 			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_TEXTURE_2D);
+			glDisable(GL_LIGHTING);
+			glDisable(GL_FOG);
+			glDisable(GL_ALPHA_TEST);
+			glDisable(GL_STENCIL_TEST);
+			glDisable(GL_SCISSOR_TEST);
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
