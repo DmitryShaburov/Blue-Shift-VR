@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <map>
 #include <regex>
@@ -299,7 +300,8 @@ namespace VR
 				g_lastHovered = hovered;
 				if (hovered != -1)
 				{
-					PlaySound("common/wpn_moveselect.wav", 1);
+					// Not PlaySound() from cl_util.h: windows.h (via vr_gl.h) turns that name into PlaySoundA
+					gEngfuncs.pfnPlaySoundByName("common/wpn_moveselect.wav", 1);
 					g_vrInput.recoilintensity = WHEEL_HOVER_HAPTIC_INTENSITY;
 				}
 			}
