@@ -202,10 +202,14 @@ namespace
 		const float top = -(rc.top - centerY) * unitsPerPixel;
 		const float bottom = -(rc.bottom - centerY) * unitsPerPixel;
 
-		const float u0 = static_cast<float>(rc.left) / sheet.width;
-		const float u1 = static_cast<float>(rc.right) / sheet.width;
-		const float v0 = static_cast<float>(rc.top) / sheet.height;
-		const float v1 = static_cast<float>(rc.bottom) / sheet.height;
+		// Sprites are packed tightly on the sheet, so sampling right on the rect edge blends in a column of the
+		// neighbouring sprite. Stay half a texel inside.
+		const float scaleX = static_cast<float>(textureWidth) / sheet.width;
+		const float scaleY = static_cast<float>(textureHeight) / sheet.height;
+		const float u0 = (rc.left * scaleX + 0.5f) / textureWidth;
+		const float u1 = (rc.right * scaleX - 0.5f) / textureWidth;
+		const float v0 = (rc.top * scaleY + 0.5f) / textureHeight;
+		const float v1 = (rc.bottom * scaleY - 0.5f) / textureHeight;
 
 		auto vertex = [&](float u, float v, float x, float y)
 		{
