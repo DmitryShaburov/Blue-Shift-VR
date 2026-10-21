@@ -47,6 +47,16 @@ namespace
 	constexpr float LABEL_RADIUS = WHEEL_OUTER_RADIUS + 1.5f;
 	constexpr float LABEL_UNITS_PER_PIXEL = 0.08f;
 
+	// The weapons of the hovered category fan out in an arc beyond the ring
+	constexpr float ARC_INNER_RADIUS = WHEEL_OUTER_RADIUS + 0.5f;
+	constexpr float ARC_OUTER_RADIUS = ARC_INNER_RADIUS + 5.5f;
+	constexpr float ARC_CENTER_RADIUS = (ARC_INNER_RADIUS + ARC_OUTER_RADIUS) / 2.f;
+	constexpr float ARC_ENTER_DISTANCE = 8.f;  // hand offset from the center from which the arc items are hovered
+
+	// The melee category has the empty hand (holster) after its weapons
+	constexpr int MELEE_CATEGORY = 0;
+	constexpr int MAX_ARC_ITEMS = MAX_WEAPON_POSITIONS + 1;
+
 	// Pixels below this brightness count as empty when looking for the visible part of an icon
 	constexpr int ICON_VISIBLE_THRESHOLD = 40;
 
@@ -56,8 +66,16 @@ namespace
 
 	constexpr float PI = 3.14159265358979f;
 
+	constexpr float SEGMENT_ANGLE = 2.f * PI / NUM_CATEGORIES;
+
+	struct Hover
+	{
+		int category = -1;
+		int item = -1;  // index in the category's arc, -1 while the hand is still inside the ring
+	};
+
 	bool g_isOpen = false;
-	int g_lastHovered = -1;
+	Hover g_lastHover;
 
 	// Fixed when the wheel is opened
 	Vector g_center;
@@ -238,8 +256,54 @@ namespace
 	// Center of the category's segment, as a direction in the wheel plane. Category 0 is at the top, going clockwise.
 	Vector GetCategoryDirection(int category)
 	{
-		const float angle = PI / 2.f - category * (2.f * PI / NUM_CATEGORIES);
+		const float angle = PI / 2.f - category * SEGMENT_ANGLE;
 		return g_right * cosf(angle) + g_up * sinf(angle);
+	}
+
+	// Draws a ring sector between two angles (counter-clockwise from the wheel's right) in the current color
+	void DrawSector(float innerRadius, float outerRadius, float start, float end)
+	{
+		glBegin(GL_QUAD_STRIP);
+		for (int step = 0; step <= WHEEL_SEGMENT_STEPS; step++)
+		{
+			const float angle = start + (end - start) * step / WHEEL_SEGMENT_STEPS;
+			const Vector dir = g_right * cosf(angle) + g_up * sinf(angle);
+			const Vector inner = g_center + dir * innerRadius;
+			const Vector outer = g_center + dir * outerRadius;
+			glVertex3f(inner.x, inner.y, inner.z);
+			glVertex3f(outer.x, outer.y, outer.z);
+		}
+		glEnd();
+	}
+
+	// Simple open hand drawn with quads in the wheel plane (the HUD sheets have no hand icon)
+	void DrawHandIcon(const Vector& position, int r, int g, int b)
+	{
+		auto quad = [&](float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3)
+		{
+			const float xs[4] = { x0, x1, x2, x3 };
+			const float ys[4] = { y0, y1, y2, y3 };
+			for (int i = 0; i < 4; i++)
+			{
+				const Vector pos = position + g_right * xs[i] + g_up * ys[i];
+				glVertex3f(pos.x, pos.y, pos.z);
+			}
+		};
+
+		glColor4f(r / 255.f, g / 255.f, b / 255.f, 1.f);
+		glBegin(GL_QUADS);
+		// Palm
+		quad(-1.0f, -1.4f, 1.0f, -1.4f, 1.0f, 0.4f, -1.0f, 0.4f);
+		// Fingers
+		const float fingerHeights[4] = { 1.4f, 1.8f, 1.6f, 1.2f };
+		for (int i = 0; i < 4; i++)
+		{
+			const float x = -1.0f + i * 0.517f;
+			quad(x, 0.5f, x + 0.45f, 0.5f, x + 0.45f, 0.4f + fingerHeights[i], x, 0.4f + fingerHeights[i]);
+		}
+		// Thumb
+		quad(-1.0f, -0.8f, -1.0f, 0.0f, -1.7f, 0.7f, -2.0f, 0.3f);
+		glEnd();
 	}
 
 	// The weapon shown for a category: the current weapon if it belongs there, otherwise the first one with ammo
@@ -252,26 +316,79 @@ namespace
 		return gWR.GetFirstPos(category);
 	}
 
-	// Returns the category the weapon hand points at, or -1 inside the dead zone
-	int GetHoveredCategory()
+	// The entries of a category's arc in slot order: the weapons the player can select, and for the
+	// melee category the empty hand (a null entry) after them. Returns how many there are.
+	int GetCategoryItems(int category, WEAPON* items[MAX_ARC_ITEMS])
 	{
+		int count = 0;
+		for (int pos = 0; pos < MAX_WEAPON_POSITIONS; pos++)
+		{
+			WEAPON* weapon = gWR.GetWeaponSlot(category, pos);
+			if (weapon != nullptr && weapon->iId != 0 && gWR.HasAmmo(weapon))
+				items[count++] = weapon;
+		}
+		if (category == MELEE_CATEGORY)
+			items[count++] = nullptr;
+
+		return count;
+	}
+
+	void DrawWeaponIcon(WEAPON* weapon, const Vector& position, bool active, int hudR, int hudG, int hudB)
+	{
+		int r = hudR, g = hudG, b = hudB;
+		HSPRITE sprite = weapon->hInactive;
+		const Rect* rect = &weapon->rcInactive;
+		if (active && weapon->hActive != 0)
+		{
+			sprite = weapon->hActive;
+			rect = &weapon->rcActive;
+		}
+		else
+		{
+			ScaleColors(r, g, b, ICON_INACTIVE_BRIGHTNESS);
+		}
+
+		if (sprite != 0)
+			DrawSprite(sprite, *rect, position, ICON_UNITS_PER_PIXEL, r, g, b, true);
+	}
+
+	// What the weapon hand points at. The category comes from the direction, the arc item from the direction
+	// as well once the hand is far enough from the center.
+	Hover GetHover(const int itemCounts[NUM_CATEGORIES])
+	{
+		Hover hover;
+
 		VRHelper* helper = gVRRenderer.GetHelper();
 		if (helper == nullptr)
-			return -1;
+			return hover;
 
 		const Vector offset = helper->GetWeaponPosition() - g_center;
 		const float x = DotProduct(offset, g_right);
 		const float y = DotProduct(offset, g_up);
-		if (x * x + y * y < WHEEL_DEAD_ZONE * WHEEL_DEAD_ZONE)
-			return -1;
+		const float distanceSquared = x * x + y * y;
+		if (distanceSquared < WHEEL_DEAD_ZONE * WHEEL_DEAD_ZONE)
+			return hover;
 
 		// Clockwise angle from the top, same layout as the drawn segments
 		float angle = atan2f(x, y);
 		if (angle < 0.f)
 			angle += 2.f * PI;
 
-		const float segmentAngle = 2.f * PI / NUM_CATEGORIES;
-		return static_cast<int>(angle / segmentAngle + 0.5f) % NUM_CATEGORIES;
+		hover.category = static_cast<int>(angle / SEGMENT_ANGLE + 0.5f) % NUM_CATEGORIES;
+
+		const int count = itemCounts[hover.category];
+		if (count > 0 && distanceSquared >= ARC_ENTER_DISTANCE * ARC_ENTER_DISTANCE)
+		{
+			// Angle from the category's clockwise-first edge
+			float delta = angle - hover.category * SEGMENT_ANGLE;
+			if (delta > PI)
+				delta -= 2.f * PI;
+			const float fromEdge = delta + SEGMENT_ANGLE / 2.f;
+
+			hover.item = (std::max)(0, (std::min)(count - 1, static_cast<int>(fromEdge / (SEGMENT_ANGLE / count))));
+		}
+
+		return hover;
 	}
 }  // namespace
 
@@ -292,7 +409,7 @@ namespace VR
 			helper->GetViewVectors(forward, g_right, g_up);
 			g_center = helper->GetWeaponPosition();
 			g_isOpen = true;
-			g_lastHovered = -1;
+			g_lastHover = Hover{};
 		}
 
 		void Close()
@@ -300,11 +417,24 @@ namespace VR
 			g_isOpen = false;
 		}
 
-		WEAPON* CloseAndGetSelection()
+		Selection CloseAndGetSelection()
 		{
-			WEAPON* selection = nullptr;
-			if (g_isOpen && g_lastHovered != -1)
-				selection = GetCategoryWeapon(g_lastHovered);
+			Selection selection;
+			if (g_isOpen && g_lastHover.category != -1)
+			{
+				WEAPON* items[MAX_ARC_ITEMS];
+				const int count = GetCategoryItems(g_lastHover.category, items);
+				if (g_lastHover.item != -1 && g_lastHover.item < count)
+				{
+					selection.weapon = items[g_lastHover.item];
+					selection.holster = selection.weapon == nullptr;
+				}
+				else
+				{
+					// Released inside the ring: the weapon shown for the category
+					selection.weapon = GetCategoryWeapon(g_lastHover.category);
+				}
+			}
 
 			g_isOpen = false;
 			return selection;
@@ -345,21 +475,24 @@ namespace VR
 			UnpackRGB(hudR, hudG, hudB, RGB_YELLOWISH);
 
 			WEAPON* categoryWeapons[NUM_CATEGORIES];
+			WEAPON* items[NUM_CATEGORIES][MAX_ARC_ITEMS];
+			int itemCounts[NUM_CATEGORIES];
 			for (int i = 0; i < NUM_CATEGORIES; i++)
 			{
 				categoryWeapons[i] = GetCategoryWeapon(i);
+				itemCounts[i] = GetCategoryItems(i, items[i]);
 			}
 
 			// Categories without a weapon can't be selected
-			int hovered = GetHoveredCategory();
-			if (hovered != -1 && categoryWeapons[hovered] == nullptr)
-				hovered = -1;
+			Hover hover = GetHover(itemCounts);
+			if (hover.category != -1 && categoryWeapons[hover.category] == nullptr)
+				hover = Hover{};
 
-			if (hovered != g_lastHovered)
+			if (hover.category != g_lastHover.category || hover.item != g_lastHover.item)
 			{
 				// Render runs once per eye, the second call sees no change
-				g_lastHovered = hovered;
-				if (hovered != -1)
+				g_lastHover = hover;
+				if (hover.category != -1)
 				{
 					// Not PlaySound() from cl_util.h: windows.h (via vr_gl.h) turns that name into PlaySoundA
 					gEngfuncs.pfnPlaySoundByName("common/wpn_moveselect.wav", 1);
@@ -367,34 +500,37 @@ namespace VR
 				}
 			}
 
-			const float segmentAngle = 2.f * PI / NUM_CATEGORIES;
 			const float gap = WHEEL_SEGMENT_GAP_DEGREES * PI / 180.f;
+
+			auto setColor = [&](float colorScale)
+			{
+				glColor4f(hudR / 255.f * colorScale, hudG / 255.f * colorScale, hudB / 255.f * colorScale, WHEEL_ALPHA);
+			};
 
 			for (int i = 0; i < NUM_CATEGORIES; i++)
 			{
 				// Category 0 is centered at the top, going clockwise
-				const float centerAngle = PI / 2.f - i * segmentAngle;
-				const float start = centerAngle - segmentAngle / 2.f + gap / 2.f;
-				const float end = centerAngle + segmentAngle / 2.f - gap / 2.f;
+				const float centerAngle = PI / 2.f - i * SEGMENT_ANGLE;
 
 				float colorScale = WHEEL_COLOR_SCALE;
 				if (categoryWeapons[i] == nullptr)
 					colorScale = WHEEL_EMPTY_COLOR_SCALE;
-				else if (i == hovered)
+				else if (i == hover.category)
 					colorScale = WHEEL_HOVER_COLOR_SCALE;
-				glColor4f(hudR / 255.f * colorScale, hudG / 255.f * colorScale, hudB / 255.f * colorScale, WHEEL_ALPHA);
+				setColor(colorScale);
 
-				glBegin(GL_QUAD_STRIP);
-				for (int step = 0; step <= WHEEL_SEGMENT_STEPS; step++)
-				{
-					const float angle = start + (end - start) * step / WHEEL_SEGMENT_STEPS;
-					const Vector dir = g_right * cosf(angle) + g_up * sinf(angle);
-					const Vector inner = g_center + dir * WHEEL_INNER_RADIUS;
-					const Vector outer = g_center + dir * WHEEL_OUTER_RADIUS;
-					glVertex3f(inner.x, inner.y, inner.z);
-					glVertex3f(outer.x, outer.y, outer.z);
-				}
-				glEnd();
+				DrawSector(WHEEL_INNER_RADIUS, WHEEL_OUTER_RADIUS, centerAngle - SEGMENT_ANGLE / 2.f + gap / 2.f, centerAngle + SEGMENT_ANGLE / 2.f - gap / 2.f);
+			}
+
+			// The arc of the hovered category. Its items split the category's span evenly, the first one on the clockwise-first side.
+			const int arcCount = hover.category != -1 ? itemCounts[hover.category] : 0;
+			const float itemAngle = arcCount > 0 ? SEGMENT_ANGLE / arcCount : 0.f;
+			const float arcEdge = hover.category != -1 ? PI / 2.f - hover.category * SEGMENT_ANGLE + SEGMENT_ANGLE / 2.f : 0.f;
+
+			for (int k = 0; k < arcCount; k++)
+			{
+				setColor(k == hover.item ? WHEEL_HOVER_COLOR_SCALE : WHEEL_COLOR_SCALE);
+				DrawSector(ARC_INNER_RADIUS, ARC_OUTER_RADIUS, arcEdge - (k + 1) * itemAngle + gap / 2.f, arcEdge - k * itemAngle - gap / 2.f);
 			}
 
 			// Sprites are additive, like everything else on the HL HUD
@@ -406,23 +542,7 @@ namespace VR
 				WEAPON* weapon = categoryWeapons[i];
 
 				if (weapon != nullptr)
-				{
-					int r = hudR, g = hudG, b = hudB;
-					HSPRITE sprite = weapon->hInactive;
-					const Rect* rect = &weapon->rcInactive;
-					if (i == hovered && weapon->hActive != 0)
-					{
-						sprite = weapon->hActive;
-						rect = &weapon->rcActive;
-					}
-					else
-					{
-						ScaleColors(r, g, b, ICON_INACTIVE_BRIGHTNESS);
-					}
-
-					if (sprite != 0)
-						DrawSprite(sprite, *rect, g_center + direction * ICON_CENTER_RADIUS, ICON_UNITS_PER_PIXEL, r, g, b, true);
-				}
+					DrawWeaponIcon(weapon, g_center + direction * ICON_CENTER_RADIUS, i == hover.category, hudR, hudG, hudB);
 
 				// Slot number
 				const int digit = gHUD.m_HUD_number_0 + i + 1;
@@ -430,6 +550,25 @@ namespace VR
 				if (weapon == nullptr)
 					ScaleColors(r, g, b, 96);
 				DrawSprite(gHUD.GetSprite(digit), gHUD.GetSpriteRect(digit), g_center + direction * LABEL_RADIUS, LABEL_UNITS_PER_PIXEL, r, g, b, false);
+			}
+
+			for (int k = 0; k < arcCount; k++)
+			{
+				const float angle = arcEdge - (k + 0.5f) * itemAngle;
+				const Vector position = g_center + (g_right * cosf(angle) + g_up * sinf(angle)) * ARC_CENTER_RADIUS;
+				WEAPON* weapon = items[hover.category][k];
+
+				if (weapon != nullptr)
+				{
+					DrawWeaponIcon(weapon, position, k == hover.item, hudR, hudG, hudB);
+				}
+				else
+				{
+					int r = hudR, g = hudG, b = hudB;
+					if (k != hover.item)
+						ScaleColors(r, g, b, ICON_INACTIVE_BRIGHTNESS);
+					DrawHandIcon(position, r, g, b);
+				}
 			}
 
 			glPopAttrib();

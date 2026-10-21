@@ -138,9 +138,11 @@ namespace VR
 				}
 				else
 				{
-					WEAPON* selection = WeaponWheel::CloseAndGetSelection();
-					if (selection)
-						SelectWeapon(selection);
+					const WeaponWheel::Selection selection = WeaponWheel::CloseAndGetSelection();
+					if (selection.holster)
+						HolsterWeapon();
+					else if (selection.weapon)
+						SelectWeapon(selection.weapon);
 				}
 			}
 		}
