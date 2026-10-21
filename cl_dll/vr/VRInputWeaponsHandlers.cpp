@@ -19,6 +19,29 @@ namespace
 {
 	WEAPON* g_pHolsteredWeapon{ nullptr };
 
+	void HolsterWeapon()
+	{
+		if (gHUD.m_Ammo.m_pWeapon)
+		{
+			// Select hand
+			ServerCmd("weapon_barehand");
+			PlaySound("common/wpn_select.wav", 1);
+			g_pHolsteredWeapon = gHUD.m_Ammo.m_pWeapon;
+			gHUD.m_Ammo.m_pWeapon = nullptr;
+		}
+	}
+
+	void SelectWeapon(WEAPON* weapon)
+	{
+		if (weapon == gHUD.m_Ammo.m_pWeapon)
+			return;
+
+		g_pHolsteredWeapon = nullptr;
+		gpActiveSel = weapon;
+		gHUD.m_iKeyBits |= IN_ATTACK;
+		gHUD.m_Ammo.Think();
+	}
+
 #ifndef MAX_COMMAND_SIZE
 #define MAX_COMMAND_SIZE 256
 #endif
@@ -84,11 +107,7 @@ namespace VR
 			{
 				if (gHUD.m_Ammo.m_pWeapon)
 				{
-					// Select hand
-					ServerCmd("weapon_barehand");
-					PlaySound("common/wpn_select.wav", 1);
-					g_pHolsteredWeapon = gHUD.m_Ammo.m_pWeapon;
-					gHUD.m_Ammo.m_pWeapon = nullptr;
+					HolsterWeapon();
 				}
 				else if (g_pHolsteredWeapon)
 				{
@@ -114,9 +133,15 @@ namespace VR
 			if (data.bActive && data.bChanged)
 			{
 				if (data.bState)
+				{
 					WeaponWheel::Open();
+				}
 				else
-					WeaponWheel::Close();
+				{
+					WEAPON* selection = WeaponWheel::CloseAndGetSelection();
+					if (selection)
+						SelectWeapon(selection);
+				}
 			}
 		}
 

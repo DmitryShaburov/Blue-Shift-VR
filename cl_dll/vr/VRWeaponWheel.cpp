@@ -300,6 +300,16 @@ namespace VR
 			g_isOpen = false;
 		}
 
+		WEAPON* CloseAndGetSelection()
+		{
+			WEAPON* selection = nullptr;
+			if (g_isOpen && g_lastHovered != -1)
+				selection = GetCategoryWeapon(g_lastHovered);
+
+			g_isOpen = false;
+			return selection;
+		}
+
 		bool IsOpen()
 		{
 			return g_isOpen;
