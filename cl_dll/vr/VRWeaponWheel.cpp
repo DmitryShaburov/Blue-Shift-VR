@@ -19,6 +19,9 @@ namespace
 	constexpr float WHEEL_SEGMENT_GAP_DEGREES = 3.f;
 	constexpr int WHEEL_SEGMENT_STEPS = 12;
 	constexpr float WHEEL_ALPHA = 0.7f;
+	constexpr float WHEEL_DEAD_ZONE = 2.5f;  // hand offset below this hovers nothing
+	constexpr float WHEEL_COLOR = 0.5f;
+	constexpr float WHEEL_HOVER_COLOR = 0.9f;
 
 	constexpr float PI = 3.14159265358979f;
 
@@ -28,6 +31,28 @@ namespace
 	Vector g_center;
 	Vector g_right;
 	Vector g_up;
+
+	// Returns the category the weapon hand points at, or -1 inside the dead zone
+	int GetHoveredCategory()
+	{
+		VRHelper* helper = gVRRenderer.GetHelper();
+		if (helper == nullptr)
+			return -1;
+
+		const Vector offset = helper->GetWeaponPosition() - g_center;
+		const float x = DotProduct(offset, g_right);
+		const float y = DotProduct(offset, g_up);
+		if (x * x + y * y < WHEEL_DEAD_ZONE * WHEEL_DEAD_ZONE)
+			return -1;
+
+		// Clockwise angle from the top, same layout as the drawn segments
+		float angle = atan2f(x, y);
+		if (angle < 0.f)
+			angle += 2.f * PI;
+
+		const float segmentAngle = 2.f * PI / NUM_CATEGORIES;
+		return static_cast<int>(angle / segmentAngle + 0.5f) % NUM_CATEGORIES;
+	}
 }  // namespace
 
 namespace VR
@@ -80,7 +105,7 @@ namespace VR
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			glColor4f(0.5f, 0.5f, 0.5f, WHEEL_ALPHA);
+			const int hovered = GetHoveredCategory();
 
 			const float segmentAngle = 2.f * PI / NUM_CATEGORIES;
 			const float gap = WHEEL_SEGMENT_GAP_DEGREES * PI / 180.f;
@@ -91,6 +116,9 @@ namespace VR
 				const float centerAngle = PI / 2.f - i * segmentAngle;
 				const float start = centerAngle - segmentAngle / 2.f + gap / 2.f;
 				const float end = centerAngle + segmentAngle / 2.f - gap / 2.f;
+
+				const float color = (i == hovered) ? WHEEL_HOVER_COLOR : WHEEL_COLOR;
+				glColor4f(color, color, color, WHEEL_ALPHA);
 
 				glBegin(GL_QUAD_STRIP);
 				for (int step = 0; step <= WHEEL_SEGMENT_STEPS; step++)
