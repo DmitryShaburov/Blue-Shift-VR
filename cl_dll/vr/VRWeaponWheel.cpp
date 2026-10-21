@@ -38,12 +38,16 @@ namespace VR
 		{
 			VRHelper* helper = gVRRenderer.GetHelper();
 			if (helper == nullptr || !helper->HasValidWeaponController())
+			{
+				gEngfuncs.Con_Printf("WeaponWheel: Open failed, no valid weapon controller\n"); // TEMP
 				return;
+			}
 
 			Vector forward;
 			helper->GetViewVectors(forward, g_right, g_up);
 			g_center = helper->GetWeaponPosition();
 			g_isOpen = true;
+			gEngfuncs.Con_Printf("WeaponWheel: opened at %.1f %.1f %.1f\n", g_center.x, g_center.y, g_center.z); // TEMP
 		}
 
 		void Close()
@@ -69,7 +73,7 @@ namespace VR
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			glColor4f(0.1f, 0.1f, 0.1f, WHEEL_ALPHA);
+			glColor4f(0.9f, 0.9f, 0.9f, WHEEL_ALPHA); // TEMP bright
 
 			const float segmentAngle = 2.f * PI / NUM_CATEGORIES;
 			const float gap = WHEEL_SEGMENT_GAP_DEGREES * PI / 180.f;

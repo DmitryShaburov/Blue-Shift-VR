@@ -113,6 +113,7 @@ namespace VR
 			// Hold to show the weapon selection wheel
 			if (data.bActive && data.bChanged)
 			{
+				gEngfuncs.Con_Printf("WeaponWheel: HandleNext state=%d\n", (int)data.bState); // TEMP
 				if (data.bState)
 					WeaponWheel::Open();
 				else
