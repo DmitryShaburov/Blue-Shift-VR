@@ -6,6 +6,7 @@
 #include "VRWeaponWheel.h"
 #include "VRRenderer.h"
 #include "VRHelper.h"
+#include "VRInput.h"
 #include "vr_gl.h"
 
 namespace
@@ -22,10 +23,12 @@ namespace
 	constexpr float WHEEL_DEAD_ZONE = 2.5f;  // hand offset below this hovers nothing
 	constexpr float WHEEL_COLOR = 0.5f;
 	constexpr float WHEEL_HOVER_COLOR = 0.9f;
+	constexpr float WHEEL_HOVER_HAPTIC_INTENSITY = 0.3f;
 
 	constexpr float PI = 3.14159265358979f;
 
 	bool g_isOpen = false;
+	int g_lastHovered = -1;
 
 	// Fixed when the wheel is opened
 	Vector g_center;
@@ -72,6 +75,7 @@ namespace VR
 			helper->GetViewVectors(forward, g_right, g_up);
 			g_center = helper->GetWeaponPosition();
 			g_isOpen = true;
+			g_lastHovered = -1;
 		}
 
 		void Close()
@@ -106,6 +110,16 @@ namespace VR
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 			const int hovered = GetHoveredCategory();
+			if (hovered != g_lastHovered)
+			{
+				// Render runs once per eye, the second call sees no change
+				g_lastHovered = hovered;
+				if (hovered != -1)
+				{
+					PlaySound("common/wpn_moveselect.wav", 1);
+					g_vrInput.recoilintensity = WHEEL_HOVER_HAPTIC_INTENSITY;
+				}
+			}
 
 			const float segmentAngle = 2.f * PI / NUM_CATEGORIES;
 			const float gap = WHEEL_SEGMENT_GAP_DEGREES * PI / 180.f;
