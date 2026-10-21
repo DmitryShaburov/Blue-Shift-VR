@@ -521,7 +521,7 @@ void VRHelper::Shutdown()
 
 Matrix4 VRHelper::GetHMDMatrixProjectionEye(vr::EVREye eEye)
 {
-	float fNearZ = 0.01f;
+	float fNearZ = 0.05f;
 	float fFarZ = 8192.f;
 	return ConvertSteamVRMatrixToMatrix4(vrSystem->GetProjectionMatrix(eEye, fNearZ, fFarZ));
 }
