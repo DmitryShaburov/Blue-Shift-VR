@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
-#include <regex>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -61,10 +60,12 @@ namespace
 	// the distance at which the hand points at a hexagon.
 	constexpr float WHEEL_SCALE = 1.f;
 
+	constexpr float SQRT3 = 1.7320508f;
+
 	constexpr float HEX_PITCH = 3.f * WHEEL_SCALE;  // distance between the centers of neighbouring hexagons, about 8 cm
 	constexpr float HEX_GAP = 0.2f * WHEEL_SCALE;   // space between the outlines of neighbours
 	constexpr float HEX_INRADIUS = HEX_PITCH / 2.f - HEX_GAP / 2.f;
-	constexpr float HEX_RADIUS = HEX_INRADIUS * 2.f / 1.7320508f;  // corner distance, flat-top hexagon
+	constexpr float HEX_RADIUS = HEX_INRADIUS * 2.f / SQRT3;  // corner distance, flat-top hexagon
 	constexpr float HEX_POINT_RADIUS = HEX_PITCH * 0.55f;           // how close the hand has to be to a hexagon's center to point at it
 
 	constexpr float WHEEL_DISTANCE = 3.f;  // how far the wheel plane is in front of the hand, about 8 cm at the default world scale
@@ -103,39 +104,51 @@ namespace
 		bool empty;       // the player has the weapon but no ammo for it, it can't be selected
 	};
 
-	// Hover key of the cell the hand points at: the weapon id, 0 for the empty hand, -1 for none
+	// No cell is hovered
+	constexpr int CELL_NONE = -1;
+
+	// Hover key of the cell the hand points at: the weapon id, HOVER_HAND for the empty hand, HOVER_NONE for none.
+	// Weapon ids start at 1, so they don't clash with HOVER_HAND.
 	constexpr int HOVER_NONE = -1;
 	constexpr int HOVER_HAND = 0;
 
-	bool g_isOpen = false;
-	int g_lastHover = HOVER_NONE;
-	bool g_leftCenter = false;  // the hand has been somewhere else than the center since the wheel opened
+	struct WheelState
+	{
+		bool isOpen = false;
+		int lastHover = HOVER_NONE;
+		bool leftCenter = false;  // the hand has been somewhere else than the center since the wheel opened
 
-	// Fixed when the wheel is opened
-	Vector g_center;
-	Vector g_right;
-	Vector g_up;
+		// The hexagons and the one the hand points at, refreshed once per frame
+		Cell cells[MAX_CELLS];
+		int cellCount = 0;
+		int hovered = CELL_NONE;
 
-	// HL coordinates of the HUD sprites are in the size of the original sprite sheet
-	struct SheetSize
+		// Fixed when the wheel is opened
+		Vector center;
+		Vector right;
+		Vector up;
+	};
+	WheelState g_wheel;
+
+	// HL coordinates of the HUD sprites are in the size of the original sprite sheet.
+	// Keyed by the sprite model name. Weapon sprites are always the 640 sheets, the 320 ones are only used
+	// when the screen is narrower than 640.
+	struct SheetInfo
 	{
 		int width;
 		int height;
+		const char* texture;
 	};
-	const std::unordered_map<std::string, SheetSize> g_sheetSizes = {
-		{ "640hud1", { 256, 256 } },
-		{ "640hud2", { 256, 256 } },
-		{ "640hud3", { 256, 256 } },
-		{ "640hud4", { 256, 256 } },
-		{ "640hud5", { 256, 256 } },
-		{ "640hud6", { 256, 256 } },
-		{ "640hud7", { 256, 128 } },
-		{ "640hud8", { 256, 64 } },
-		{ "640hud9", { 256, 64 } },
-		{ "320hud1", { 256, 256 } },
-		{ "320hud2", { 128, 128 } },
-		{ "320hud3", { 256, 64 } },
-		{ "320hud4", { 256, 32 } },
+	const std::unordered_map<std::string, SheetInfo> g_sheets = {
+		{ "sprites/640hud1.spr", { 256, 256, "/hud/640hud1.png" } },
+		{ "sprites/640hud2.spr", { 256, 256, "/hud/640hud2.png" } },
+		{ "sprites/640hud3.spr", { 256, 256, "/hud/640hud3.png" } },
+		{ "sprites/640hud4.spr", { 256, 256, "/hud/640hud4.png" } },
+		{ "sprites/640hud5.spr", { 256, 256, "/hud/640hud5.png" } },
+		{ "sprites/640hud6.spr", { 256, 256, "/hud/640hud6.png" } },
+		{ "sprites/640hud7.spr", { 256, 128, "/hud/640hud7.png" } },
+		{ "sprites/640hud8.spr", { 256, 64, "/hud/640hud8.png" } },
+		{ "sprites/640hud9.spr", { 256, 64, "/hud/640hud9.png" } },
 	};
 
 	struct VisibleBounds
@@ -143,23 +156,62 @@ namespace
 		float left, right, top, bottom;  // in sprite pixels, relative to the sheet
 	};
 
+	// What is kept of a sprite sheet texture. It is read back from the GPU once, when the sheet is first used.
+	struct SheetData
+	{
+		// Copy of the sheet that is white with alpha from the pixel brightness, so the dark background
+		// (with scanlines) doesn't show up as a lighter rectangle. The sprite color is applied when drawing.
+		unsigned int maskedTexture = 0;
+		std::vector<unsigned char> brightness;  // per pixel, to find the visible part of an icon
+	};
+
+	const SheetData& GetSheetData(unsigned int texture, int textureWidth, int textureHeight)
+	{
+		static std::unordered_map<unsigned int, SheetData> cache;
+
+		auto it = cache.find(texture);
+		if (it != cache.end())
+			return it->second;
+
+		std::vector<unsigned char> pixels(static_cast<size_t>(textureWidth) * textureHeight * 4);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+		SheetData& data = cache[texture];
+		data.brightness.resize(static_cast<size_t>(textureWidth) * textureHeight);
+		for (size_t i = 0; i < data.brightness.size(); i++)
+		{
+			unsigned char* p = &pixels[i * 4];
+			const int brightness = (std::max)({ p[0], p[1], p[2] });
+			const int alpha = (std::max)(0, brightness - ICON_BACKGROUND_FLOOR) * 255 / (255 - ICON_BACKGROUND_FLOOR);
+			data.brightness[i] = static_cast<unsigned char>(brightness);
+			p[0] = p[1] = p[2] = 255;
+			p[3] = static_cast<unsigned char>(alpha);
+		}
+
+		glGenTextures(1, &data.maskedTexture);
+		glBindTexture(GL_TEXTURE_2D, data.maskedTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, textureWidth, textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		return data;
+	}
+
 	// Returns the part of the rect that actually has something drawn, so icons can be centered
 	// (the weapon sprites are right aligned in their rects)
-	VisibleBounds GetVisibleBounds(unsigned int texture, int textureWidth, int textureHeight, const SheetSize& sheet, const Rect& rc)
+	VisibleBounds GetVisibleBounds(const SheetData& data, int textureWidth, int textureHeight, const SheetInfo& sheet, const Rect& rc)
 	{
 		static std::map<std::tuple<unsigned int, int, int, int, int>, VisibleBounds> cache;
 
-		const auto key = std::make_tuple(texture, rc.left, rc.top, rc.right, rc.bottom);
+		const auto key = std::make_tuple(data.maskedTexture, rc.left, rc.top, rc.right, rc.bottom);
 		auto it = cache.find(key);
 		if (it != cache.end())
 			return it->second;
 
 		VisibleBounds bounds{ static_cast<float>(rc.left), static_cast<float>(rc.right), static_cast<float>(rc.top), static_cast<float>(rc.bottom) };
-
-		std::vector<unsigned char> pixels(static_cast<size_t>(textureWidth) * textureHeight * 4);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-		glBindTexture(GL_TEXTURE_2D, 0);
 
 		const float scaleX = static_cast<float>(textureWidth) / sheet.width;
 		const float scaleY = static_cast<float>(textureHeight) / sheet.height;
@@ -168,9 +220,7 @@ namespace
 		{
 			for (int x = static_cast<int>(rc.left * scaleX); x < static_cast<int>(rc.right * scaleX) && x < textureWidth; x++)
 			{
-				const unsigned char* p = &pixels[(static_cast<size_t>(y) * textureWidth + x) * 4];
-				const int brightness = (std::max)({ p[0], p[1], p[2] }) * p[3] / 255;
-				if (brightness > ICON_VISIBLE_THRESHOLD)
+				if (data.brightness[static_cast<size_t>(y) * textureWidth + x] > ICON_VISIBLE_THRESHOLD)
 				{
 					minX = (std::min)(minX, x);
 					maxX = (std::max)(maxX, x);
@@ -188,41 +238,6 @@ namespace
 		return bounds;
 	}
 
-	// Returns a copy of the sheet texture that is white with alpha from the pixel brightness, so the
-	// dark background doesn't show up as a lighter rectangle. The sprite color is applied when drawing.
-	unsigned int GetMaskedTexture(unsigned int texture, int textureWidth, int textureHeight)
-	{
-		static std::unordered_map<unsigned int, unsigned int> cache;
-
-		auto it = cache.find(texture);
-		if (it != cache.end())
-			return it->second;
-
-		std::vector<unsigned char> pixels(static_cast<size_t>(textureWidth) * textureHeight * 4);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-
-		for (size_t i = 0; i < pixels.size(); i += 4)
-		{
-			const int brightness = (std::max)({ pixels[i], pixels[i + 1], pixels[i + 2] });
-			const int alpha = (std::max)(0, brightness - ICON_BACKGROUND_FLOOR) * 255 / (255 - ICON_BACKGROUND_FLOOR);
-			pixels[i] = pixels[i + 1] = pixels[i + 2] = 255;
-			pixels[i + 3] = static_cast<unsigned char>(alpha);
-		}
-
-		unsigned int masked = 0;
-		glGenTextures(1, &masked);
-		glBindTexture(GL_TEXTURE_2D, masked);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, textureWidth, textureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		cache[texture] = masked;
-		return masked;
-	}
-
 	// Draws a HUD sprite rect as a quad in the wheel plane, centered at the given point
 	void DrawSprite(HSPRITE sprite, const Rect& rc, const Vector& position, float unitsPerPixel, int r, int g, int b)
 	{
@@ -230,19 +245,18 @@ namespace
 		if (model == nullptr)
 			return;
 
-		// "sprites/640hud7.spr" -> "640hud7"
-		const std::string sheetName = std::regex_replace(model->name, std::regex{ "^sprites/([a-z0-9_]+)\\.spr$" }, "$1");
-		const auto sheetIt = g_sheetSizes.find(sheetName);
-		if (sheetIt == g_sheetSizes.end())
+		const auto sheetIt = g_sheets.find(model->name);
+		if (sheetIt == g_sheets.end())
 			return;
-		const SheetSize& sheet = sheetIt->second;
+		const SheetInfo& sheet = sheetIt->second;
 
 		unsigned int textureWidth = 0, textureHeight = 0;
-		const unsigned int texture = VRTextureHelper::Instance().GetTexture("/hud/" + sheetName + ".png", textureWidth, textureHeight);
+		const unsigned int texture = VRTextureHelper::Instance().GetTexture(sheet.texture, textureWidth, textureHeight);
 		if (texture == 0)
 			return;
 
-		const VisibleBounds visible = GetVisibleBounds(texture, textureWidth, textureHeight, sheet, rc);
+		const SheetData& sheetData = GetSheetData(texture, textureWidth, textureHeight);
+		const VisibleBounds visible = GetVisibleBounds(sheetData, textureWidth, textureHeight, sheet, rc);
 
 		// Offsets from the point to the rect edges, so the center of the visible part lands on it
 		const float centerX = (visible.left + visible.right) / 2.f;
@@ -263,17 +277,13 @@ namespace
 
 		auto vertex = [&](float u, float v, float x, float y)
 		{
-			const Vector pos = position + g_right * x + g_up * y;
+			const Vector pos = position + g_wheel.right * x + g_wheel.up * y;
 			glTexCoord2f(u, v);
 			glVertex3f(pos.x, pos.y, pos.z);
 		};
 
-		const unsigned int maskedTexture = GetMaskedTexture(texture, textureWidth, textureHeight);
-		if (maskedTexture == 0)
-			return;
-
 		glEnable(GL_TEXTURE_2D);
-		glBindTexture(GL_TEXTURE_2D, maskedTexture);
+		glBindTexture(GL_TEXTURE_2D, sheetData.maskedTexture);
 		glColor4f(r / 255.f, g / 255.f, b / 255.f, 1.f);
 		glBegin(GL_QUADS);
 		vertex(u0, v0, left, top);
@@ -345,21 +355,21 @@ namespace
 
 	Vector GetCellPosition(const Cell& cell)
 	{
-		return g_center + g_right * cell.x + g_up * cell.y;
+		return g_wheel.center + g_wheel.right * cell.x + g_wheel.up * cell.y;
 	}
 
-	// The selectable cell closest to the weapon hand, -1 if the hand is not on any
+	// The selectable cell closest to the weapon hand, CELL_NONE if the hand is not on any
 	int GetHoveredCell(const Cell* cells, int count)
 	{
 		VRHelper* helper = gVRRenderer.GetHelper();
 		if (helper == nullptr)
-			return -1;
+			return CELL_NONE;
 
-		const Vector offset = helper->GetWeaponPosition() - g_center;
-		const float x = DotProduct(offset, g_right);
-		const float y = DotProduct(offset, g_up);
+		const Vector offset = helper->GetWeaponPosition() - g_wheel.center;
+		const float x = DotProduct(offset, g_wheel.right);
+		const float y = DotProduct(offset, g_wheel.up);
 
-		int hovered = -1;
+		int hovered = CELL_NONE;
 		float closest = HEX_POINT_RADIUS * HEX_POINT_RADIUS;
 		for (int i = 0; i < count; i++)
 		{
@@ -381,17 +391,23 @@ namespace
 
 	int GetHoverKey(const Cell* cells, int hovered)
 	{
-		if (hovered == -1)
+		if (hovered == CELL_NONE)
 			return HOVER_NONE;
 
 		return cells[hovered].weapon != nullptr ? cells[hovered].weapon->iId : HOVER_HAND;
+	}
+
+	void Refresh()
+	{
+		g_wheel.cellCount = BuildCells(g_wheel.cells);
+		g_wheel.hovered = GetHoveredCell(g_wheel.cells, g_wheel.cellCount);
 	}
 
 	// Corner of a flat-top hexagon
 	Vector GetHexCorner(const Vector& center, int corner)
 	{
 		const float angle = corner * (PI / 3.f);
-		return center + g_right * (cosf(angle) * HEX_RADIUS) + g_up * (sinf(angle) * HEX_RADIUS);
+		return center + g_wheel.right * (cosf(angle) * HEX_RADIUS) + g_wheel.up * (sinf(angle) * HEX_RADIUS);
 	}
 
 	// Draws a hexagon, with the alpha going from centerAlpha in the middle to edgeAlpha at the corners
@@ -409,10 +425,9 @@ namespace
 		glEnd();
 	}
 
-	// Draws the outline of a hexagon inside its edges, in the current color
-	void DrawHexOutline(const Vector& center, float thickness)
+	// Adds the outline of a hexagon inside its edges, in the current color. Call between glBegin(GL_QUADS) and glEnd().
+	void AddHexOutline(const Vector& center, float thickness)
 	{
-		glBegin(GL_QUADS);
 		for (int corner = 0; corner < 6; corner++)
 		{
 			const Vector from = GetHexCorner(center, corner);
@@ -422,7 +437,99 @@ namespace
 			for (const Vector& point : points)
 				glVertex3f(point.x, point.y, point.z);
 		}
+	}
+	struct Color
+	{
+		int r, g, b;
+	};
+
+	struct HudColors
+	{
+		Color normal;
+		Color empty;  // weapons without ammo
+	};
+
+	HudColors GetHudColors()
+	{
+		HudColors colors;
+		// Blue Shift's HUD color (named RGB_YELLOWISH in the HL code)
+		UnpackRGB(colors.normal.r, colors.normal.g, colors.normal.b, RGB_YELLOWISH);
+
+		// Weapons without ammo are dim red, like in the HL weapon list
+		UnpackRGB(colors.empty.r, colors.empty.g, colors.empty.b, RGB_REDISH);
+		ScaleColors(colors.empty.r, colors.empty.g, colors.empty.b, EMPTY_BRIGHTNESS);
+		return colors;
+	}
+
+	const Color& GetCellColor(const Cell& cell, const HudColors& colors)
+	{
+		return cell.empty ? colors.empty : colors.normal;
+	}
+
+	void SetRenderState()
+	{
+		// The engine may leave any of this on; plain colored geometry needs it all off
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		// On Windows the glDisable hook ignores GL_DEPTH_TEST while the VR scene is drawn (VROpenGLInterceptor.cpp),
+		// so also make the test always pass and don't write depth. Otherwise the coplanar sprites z-fight with the hexagons.
+		glDepthFunc(GL_ALWAYS);
+		glDepthMask(GL_FALSE);
+		glDisable(GL_LIGHTING);
+		glDisable(GL_FOG);
+		glDisable(GL_ALPHA_TEST);
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_SCISSOR_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
+	// Translucent fill
+	void DrawFills(const HudColors& colors)
+	{
+		for (int i = 0; i < g_wheel.cellCount; i++)
+		{
+			const Cell& cell = g_wheel.cells[i];
+			const Color& color = GetCellColor(cell, colors);
+			if (i == g_wheel.hovered)
+				DrawHexFill(GetCellPosition(cell), color.r, color.g, color.b, HOVER_CENTER_ALPHA, HOVER_EDGE_ALPHA);
+			else
+				DrawHexFill(GetCellPosition(cell), color.r, color.g, color.b, TILE_TINT_ALPHA, TILE_TINT_ALPHA);
+		}
+	}
+
+	// Outlines on top, opaque so the corners where the lines overlap don't get brighter
+	void DrawOutlines(const HudColors& colors)
+	{
+		glBegin(GL_QUADS);
+		for (int i = 0; i < g_wheel.cellCount; i++)
+		{
+			const Cell& cell = g_wheel.cells[i];
+			const bool isHovered = i == g_wheel.hovered;
+			const float scale = isHovered ? OUTLINE_HOVER_COLOR_SCALE : OUTLINE_COLOR_SCALE;
+			const Color& color = GetCellColor(cell, colors);
+			glColor4f(color.r / 255.f * scale, color.g / 255.f * scale, color.b / 255.f * scale, 1.f);
+			AddHexOutline(GetCellPosition(cell), isHovered ? OUTLINE_HOVER_THICKNESS : OUTLINE_THICKNESS);
+		}
 		glEnd();
+	}
+
+	// Sprites are additive, like everything else on the HL HUD. The empty hand has no icon, only its hexagon.
+	void DrawIcons(const HudColors& colors)
+	{
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		for (int i = 0; i < g_wheel.cellCount; i++)
+		{
+			const Cell& cell = g_wheel.cells[i];
+			if (cell.weapon == nullptr)
+				continue;
+
+			const Color& color = GetCellColor(cell, colors);
+			DrawWeaponIcon(cell.weapon, GetCellPosition(cell), !cell.empty && i == g_wheel.hovered, color.r, color.g, color.b);
+		}
 	}
 }  // namespace
 
@@ -440,34 +547,34 @@ namespace VR
 			}
 
 			Vector forward;
-			helper->GetViewVectors(forward, g_right, g_up);
+			helper->GetViewVectors(forward, g_wheel.right, g_wheel.up);
 			// Away from the head, so the hand is in front of the wheel
-			g_center = helper->GetWeaponPosition() + forward * WHEEL_DISTANCE;
-			g_isOpen = true;
-			g_lastHover = HOVER_HAND;  // the hand starts on the center hexagon
-			g_leftCenter = false;
+			g_wheel.center = helper->GetWeaponPosition() + forward * WHEEL_DISTANCE;
+			g_wheel.isOpen = true;
+			Refresh();
+			g_wheel.lastHover = HOVER_HAND;  // the hand starts on the center hexagon
+			g_wheel.leftCenter = false;
 		}
 
 		void Close()
 		{
-			g_isOpen = false;
+			g_wheel.isOpen = false;
 		}
 
 		Selection CloseAndGetSelection()
 		{
 			Selection selection;
-			if (g_isOpen)
+			if (g_wheel.isOpen)
 			{
-				Cell cells[MAX_CELLS];
-				const int count = BuildCells(cells);
-				const int hovered = GetHoveredCell(cells, count);
-				if (hovered != -1)
+				// The release comes before this frame's Update()
+				Refresh();
+				if (g_wheel.hovered != CELL_NONE)
 				{
-					if (cells[hovered].weapon != nullptr)
+					if (g_wheel.cells[g_wheel.hovered].weapon != nullptr)
 					{
-						selection.weapon = cells[hovered].weapon;
+						selection.weapon = g_wheel.cells[g_wheel.hovered].weapon;
 					}
-					else if (g_leftCenter)
+					else if (g_wheel.leftCenter)
 					{
 						// Releasing on the center without having moved is just closing the wheel, not holstering
 						selection.holster = true;
@@ -475,104 +582,45 @@ namespace VR
 				}
 			}
 
-			g_isOpen = false;
+			g_wheel.isOpen = false;
 			return selection;
 		}
 
-		bool IsOpen()
+		void Update()
 		{
-			return g_isOpen;
-		}
-
-		void Render()
-		{
-			if (!g_isOpen)
+			if (!g_wheel.isOpen)
 				return;
 
-			glPushAttrib(GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT);
+			Refresh();
 
-			// The engine may leave any of this on; plain colored geometry needs it all off
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, 0);
-			glDisable(GL_TEXTURE_2D);
-			glDisable(GL_CULL_FACE);
-			glDisable(GL_DEPTH_TEST);
-			// On Windows the glDisable hook ignores GL_DEPTH_TEST while the VR scene is drawn (VROpenGLInterceptor.cpp),
-			// so also make the test always pass and don't write depth. Otherwise the coplanar sprites z-fight with the hexagons.
-			glDepthFunc(GL_ALWAYS);
-			glDepthMask(GL_FALSE);
-			glDisable(GL_LIGHTING);
-			glDisable(GL_FOG);
-			glDisable(GL_ALPHA_TEST);
-			glDisable(GL_STENCIL_TEST);
-			glDisable(GL_SCISSOR_TEST);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			// Blue Shift's HUD color (named RGB_YELLOWISH in the HL code)
-			int hudR, hudG, hudB;
-			UnpackRGB(hudR, hudG, hudB, RGB_YELLOWISH);
-
-			Cell cells[MAX_CELLS];
-			const int count = BuildCells(cells);
-			const int hovered = GetHoveredCell(cells, count);
-
-			const int hoverKey = GetHoverKey(cells, hovered);
-			if (hoverKey != g_lastHover)
+			const int hoverKey = GetHoverKey(g_wheel.cells, g_wheel.hovered);
+			if (hoverKey != g_wheel.lastHover)
 			{
-				// Render runs once per eye, the second call sees no change
-				g_lastHover = hoverKey;
-				if (hovered != -1)
+				g_wheel.lastHover = hoverKey;
+				if (g_wheel.hovered != CELL_NONE)
 				{
 					// Not PlaySound() from cl_util.h: windows.h (via vr_gl.h) turns that name into PlaySoundA
 					gEngfuncs.pfnPlaySoundByName("common/wpn_moveselect.wav", 1);
 					g_vrInput.recoilintensity = WHEEL_HOVER_HAPTIC_INTENSITY;
 				}
 			}
-			if (hovered != 0)
-				g_leftCenter = true;
+			// Any movement off the center counts, including pointing at nothing
+			if (g_wheel.hovered != 0)
+				g_wheel.leftCenter = true;
+		}
 
-			// Weapons without ammo are dim red, like in the HL weapon list
-			int emptyR, emptyG, emptyB;
-			UnpackRGB(emptyR, emptyG, emptyB, RGB_REDISH);
-			ScaleColors(emptyR, emptyG, emptyB, EMPTY_BRIGHTNESS);
+		void Render()
+		{
+			if (!g_wheel.isOpen)
+				return;
 
-			// Translucent fill
-			for (int i = 0; i < count; i++)
-			{
-				const int r = cells[i].empty ? emptyR : hudR;
-				const int g = cells[i].empty ? emptyG : hudG;
-				const int b = cells[i].empty ? emptyB : hudB;
-				if (i == hovered)
-					DrawHexFill(GetCellPosition(cells[i]), r, g, b, HOVER_CENTER_ALPHA, HOVER_EDGE_ALPHA);
-				else
-					DrawHexFill(GetCellPosition(cells[i]), r, g, b, TILE_TINT_ALPHA, TILE_TINT_ALPHA);
-			}
+			glPushAttrib(GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT);
+			SetRenderState();
 
-			// Outlines on top, opaque so the corners where the lines overlap don't get brighter
-			for (int i = 0; i < count; i++)
-			{
-				const bool isHovered = i == hovered;
-				const float scale = isHovered ? OUTLINE_HOVER_COLOR_SCALE : OUTLINE_COLOR_SCALE;
-				const int r = cells[i].empty ? emptyR : hudR;
-				const int g = cells[i].empty ? emptyG : hudG;
-				const int b = cells[i].empty ? emptyB : hudB;
-				glColor4f(r / 255.f * scale, g / 255.f * scale, b / 255.f * scale, 1.f);
-				DrawHexOutline(GetCellPosition(cells[i]), isHovered ? OUTLINE_HOVER_THICKNESS : OUTLINE_THICKNESS);
-			}
-
-			// Sprites are additive, like everything else on the HL HUD. The empty hand has no icon, only its hexagon.
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-			for (int i = 0; i < count; i++)
-			{
-				if (cells[i].weapon == nullptr)
-					continue;
-
-				if (cells[i].empty)
-					DrawWeaponIcon(cells[i].weapon, GetCellPosition(cells[i]), false, emptyR, emptyG, emptyB);
-				else
-					DrawWeaponIcon(cells[i].weapon, GetCellPosition(cells[i]), i == hovered, hudR, hudG, hudB);
-			}
+			const HudColors colors = GetHudColors();
+			DrawFills(colors);
+			DrawOutlines(colors);
+			DrawIcons(colors);
 
 			glPopAttrib();
 		}

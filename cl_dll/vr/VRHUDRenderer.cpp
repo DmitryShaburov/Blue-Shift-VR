@@ -450,7 +450,7 @@ void VRRenderer::InterceptSPR_DrawAdditive(int frame, int x, int y, const Rect* 
 	if (prc != nullptr)
 	{
 		// Upstream goes one pixel outside the rect horizontally, which draws a thin line from the next sprite on
-		// the sheet at the sides. Stay half a pixel inside, like vertically.
+		// the sheet at the sides. Stay half a pixel inside (vertically it is one pixel inside, as upstream).
 		textureLeft = (static_cast<float>(prc->left) + 0.5f) / static_cast<float>(w);
 		textureRight = (static_cast<float>(prc->right) - 0.5f) / static_cast<float>(w);
 		textureTop = static_cast<float>(prc->top + 1) / static_cast<float>(h);

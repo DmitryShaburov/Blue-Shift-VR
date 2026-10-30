@@ -563,6 +563,8 @@ void VRInput::HandleInput(bool isInGame, bool isInMenu)
 		ForceWindowToForeground();
 	}
 
+	VR::WeaponWheel::Update();
+
 	FireFeedbacks();
 }
 
