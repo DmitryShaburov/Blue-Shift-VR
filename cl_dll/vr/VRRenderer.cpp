@@ -49,6 +49,7 @@
 #include "VRSettings.h"
 #include "VRRandom.h"
 #include "VRSteamworksManager.h"
+#include "VRWeaponWheel.h"
 
 #include "com_model.h"
 #include "vr/VRComModelHL25.h"
@@ -435,6 +436,7 @@ void VRRenderer::RenderVRHandsAndHUDAndStuff()
 	if (drawHandsAndHUD)
 	{
 		RenderHUDSprites();
+		VR::WeaponWheel::Render();
 	}
 	// BSVR end
 	RenderScreenOverlays();

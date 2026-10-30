@@ -42,6 +42,7 @@ namespace
 #include "VRCommon.h"
 #include "VRRenderer.h"
 #include "VRHelper.h"
+#include "VRWeaponWheel.h"
 
 VRInput g_vrInput;
 
@@ -524,6 +525,10 @@ void VRInput::HandleInput(bool isInGame, bool isInMenu)
 {
 	m_isInGame = isInGame;
 	m_isInMenu = isInMenu;
+
+	// The weapon actions aren't polled here, so the wheel would miss its release event
+	if (!isInGame || isInMenu)
+		VR::WeaponWheel::Close();
 
 	m_vrInputThisFrame = false;
 	m_fingerSkeletalData.clear();

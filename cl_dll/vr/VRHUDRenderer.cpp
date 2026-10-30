@@ -449,8 +449,10 @@ void VRRenderer::InterceptSPR_DrawAdditive(int frame, int x, int y, const Rect* 
 	// Get texture coordinates and sprite dimensions
 	if (prc != nullptr)
 	{
-		textureLeft = static_cast<float>(prc->left - 1) / static_cast<float>(w);
-		textureRight = static_cast<float>(prc->right + 1) / static_cast<float>(w);
+		// Upstream goes one pixel outside the rect horizontally, which draws a thin line from the next sprite on
+		// the sheet at the sides. Stay half a pixel inside, like vertically.
+		textureLeft = (static_cast<float>(prc->left) + 0.5f) / static_cast<float>(w);
+		textureRight = (static_cast<float>(prc->right) - 0.5f) / static_cast<float>(w);
 		textureTop = static_cast<float>(prc->top + 1) / static_cast<float>(h);
 		textureBottom = static_cast<float>(prc->bottom - 1) / static_cast<float>(h);
 
