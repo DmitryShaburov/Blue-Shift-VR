@@ -19,9 +19,19 @@
 #include "hud.h"
 #include "cl_util.h"
 #include "VRCommon.h"
+#include "VRClientVGUI.h"
 // #include "VRSpeechListener.h"
 
 VRSettings g_vrSettings;
+
+namespace
+{
+	void VROptionsCommand()
+	{
+		if (const char* error = VROpenOptionsDialog())
+			gEngfuncs.Con_Printf("VR Options can't open: %s\n", error);
+	}
+}
 
 constexpr const char* VR_DEFAULT_VIEW_DIST_TO_WALLS_AS_STRING = "5";  // for cvar
 
@@ -35,6 +45,9 @@ void VRSettings::Init()
 	CVAR_CREATE("vr_cheat_enable_healing_exploit", "0", 0);
 	CVAR_CREATE("vr_show_achievements", "0", 0);
 
+	// VR Options dialog in the game's menu, opened by resource/GameMenu.res
+	gEngfuncs.pfnAddCommand("vr_options", VROptionsCommand);
+
 	// These are all stored in hlsettings.cfg and synchronized with HLVRConfig
 	RegisterCVAR("vr_357_scale", "1");
 	RegisterCVAR("vr_9mmar_scale", "1");
@@ -45,7 +58,7 @@ void VRSettings::Init()
 	RegisterCVAR("vr_disable_func_friction", "1");
 	//RegisterCVAR("vr_disable_triggerpush", "0");
 	RegisterCVAR("vr_egon_scale", "1");
-	RegisterCVAR("vr_enable_aim_laser", "0");
+	RegisterCVAR("vr_enable_aim_laser", "1"); // BSVR changed to enabled
 	RegisterCVAR("vr_speech_commands_enabled", "0");
 	RegisterCVAR("vr_speech_language_id", "1400");
 	RegisterCVAR("vr_flashlight_attachment", "0");
@@ -137,7 +150,6 @@ void VRSettings::Init()
 	RegisterCVAR("vr_smooth_steps", "0");
 	RegisterCVAR("vr_smooth_steps_intensity", "0.5");
 	RegisterCVAR("vr_headset_offset", "0");
-	RegisterCVAR("vr_classic_mode", "0");
 	RegisterCVAR("vr_enable_interactive_debris", "1");
 	RegisterCVAR("vr_max_interactive_debris", "50");
 	RegisterCVAR("vr_drag_onlyhand", "0");
@@ -148,12 +160,11 @@ void VRSettings::Init()
 	RegisterCVAR("vr_blastpit_fan_nonsolid", "1");
 	RegisterCVAR("vr_blastpit_fan_delay", "1");
 
-	RegisterCVAR("vr_texturemode", "GL_LINEAR_MIPMAP_LINEAR");
 	RegisterCVAR("vr_display_game", "0");
 
 	RegisterCVAR("vr_menu_scale", "1");
 	RegisterCVAR("vr_menu_height", "-0.3");  // meters relative to eye level
-	RegisterCVAR("vr_menu_opacity", "0.99");
+	RegisterCVAR("vr_menu_opacity", "1"); // BSVR changed to fully opaque
 }
 
 void SyncCvars(const char* src, const char* dst)
@@ -184,17 +195,6 @@ void VRSettings::CheckCVARsForChanges()
 	SyncCvars("vr_upspeed", "cl_upspeed");
 	SyncCvars("vr_yawspeed", "cl_yawspeed");
 	SyncCvars("vr_walkspeedfactor", "cl_movespeedkey");
-
-	// classic mode uses unfiltered textures
-	if (gEngfuncs.pfnGetCvarFloat("vr_classic_mode") != 0.f)
-	{
-		gEngfuncs.pfnClientCmd("gl_texturemode GL_NEAREST");
-		gEngfuncs.pfnClientCmd("vr_texturemode GL_NEAREST");
-	}
-	else
-	{
-		UpdateTextureMode();
-	}
 }
 
 void SetCVAR(const char* name, const char* value)
@@ -221,47 +221,3 @@ void VRSettings::RegisterCVAR(const char* name, const char* value)
 	m_cvarCache[name] = value;
 }
 
-void VRSettings::UpdateTextureMode()
-{
-	std::string vr_texturemode = CVAR_GET_STRING("vr_texturemode");
-	std::transform(vr_texturemode.begin(), vr_texturemode.end(), vr_texturemode.begin(), ::toupper);
-
-	std::string gl_texturemode = CVAR_GET_STRING("gl_texturemode");
-	std::transform(gl_texturemode.begin(), gl_texturemode.end(), gl_texturemode.begin(), ::toupper);
-
-	if (vr_texturemode != m_vr_texturemode || vr_texturemode != gl_texturemode)
-	{
-		if (vr_texturemode == "GL_NEAREST")
-		{
-			gEngfuncs.pfnClientCmd("gl_texturemode GL_NEAREST");
-			gEngfuncs.pfnClientCmd("vr_texturemode GL_NEAREST");
-		}
-		else if (vr_texturemode == "GL_LINEAR")
-		{
-			gEngfuncs.pfnClientCmd("gl_texturemode GL_LINEAR");
-			gEngfuncs.pfnClientCmd("vr_texturemode GL_LINEAR");
-		}
-		else if (vr_texturemode == "GL_NEAREST_MIPMAP_NEAREST")
-		{
-			gEngfuncs.pfnClientCmd("gl_texturemode GL_NEAREST_MIPMAP_NEAREST");
-			gEngfuncs.pfnClientCmd("vr_texturemode GL_NEAREST_MIPMAP_NEAREST");
-		}
-		else if (vr_texturemode == "GL_LINEAR_MIPMAP_NEAREST")
-		{
-			gEngfuncs.pfnClientCmd("gl_texturemode GL_LINEAR_MIPMAP_NEAREST");
-			gEngfuncs.pfnClientCmd("vr_texturemode GL_LINEAR_MIPMAP_NEAREST");
-		}
-		else if (vr_texturemode == "GL_NEAREST_MIPMAP_LINEAR")
-		{
-			gEngfuncs.pfnClientCmd("gl_texturemode GL_NEAREST_MIPMAP_LINEAR");
-			gEngfuncs.pfnClientCmd("vr_texturemode GL_NEAREST_MIPMAP_LINEAR");
-		}
-		else /*if (newtexturemode == "GL_LINEAR_MIPMAP_LINEAR")*/
-		{
-			gEngfuncs.pfnClientCmd("gl_texturemode GL_LINEAR_MIPMAP_LINEAR");
-			gEngfuncs.pfnClientCmd("vr_texturemode GL_LINEAR_MIPMAP_LINEAR");
-			vr_texturemode = "GL_LINEAR_MIPMAP_LINEAR";
-		}
-		m_vr_texturemode = vr_texturemode;
-	}
-}

@@ -203,3 +203,183 @@ void CaptureCurrentScreenToTexture(GLuint texture)
 	glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, viewport[2], viewport[3]);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+namespace
+{
+	// GLSL functions, loaded on first use. Local names so they don't clash with glext.h.
+	using CreateShaderFn = GLuint(APIENTRY*)(GLenum type);
+	using ShaderSourceFn = void(APIENTRY*)(GLuint shader, GLsizei count, const char* const* source, const GLint* length);
+	using CompileShaderFn = void(APIENTRY*)(GLuint shader);
+	using GetShaderivFn = void(APIENTRY*)(GLuint shader, GLenum pname, GLint* params);
+	using CreateProgramFn = GLuint(APIENTRY*)();
+	using AttachShaderFn = void(APIENTRY*)(GLuint program, GLuint shader);
+	using LinkProgramFn = void(APIENTRY*)(GLuint program);
+	using GetProgramivFn = void(APIENTRY*)(GLuint program, GLenum pname, GLint* params);
+	using UseProgramFn = void(APIENTRY*)(GLuint program);
+	using GetUniformLocationFn = GLint(APIENTRY*)(GLuint program, const char* name);
+	using Uniform1iFn = void(APIENTRY*)(GLint location, GLint v0);
+	using DeleteShaderFn = void(APIENTRY*)(GLuint shader);
+	using DeleteProgramFn = void(APIENTRY*)(GLuint program);
+
+	CreateShaderFn vrglCreateShader = nullptr;
+	ShaderSourceFn vrglShaderSource = nullptr;
+	CompileShaderFn vrglCompileShader = nullptr;
+	GetShaderivFn vrglGetShaderiv = nullptr;
+	CreateProgramFn vrglCreateProgram = nullptr;
+	AttachShaderFn vrglAttachShader = nullptr;
+	LinkProgramFn vrglLinkProgram = nullptr;
+	GetProgramivFn vrglGetProgramiv = nullptr;
+	UseProgramFn vrglUseProgram = nullptr;
+	GetUniformLocationFn vrglGetUniformLocation = nullptr;
+	Uniform1iFn vrglUniform1i = nullptr;
+	DeleteShaderFn vrglDeleteShader = nullptr;
+	DeleteProgramFn vrglDeleteProgram = nullptr;
+
+	constexpr GLenum VRGL_FRAGMENT_SHADER = 0x8B30;
+	constexpr GLenum VRGL_VERTEX_SHADER = 0x8B31;
+	constexpr GLenum VRGL_COMPILE_STATUS = 0x8B81;
+	constexpr GLenum VRGL_LINK_STATUS = 0x8B82;
+	constexpr GLenum VRGL_CURRENT_PROGRAM = 0x8B8D;
+
+	// Black (and anything darker than BlackLevel) becomes transparent, with a soft edge: alpha rises with the brightest
+	// channel. Over black, an anti-aliased pixel is its color times its coverage, so dividing by alpha restores the color.
+	const char* BlackToTransparentVertexShader =
+		"void main() { gl_TexCoord[0] = gl_MultiTexCoord0; gl_Position = gl_Vertex; }";
+	const char* BlackToTransparentFragmentShader =
+		"uniform sampler2D source;\n"
+		"const float BlackLevel = 0.05;\n"
+		"void main() {\n"
+		"	vec3 color = texture2D(source, gl_TexCoord[0].st).rgb;\n"
+		"	float alpha = clamp(max(color.r, max(color.g, color.b)) / BlackLevel, 0.0, 1.0);\n"
+		"	gl_FragColor = vec4(alpha > 0.0 ? color / alpha : vec3(0.0), alpha);\n"
+		"}\n";
+
+	GLuint CompileShader(GLenum type, const char* source)
+	{
+		GLuint shader = vrglCreateShader(type);
+		vrglShaderSource(shader, 1, &source, nullptr);
+		vrglCompileShader(shader);
+		GLint compiled = 0;
+		vrglGetShaderiv(shader, VRGL_COMPILE_STATUS, &compiled);
+		if (!compiled)
+		{
+			vrglDeleteShader(shader);
+			return 0;
+		}
+		return shader;
+	}
+
+	// 0 if GLSL isn't available or the shaders don't compile, then it isn't tried again
+	GLuint GetBlackToTransparentProgram()
+	{
+		static bool tried = false;
+		static GLuint program = 0;
+		if (tried)
+			return program;
+		tried = true;
+
+		vrglCreateShader = (CreateShaderFn)GetOpenGLFuncAddress("glCreateShader");
+		vrglShaderSource = (ShaderSourceFn)GetOpenGLFuncAddress("glShaderSource");
+		vrglCompileShader = (CompileShaderFn)GetOpenGLFuncAddress("glCompileShader");
+		vrglGetShaderiv = (GetShaderivFn)GetOpenGLFuncAddress("glGetShaderiv");
+		vrglCreateProgram = (CreateProgramFn)GetOpenGLFuncAddress("glCreateProgram");
+		vrglAttachShader = (AttachShaderFn)GetOpenGLFuncAddress("glAttachShader");
+		vrglLinkProgram = (LinkProgramFn)GetOpenGLFuncAddress("glLinkProgram");
+		vrglGetProgramiv = (GetProgramivFn)GetOpenGLFuncAddress("glGetProgramiv");
+		vrglUseProgram = (UseProgramFn)GetOpenGLFuncAddress("glUseProgram");
+		vrglGetUniformLocation = (GetUniformLocationFn)GetOpenGLFuncAddress("glGetUniformLocation");
+		vrglUniform1i = (Uniform1iFn)GetOpenGLFuncAddress("glUniform1i");
+		vrglDeleteShader = (DeleteShaderFn)GetOpenGLFuncAddress("glDeleteShader");
+		vrglDeleteProgram = (DeleteProgramFn)GetOpenGLFuncAddress("glDeleteProgram");
+		void* functions[] = { (void*)vrglCreateShader, (void*)vrglShaderSource, (void*)vrglCompileShader, (void*)vrglGetShaderiv,
+			(void*)vrglCreateProgram, (void*)vrglAttachShader, (void*)vrglLinkProgram, (void*)vrglGetProgramiv, (void*)vrglUseProgram,
+			(void*)vrglGetUniformLocation, (void*)vrglUniform1i, (void*)vrglDeleteShader, (void*)vrglDeleteProgram };
+		for (void* function : functions)
+		{
+			if (!IsValidAddressPointer(function))
+			{
+				gEngfuncs.Con_DPrintf("GLSL is not available, the menu is shown with a black background.\n");
+				return 0;
+			}
+		}
+
+		GLuint vertexShader = CompileShader(VRGL_VERTEX_SHADER, BlackToTransparentVertexShader);
+		GLuint fragmentShader = CompileShader(VRGL_FRAGMENT_SHADER, BlackToTransparentFragmentShader);
+		if (vertexShader == 0 || fragmentShader == 0)
+		{
+			vrglDeleteShader(vertexShader);  // ignores 0
+			vrglDeleteShader(fragmentShader);
+			gEngfuncs.Con_DPrintf("Could not compile the menu transparency shader, the menu is shown with a black background.\n");
+			return 0;
+		}
+		GLuint newProgram = vrglCreateProgram();
+		vrglAttachShader(newProgram, vertexShader);
+		vrglAttachShader(newProgram, fragmentShader);
+		vrglLinkProgram(newProgram);
+		// the program keeps the attached shaders, they are freed with it
+		vrglDeleteShader(vertexShader);
+		vrglDeleteShader(fragmentShader);
+		GLint linked = 0;
+		vrglGetProgramiv(newProgram, VRGL_LINK_STATUS, &linked);
+		if (!linked)
+		{
+			vrglDeleteProgram(newProgram);
+			gEngfuncs.Con_DPrintf("Could not link the menu transparency shader, the menu is shown with a black background.\n");
+			return 0;
+		}
+		program = newProgram;
+		return program;
+	}
+}
+
+bool CopyTextureWithBlackTransparent(GLuint source, GLuint targetFramebuffer, int width, int height)
+{
+	GLuint program = GetBlackToTransparentProgram();
+	if (program == 0)
+		return false;
+
+	GLint previousFramebuffer = 0;
+	GLint previousProgram = 0;
+	glGetIntegerv(VRGL_FRAMEBUFFER_BINDING, &previousFramebuffer);
+	glGetIntegerv(VRGL_CURRENT_PROGRAM, &previousProgram);
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, targetFramebuffer);
+	glViewport(0, 0, width, height);
+	glDisable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_SCISSOR_TEST);
+	glActiveTexture(GL_TEXTURE0);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, source);
+
+	vrglUseProgram(program);
+	vrglUniform1i(vrglGetUniformLocation(program, "source"), 0);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.f, 0.f); glVertex2f(-1.f, -1.f);
+	glTexCoord2f(1.f, 0.f); glVertex2f(1.f, -1.f);
+	glTexCoord2f(1.f, 1.f); glVertex2f(1.f, 1.f);
+	glTexCoord2f(0.f, 1.f); glVertex2f(-1.f, 1.f);
+	glEnd();
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	vrglUseProgram(previousProgram);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glPopAttrib();
+	glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
+	return true;
+}

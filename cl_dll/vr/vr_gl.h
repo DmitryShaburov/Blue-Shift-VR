@@ -67,6 +67,12 @@ bool InitAdditionalGLFunctions();
 
 void CaptureCurrentScreenToTexture(GLuint texture);
 
+// GL_FRAMEBUFFER_BINDING, missing from the GL headers the client is built with
+constexpr GLenum VRGL_FRAMEBUFFER_BINDING = 0x8CA6;
+
+// Draws source into targetFramebuffer with its black background made transparent. False if GLSL isn't available.
+bool CopyTextureWithBlackTransparent(GLuint source, GLuint targetFramebuffer, int width, int height);
+
 
 class OGLErrorException : public std::exception
 {

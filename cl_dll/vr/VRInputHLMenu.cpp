@@ -16,15 +16,26 @@
 #include "VRRenderer.h"
 #include "VRHelper.h"
 #include "VRTextureHelper.h"
-#include "VRGUIRenderer.h"
 
 namespace
 {
+	// The game's menu, copied from the game window (VRRenderer::Frame)
 	unsigned int GetVRMenuTextureHandle()
 	{
-		//return gVRRenderer.GetHelper()->GetHLMenuTexture();
-		return gVRRenderer.GetHelper()->GetVRGLGUITexture();
+		// BSVR start
+		// return gVRRenderer.GetHelper()->GetVRGLGUITexture(); - original
+		// over the game world the menu is shown without its black background
+		if (gVRRenderer.GetHLMenuTransparentTexture() != 0)
+			return gVRRenderer.GetHLMenuTransparentTexture();
+		return gVRRenderer.GetHelper()->GetHLMenuTexture();
+		// BSVR end
 	}
+
+	// Whether the game's mouse button is held down by the menu click, and where the cursor was last
+	bool menuButtonDown = false;
+	bool menuClickWasPressed = false;
+	float menuCursorX = 0.f;
+	float menuCursorY = 0.f;
 
 	// Sets the transparency of the menu overlay, only when the setting changed
 	void ApplyHLMenuOpacity(vr::VROverlayHandle_t overlay)
@@ -207,8 +218,17 @@ void VRInput::HandleHLMenuInput()
 
 	static std::array<vr::TrackedDevicePose_t, vr::k_unMaxTrackedDeviceCount> trackedDevicePoses = { { 0 } };
 
-	vr::VRCompositor()->SetTrackingSpace(vr::TrackingUniverseStanding);
-	vr::VRCompositor()->WaitGetPoses(trackedDevicePoses.data(), vr::k_unMaxTrackedDeviceCount, nullptr, 0);
+	if (gVRRenderer.IsGameShownBehindMenu())
+	{
+		// The game world is rendered behind the menu and waits for the poses itself (VRHelper::UpdatePositions),
+		// waiting here too would skip every other frame. Read the current poses instead.
+		vr::VRSystem()->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseStanding, 0.f, trackedDevicePoses.data(), vr::k_unMaxTrackedDeviceCount);
+	}
+	else
+	{
+		vr::VRCompositor()->SetTrackingSpace(vr::TrackingUniverseStanding);
+		vr::VRCompositor()->WaitGetPoses(trackedDevicePoses.data(), vr::k_unMaxTrackedDeviceCount, nullptr, 0);
+	}
 
 	Vector position;
 	Vector direction;
@@ -255,8 +275,8 @@ void VRInput::HandleHLMenuInput()
 		params.vDirection.v[i] = direction[i];
 	}
 
-	VRGUIRenderer::VRControllerState uiControllerState;
-	uiControllerState.isPressed = g_vrInput.GetVRMenuClickStatus();
+	const bool isPressed = g_vrInput.GetVRMenuClickStatus();
+	bool isOverMenu = false;
 
 	vr::VROverlayIntersectionResults_t results;
 	float beamLength = BeamMissLength;
@@ -264,24 +284,40 @@ void VRInput::HandleHLMenuInput()
 	{
 		// ComputeOverlayIntersection returns UVs as if the overlay were as tall as it is wide, but the
 		// overlay is shown with the aspect ratio of its texture, so rescale v around the center.
-		const float texWidth = (float)gVRRenderer.GetHelper()->GetVRGLGUITextureWidth();
-		const float texHeight = (float)gVRRenderer.GetHelper()->GetVRGLGUITextureHeight();
+		const float texWidth = (float)gVRRenderer.GetHelper()->GetHLMenuTextureWidth();
+		const float texHeight = (float)gVRRenderer.GetHelper()->GetHLMenuTextureHeight();
 		const float aspect = (texWidth > 0.f && texHeight > 0.f) ? texHeight / texWidth : 1.f;
 		const float v = 0.5f - (0.5f - results.vUVs.v[1]) / aspect;
 
-		uiControllerState.isOverGUI = v >= 0.f && v <= 1.f;
-		uiControllerState.x = results.vUVs.v[0];
-		uiControllerState.y = v;
+		isOverMenu = v >= 0.f && v <= 1.f;
+		if (isOverMenu)
+		{
+			menuCursorX = results.vUVs.v[0];
+			menuCursorY = v;
+		}
 		beamLength = results.fDistance;
-	}
-	else
-	{
-		uiControllerState.isOverGUI = false;
 	}
 
 	UpdateHLMenuBeam(hasController, position, direction, beamLength, trackedDevicePoses[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking);
 
-	VRGUIRenderer::Instance().UpdateControllerState(uiControllerState);
+	// Move the game's cursor to where the beam points, the menu click presses its left button.
+	// A press only starts on the menu, a release is sent wherever the beam is, so dragging a slider off the menu ends cleanly.
+	if (isOverMenu)
+	{
+		SendMousePosToHLWindow(menuCursorX, menuCursorY);
+	}
+	const bool clickStarted = isPressed && !menuClickWasPressed;
+	menuClickWasPressed = isPressed;
+	if (clickStarted && isOverMenu && !menuButtonDown)
+	{
+		SendMouseButtonClickToHLWindow(menuCursorX, menuCursorY);
+		menuButtonDown = true;
+	}
+	else if (!isPressed && menuButtonDown)
+	{
+		SendMouseButtonUpToHLWindow(menuCursorX, menuCursorY);
+		menuButtonDown = false;
+	}
 }
 
 void VRInput::ShowHLMenu()
@@ -322,6 +358,13 @@ void VRInput::HideHLMenu()
 {
 	if (!m_isHLMenuShown)
 		return;
+
+	// don't leave the game's mouse button held down
+	if (menuButtonDown)
+	{
+		SendMouseButtonUpToHLWindow(menuCursorX, menuCursorY);
+		menuButtonDown = false;
+	}
 
 	if (beamOverlay != vr::k_ulOverlayHandleInvalid)
 	{

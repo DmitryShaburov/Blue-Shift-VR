@@ -688,7 +688,13 @@ bool VRHelper::UpdatePositions(int viewent)
 		{
 			Vector smoothOffset = UpdateHMD(viewent);
 			UpdateControllers(smoothOffset);
-			SendPositionUpdateToServer();
+			// BSVR start
+			// The world is also rendered behind the menu while the game is paused. The server still runs these updates
+			// then, so the hands would hit and break things. Upstream didn't get here with the menu open.
+			// SendPositionUpdateToServer(); - original
+			if (!gVRRenderer.IsGameShownBehindMenu())
+				SendPositionUpdateToServer();
+			// BSVR end
 			return true;
 		}
 	}
@@ -832,17 +838,31 @@ unsigned int VRHelper::GetHLMenuTexture()
 	return vrGLHLMenuTexture;
 }
 
-unsigned int VRHelper::GetVRGLGUITexture()
+// BSVR: GetVRGLGUITexture() removed with the Nuklear menu (VRGUIRenderer), the game's own menu is shown in VR instead
+
+unsigned int VRHelper::UpdateHLMenuTransparentTexture()
 {
-	int viewport[4];
-	glGetIntegerv(GL_VIEWPORT, viewport);
-	if (m_vrGLGUITextureWidth != viewport[2] || m_vrGLGUITextureHeight != viewport[3])
+	const unsigned int menuTexture = GetHLMenuTexture();
+	if (vrGLHLMenuTransparentTexture == 0 || m_vrGLHLMenuTransparentTextureWidth != m_vrGLHLMenuTextureWidth || m_vrGLHLMenuTransparentTextureHeight != m_vrGLHLMenuTextureHeight)
 	{
-		m_vrGLGUITextureWidth = viewport[2];
-		m_vrGLGUITextureHeight = viewport[3];
-		CreateGLTexture(&vrGLGUITexture, m_vrGLGUITextureWidth, m_vrGLGUITextureHeight);
+		m_vrGLHLMenuTransparentTextureWidth = m_vrGLHLMenuTextureWidth;
+		m_vrGLHLMenuTransparentTextureHeight = m_vrGLHLMenuTextureHeight;
+		CreateGLTexture(&vrGLHLMenuTransparentTexture, m_vrGLHLMenuTransparentTextureWidth, m_vrGLHLMenuTransparentTextureHeight);
+
+		GLint previousFramebuffer = 0;
+		glGetIntegerv(VRGL_FRAMEBUFFER_BINDING, &previousFramebuffer);
+		if (vrGLHLMenuTransparentFrameBuffer == 0)
+		{
+			glGenFramebuffers(1, &vrGLHLMenuTransparentFrameBuffer);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, vrGLHLMenuTransparentFrameBuffer);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, vrGLHLMenuTransparentTexture, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
 	}
-	return vrGLGUITexture;
+
+	if (vrGLHLMenuTransparentTexture == 0 || !CopyTextureWithBlackTransparent(menuTexture, vrGLHLMenuTransparentFrameBuffer, m_vrGLHLMenuTransparentTextureWidth, m_vrGLHLMenuTransparentTextureHeight))
+		return 0;
+	return vrGLHLMenuTransparentTexture;
 }
 
 void VRHelper::GetViewAngles(vr::EVREye eEye, float* angles)

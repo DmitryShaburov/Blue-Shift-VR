@@ -192,7 +192,8 @@ private:
 	void HandleHLMenuInput();
 
 	void SendMousePosToHLWindow(float x, float y);
-	void SendMouseButtonClickToHLWindow(float x, float y);
+	void SendMouseButtonClickToHLWindow(float x, float y);  // presses the left button, release with SendMouseButtonUpToHLWindow
+	void SendMouseButtonUpToHLWindow(float x, float y);
 
 	void FireFeedbacks();
 	void FireFeedback(FeedbackType feedback, int damageType, float durationInSeconds, float frequency, float amplitude);

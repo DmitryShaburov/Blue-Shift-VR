@@ -1,38 +1,63 @@
 using System.Diagnostics;
 using BsvrInstaller;
 
+// Started by double-click, the console window closes on a crash before anyone can read why.
+AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+{
+    Console.WriteLine();
+    Console.WriteLine($"Unexpected error: {e.ExceptionObject}");
+    Console.WriteLine("Please report this message to the mod authors.");
+    Pause();
+};
+
 Console.WriteLine("Half-Life: VR Mod - Blue Shift installer");
 Console.WriteLine();
 
 var steam = Steam.FindRoot();
 if (steam is null)
 {
-    Console.WriteLine("Steam was not found in the registry, please enter the folders by hand.");
+    return Quit("Steam was not found. Install Steam and the games below, then run the installer again.");
 }
 
-var halfLifeDir = AskFolder(
-    "Half-Life folder (contains hl.exe and bshift\\)",
-    steam is null ? null : Steam.FindApp(steam, Steam.BlueShiftAppId),
-    Steam.IsHalfLifeWithBlueShift,
-    "Half-Life: Blue Shift was not found in Steam. Install it and run it once, or enter its folder.");
-
-WaitForHalfLife(steam);
-
-var halfLifeVrDir = AskFolder(
-    "Half-Life: VR Mod folder (contains hl.exe and valve\\actions\\)",
-    steam is null ? null : Steam.FindApp(steam, Steam.HalfLifeVrAppId),
-    Steam.IsHalfLifeVr,
-    "Half-Life: VR Mod was not found in Steam. It is free and provides the VR assets; install it or enter its folder.");
+var halfLifeDir = FindFolder(steam, Steam.BlueShiftAppId, Steam.IsHalfLifeWithBlueShift, "Half-Life folder");
+if (halfLifeDir is null)
+{
+    return Quit("Half-Life: Blue Shift was not found in Steam. Install it, run it once and run the installer again.");
+}
 
 var modDir = Path.Combine(halfLifeDir, "bsvr");
-Console.WriteLine();
-Console.WriteLine($"Installing to {modDir}");
-if (!AskYesNo("Continue?", defaultYes: true))
+var installed = File.Exists(Path.Combine(modDir, "liblist.gam"));
+if (!installed)
 {
-    return 1;
+    WaitForHalfLife(steam);
 }
 
-WaitForSteamToExit();
+var halfLifeVrDir = FindFolder(steam, Steam.HalfLifeVrAppId, Steam.IsHalfLifeVr, "Half-Life: VR Mod folder");
+if (halfLifeVrDir is null)
+{
+    return Quit("Half-Life: VR Mod was not found in Steam. It is free and provides the VR assets; install it and run the installer again.");
+}
+
+Console.WriteLine();
+if (installed)
+{
+    // Steam already lists the mod, so it can keep running; only the game locks the files.
+    Console.WriteLine($"The mod is already installed in {modDir}");
+    if (!AskYesNo("Update it?", defaultYes: true))
+    {
+        return 1;
+    }
+}
+else
+{
+    Console.WriteLine($"Installing to {modDir}");
+    if (!AskYesNo("Continue?", defaultYes: true))
+    {
+        return 1;
+    }
+    WaitForSteamToExit();
+}
+WaitForGameToExit();
 
 Console.WriteLine();
 try
@@ -49,36 +74,40 @@ catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 }
 
 Console.WriteLine();
-Console.WriteLine("Done. Start Steam, then start \"Half-Life: VR Mod - Blue Shift\" from the library.");
+Console.WriteLine(installed
+    ? "Done. Start \"Half-Life: VR Mod - Blue Shift\" from the Steam library."
+    : "Done. Start Steam, then start \"Half-Life: VR Mod - Blue Shift\" from the library.");
 Pause();
 return 0;
 
-static string AskFolder(string what, string? suggestion, Func<string, bool> looksRight, string notFoundHint)
+static string? FindFolder(string steam, int appId, Func<string, bool> looksRight, string what)
 {
-    if (suggestion is not null && Directory.Exists(suggestion) && looksRight(suggestion))
+    var folder = Steam.FindApp(steam, appId);
+    if (folder is null || !looksRight(folder))
     {
-        var found = Path.GetFullPath(suggestion);
-        Console.WriteLine($"{what}: {found} (found via Steam)");
-        return found;
+        return null;
     }
+    folder = Path.GetFullPath(folder);
+    Console.WriteLine($"{what}: {folder}");
+    return folder;
+}
 
-    Console.WriteLine(notFoundHint);
-    Console.WriteLine("Press Enter without a folder to quit.");
+static int Quit(string message)
+{
+    Console.WriteLine(message);
+    Pause();
+    return 1;
+}
 
-    while (true)
+// The running game keeps the mod DLLs and openvr_api.dll locked.
+static void WaitForGameToExit()
+{
+    while (Process.GetProcessesByName("hl").Length > 0)
     {
-        Console.Write($"{what}: ");
-        var folder = ReadLine().Trim().Trim('"');
-        if (folder.Length == 0)
-        {
-            Console.WriteLine("Nothing to install without it, quitting.");
-            Environment.Exit(1);
-        }
-        if (Directory.Exists(folder) && looksRight(folder))
-        {
-            return Path.GetFullPath(folder);
-        }
-        Console.WriteLine("That folder does not look right, please try again.");
+        Console.WriteLine();
+        Console.WriteLine("The game (hl.exe) is running. Quit it so its files can be replaced.");
+        Console.Write("Press Enter once the game has exited (close this window to cancel): ");
+        ReadLine();
     }
 }
 
@@ -86,21 +115,20 @@ static bool IsSteamRunning() =>
     Process.GetProcessesByName("steam").Length > 0 || Process.GetProcessesByName("steamwebhelper").Length > 0;
 
 // Steam lists mods only under Half-Life, so the mod will not show up in the library without it.
-static void WaitForHalfLife(string? steam)
+static void WaitForHalfLife(string steam)
 {
-    if (steam is null)
-    {
-        return;
-    }
-
     while (!Steam.IsOwnedAndInstalled(steam, Steam.HalfLifeAppId))
     {
         Console.WriteLine();
         Console.WriteLine("Half-Life is not installed. Steam lists mods only under Half-Life, so the mod will not");
         Console.WriteLine("appear in the library without it. Add Half-Life to your Steam library, install it as its own game");
         Console.WriteLine("(Blue Shift alone is not enough) and wait for the download to finish.");
+        Console.WriteLine("If Half-Life is installed and this check is wrong, type C to continue anyway.");
         Console.Write("Press Enter to check again (close this window to cancel): ");
-        ReadLine();
+        if (ReadLine().Trim().Equals("c", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
     }
 }
 

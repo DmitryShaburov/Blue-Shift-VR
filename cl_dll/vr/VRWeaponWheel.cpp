@@ -18,6 +18,8 @@
 #include "VRTextureHelper.h"
 #include "vr_gl.h"
 
+extern cl_entity_t* SaveGetLocalPlayer();
+
 namespace
 {
 	// The wheel is a honeycomb of flat-top hexagons, like in the HL2 VR mod. The empty hand (holster) is in the
@@ -123,7 +125,13 @@ namespace
 		int cellCount = 0;
 		int hovered = CELL_NONE;
 
-		// Fixed when the wheel is opened
+		// Fixed when the wheel is opened: relative to the player's feet and without the world yaw (turning, trains),
+		// the same room space the hands are tracked in, so the wheel moves with the player on elevators and trains
+		Vector roomCenter;
+		Vector roomRight;
+		Vector roomUp;
+
+		// The above in the world, refreshed once per frame
 		Vector center;
 		Vector right;
 		Vector up;
@@ -397,8 +405,42 @@ namespace
 		return cells[hovered].weapon != nullptr ? cells[hovered].weapon->iId : HOVER_HAND;
 	}
 
+	// The player's feet, the point the hands are tracked from (GetPositionInHLSpaceFromAbsoluteTrackingMatrix).
+	// Not the origin: it moves when the hull changes (crouching), the hands and the ground don't.
+	Vector GetPlayerGround()
+	{
+		cl_entity_t* localPlayer = SaveGetLocalPlayer();
+		if (localPlayer == nullptr)
+			return Vector{};
+
+		Vector ground = localPlayer->curstate.origin;
+		ground.z += localPlayer->curstate.mins.z;
+		return ground;
+	}
+
+	// Rotates around the vertical axis, like the world yaw rotates the tracked positions
+	Vector RotateYaw(const Vector& v, float degrees)
+	{
+		const float c = cosf(degrees * PI / 180.f);
+		const float s = sinf(degrees * PI / 180.f);
+		return Vector{ v.x * c - v.y * s, v.x * s + v.y * c, v.z };
+	}
+
+	void UpdateWorldPosition()
+	{
+		VRHelper* helper = gVRRenderer.GetHelper();
+		if (helper == nullptr)
+			return;
+
+		const float yaw = helper->GetWorldYaw();
+		g_wheel.center = GetPlayerGround() + RotateYaw(g_wheel.roomCenter, yaw);
+		g_wheel.right = RotateYaw(g_wheel.roomRight, yaw);
+		g_wheel.up = RotateYaw(g_wheel.roomUp, yaw);
+	}
+
 	void Refresh()
 	{
+		UpdateWorldPosition();
 		g_wheel.cellCount = BuildCells(g_wheel.cells);
 		g_wheel.hovered = GetHoveredCell(g_wheel.cells, g_wheel.cellCount);
 	}
@@ -546,10 +588,15 @@ namespace VR
 				return;
 			}
 
-			Vector forward;
-			helper->GetViewVectors(forward, g_wheel.right, g_wheel.up);
+			Vector forward, right, up;
+			helper->GetViewVectors(forward, right, up);
 			// Away from the head, so the hand is in front of the wheel
-			g_wheel.center = helper->GetWeaponPosition() + forward * WHEEL_DISTANCE;
+			const Vector center = helper->GetWeaponPosition() + forward * WHEEL_DISTANCE;
+
+			const float yaw = helper->GetWorldYaw();
+			g_wheel.roomCenter = RotateYaw(center - GetPlayerGround(), -yaw);
+			g_wheel.roomRight = RotateYaw(right, -yaw);
+			g_wheel.roomUp = RotateYaw(up, -yaw);
 			g_wheel.isOpen = true;
 			Refresh();
 			g_wheel.lastHover = HOVER_HAND;  // the hand starts on the center hexagon

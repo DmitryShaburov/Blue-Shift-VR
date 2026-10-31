@@ -2,19 +2,28 @@
 
 Interactive single-file Windows installer for Half-Life: VR Mod - Blue Shift.
 
-It finds Steam through the registry, suggests the Half-Life and Half-Life: VR Mod folders from their
+It finds Steam through the registry, finds the Half-Life and Half-Life: VR Mod folders from their
 Steam app manifests, warns when Half-Life/Blue Shift/VR Mod is missing because Steam only lists mods under it,
 then creates `<Half-Life>\bsvr\` and `<Half-Life>\bsvr_hd\` with:
 
 - the embedded payload: `liblist.gam`, `delta.lst`, the `game.*` icons, `dlls\hl.dll`,
   `cl_dlls\client.dll`, `maps\ba_yard4a.ent`, the SD weapon view models in `models\` and `models\animov\`, licenses;
 - the HD weapon view models in `bsvr_hd\models\` and `bsvr_hd\models\animov\`. The engine puts `bsvr_hd` ahead of
-  `bsvr` when HD models are on (**Options > Graphics > Models**, which runs `_sethdmodels` and restarts the game);
+  `bsvr` when HD models are on (the game's own HD models option in **Options > Video**, which runs `_sethdmodels`);
 - `openvr_api.dll` and `EasyHook32.dll` next to `hl.exe` in the Half-Life folder, because `client.dll`
   imports them implicitly and Windows does not search `cl_dlls\` for imports;
 - VR runtime assets copied from Half-Life: VR Mod (see the tables in `Assets.cs`, derived from `Docs/VR_ASSETS.md`);
 - Blue Shift's maps, rewritten from the Blue Shift BSP lump order to the standard one (see `Maps.cs`),
   with entities replaced from any `maps\*.ent` in the payload.
+- `resource\OptionsSub*.res`: the player's own layouts of the game's Options tabs (from `bshift`, else `valve`) with the
+  options that do nothing in VR or that the mod overrides set to `"enabled" "0"`: HEV suit volume, all of Video except
+  texture filtering, brightness and gamma (display mode is hidden, the game enables it itself), all of Aim and Keyboard
+  (see `OptionsLocks.cs`). Rerun the installer after a game update that changes them.
+- spaces removed from the names of files in `SAVE\`: the new game menu cannot load saves with spaces, which the old one allowed.
+
+Both folders come only from Steam; the installer quits with a hint when Steam or a game is not found.
+If the Half-Life folder already has `bsvr\liblist.gam`, the installer asks whether to update it, does not wait for Steam
+to exit (the mod is already in the library) and only waits for `hl.exe` to quit.
 
 ## Payload
 
@@ -24,7 +33,10 @@ for SD mode. Blue Shift's own NPC and world models are not copied: the engine fi
 `bshift_hd`. Both animov sets must be complete, because the animov twin of every weapon is precached unconditionally.
 
 `payload/liblist.gam`, the icons and `maps/ba_yard4a.ent` are tracked; the last four come from the
-Blue Shift Updated release. `skill.cfg`, `settings.scr` and `user.scr` are deliberately not shipped:
+Blue Shift Updated release. `payload/resource/GameMenu.res` is tracked too: the game's main menu with a "VR Options" entry
+(console command `vr_options`), it replaces the one the engine would find in `bshift`. `payload/resource/VROptionsScheme.res`
+is the look of the VR Options dialog, based on the game's `TrackerScheme.res`; the game writes a compiled copy next to it
+(`VROptionsScheme.res.i`) the first time the dialog opens. `skill.cfg`, `settings.scr` and `user.scr` are deliberately not shipped:
 the engine finds retail Blue Shift's through `fallback_dir`, which keeps Blue Shift's own skill values. `payload/dlls/hl.dll` and `payload/cl_dlls/client.dll` are not; the Visual Studio post-build step of
 `hldll` and `hl_cdll` copies them there, so publish after building the configuration you want to ship.
 copy them from the mod build before publishing. `delta.lst`, `LICENSE`, `THIRD_PARTY_LICENSES`,

@@ -56,12 +56,16 @@ VRInputAction::VRInputAction(const std::string& id, vr::VRActionHandle_t handle,
 {
 }
 
-void VRInputAction::HandleDigitalInput(vr::VRInputValueHandle_t device)
+void VRInputAction::HandleDigitalInput(vr::VRInputValueHandle_t device, bool runHandler)
 {
 	vr::InputDigitalActionData_t data{ 0 };
 	vr::EVRInputError result = vr::VRInput()->GetDigitalActionData(m_handle, &data, sizeof(vr::InputDigitalActionData_t), device);
 	if (result == vr::VRInputError_None)
 	{
+		// BSVR start
+		if (!runHandler)
+			return;
+		// BSVR end
 		if (data.bActive && data.bChanged && data.bState)
 		{
 			g_vrInput.m_vrInputThisFrame = true;
@@ -148,8 +152,15 @@ void VRInputAction::HandleSkeletalInput()
 
 void VRInputAction::HandleInput(bool isInGame)
 {
-	if (!isInGame && !m_handleWhenNotInGame)
+	// BSVR start
+	// In-game actions don't run while the menu is open, but buttons are still read. OpenVR reports a button as changed
+	// since it was last read, so a trigger press that closes the menu (Resume Game) would fire once the game runs again.
+	// if (!isInGame && !m_handleWhenNotInGame) - original
+	//	return;
+	const bool runHandler = isInGame || m_handleWhenNotInGame;
+	if (!runHandler && m_type != ActionType::DIGITAL)
 		return;
+	// BSVR end
 
 	vr::VRInputValueHandle_t leftHandHandle = vr::k_ulInvalidInputValueHandle;
 	vr::VRInputValueHandle_t rightHandHandle = vr::k_ulInvalidInputValueHandle;
@@ -161,12 +172,12 @@ void VRInputAction::HandleInput(bool isInGame)
 	case ActionType::DIGITAL:
 		if (m_handAgnostic)
 		{
-			HandleDigitalInput(leftHandHandle);
-			HandleDigitalInput(rightHandHandle);
+			HandleDigitalInput(leftHandHandle, runHandler);
+			HandleDigitalInput(rightHandHandle, runHandler);
 		}
 		else
 		{
-			HandleDigitalInput(vr::k_ulInvalidInputValueHandle);
+			HandleDigitalInput(vr::k_ulInvalidInputValueHandle, runHandler);
 		}
 		break;
 	case ActionType::ANALOG:

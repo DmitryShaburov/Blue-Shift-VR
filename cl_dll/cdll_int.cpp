@@ -325,6 +325,14 @@ void CL_LoadParticleMan()
 	}
 }
 
+// BSVR start
+// The engine gets the client's interfaces through this factory, including IClientVGUI (VRClientVGUI.cpp) for the VR Options dialog
+extern "C" DLLEXPORT void* ClientFactory()
+{
+	return (void*)Sys_GetFactoryThis();
+}
+// BSVR end
+
 extern "C" void DLLEXPORT F(void* pv)
 {
 	cldll_func_t* pcldll_func = (cldll_func_t*)pv;
@@ -372,6 +380,10 @@ extern "C" void DLLEXPORT F(void* pv)
 			HUD_DirectorMessage,
 			HUD_GetStudioModelInterface,
 			HUD_ChatInputPosition,
+			// BSVR start
+			nullptr, // pGetPlayerTeam
+			ClientFactory,
+			// BSVR end
 		};
 
 	*pcldll_func = cldll_func;

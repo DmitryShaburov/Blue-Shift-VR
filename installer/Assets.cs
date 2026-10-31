@@ -14,10 +14,8 @@ static class Assets
     static readonly (string From, string To)[] FromHalfLifeVr =
     [
         ("valve/actions/",                   "actions/"),          // SteamVR input manifest and bindings
-        ("valve/fonts/Roboto-Regular.ttf",   "fonts/"),
         ("valve/textures/hud/",              "textures/hud/"),     // HUD sprite sheets as PNG
         ("valve/textures/background.png",    "textures/"),
-        ("valve/textures/null.png",          "textures/"),
         ("valve/textures/skybox/",           "textures/skybox/"),  // VR sky for maps whose sky name matches
         ("valve/sprites/black.spr",          "sprites/"),
         ("valve/sound/plats/train_use2.wav", "sound/plats/"),
@@ -35,6 +33,42 @@ static class Assets
 
         Console.WriteLine("Maps from Blue Shift");
         Maps.Install(halfLifeDir, modDir);
+
+        Console.WriteLine("Options that do nothing in VR");
+        OptionsLocks.Install(halfLifeDir, modDir);
+
+        Console.WriteLine("Saved games");
+        RenameSaves(modDir);
+    }
+
+    // The old game menu allowed spaces in save names and the new one cannot load those saves, so the spaces
+    // are removed. The save and its thumbnail share a name, so every file in SAVE\ is renamed the same way.
+    static void RenameSaves(string modDir)
+    {
+        var saveDir = Path.Combine(modDir, "SAVE");
+        if (!Directory.Exists(saveDir))
+        {
+            return;
+        }
+
+        foreach (var file in Directory.GetFiles(saveDir))
+        {
+            var name = Path.GetFileName(file);
+            if (!name.Contains(' '))
+            {
+                continue;
+            }
+
+            var newName = name.Replace(" ", "");
+            var target = Path.Combine(saveDir, newName);
+            if (File.Exists(target))
+            {
+                Console.WriteLine($"  warning: {name} not renamed, {newName} already exists");
+                continue;
+            }
+            File.Move(file, target);
+            Console.WriteLine($"  {name} -> {newName}");
+        }
     }
 
     // Embedded resource "payload/dlls/hl.dll" goes to "<mod>/dlls/hl.dll", and so on.

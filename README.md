@@ -66,6 +66,10 @@ Sam Vanheer, JoelTroch, malortie, dtugend, Revenant100, fel1x-developer, LogicAn
 
 Special thanks: Valve Software, Gearbox Software, Alfred Reynolds, mikela-valve, the TWHL community, Knockout, Gamebanana, ModDB.
 
+## hl1_source_sdk
+
+The VR Options dialog in the game's menu uses VGUI2 from [hl1_source_sdk](https://github.com/tmp64/hl1_source_sdk) by tmp64: parts of Valve's Source SDK 2013 ported to the Half-Life engine, based on Sam Vanheer's reverse engineering of the engine.
+
 # Development
 
 For building and installing follow the upstream [Blue Shift Updated](https://github.com/twhl-community/halflife-bs-updated#readme) documentation.

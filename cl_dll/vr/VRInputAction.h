@@ -31,7 +31,7 @@ public:
 	void HandleInput(bool isInGame);
 
 private:
-	void HandleDigitalInput(vr::VRInputValueHandle_t device);
+	void HandleDigitalInput(vr::VRInputValueHandle_t device, bool runHandler = true);  // BSVR: runHandler
 	void HandleAnalogInput(vr::VRInputValueHandle_t device);
 	void HandlePoseInput(vr::VRInputValueHandle_t device);
 	void HandleSkeletalInput();

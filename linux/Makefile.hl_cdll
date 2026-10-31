@@ -16,11 +16,21 @@ HL1_SERVER_OBJ_DIR=$(HL1_OBJ_DIR)/server
 PM_SHARED_OBJ_DIR=$(HL1_OBJ_DIR)/pm_shared
 VR_OBJ_DIR=$(HL1_OBJ_DIR)/vr
 
+# VGUI2 SDK subset for the VR Options dialog (external/hl1_source_sdk/README_BSVR.md). Its files and VRClientVGUI.cpp
+# are built with the SDK's include paths and defines instead of the game's (both have interface.h, FileSystem.h, ...).
+# The SDK uses SSE intrinsics, so -msse2 overrides -mno-sse from ARCH_CFLAGS.
+SDK_DIR=$(SOURCE_DIR)/external/hl1_source_sdk
+SDK_OBJ_DIR=$(HL1_OBJ_DIR)/hl1_source_sdk
+SDK_INCLUDEDIRS=-I$(SDK_DIR)/common -I$(SDK_DIR)/public -I$(SDK_DIR)/public/tier0 -I$(SDK_DIR)/public/tier1
+SDK_CFLAGS=$(BASE_CFLAGS) $(ARCH_CFLAGS) -msse2 -fexceptions -DNO_MALLOC_OVERRIDE -DMATHLIB_HEADER_ONLY -D_DLL_EXT=.so -DSOURCE_SDK_GFX_PATH=\"gfx/vgui2\" -DNO_STEAM
+SDK_DO_CC=mkdir -p $(dir $@) && $(CPLUS) $(SDK_INCLUDEDIRS) $(SDK_CFLAGS) -o $@ -c $<
+SDK_FORCED_INCLUDES=-include $(SDK_DIR)/vgui_controls_forced_includes.h
+
 CFLAGS=$(BASE_CFLAGS) $(ARCH_CFLAGS) -DCLIENT_DLL -fexceptions
 
 INCLUDEDIRS=-I$(HL_SRC_DIR) -I$(HL_PARTICLEMAN_DIR) -I../dlls -I/usr/include/malloc -I$(COMMON_SRC_DIR) -I$(PUBLIC_SRC_DIR) -I../pm_shared -I../engine -I../utils/vgui/include -I../game_shared -I../external
 
-LDFLAGS=$(SHLIBLDFLAGS) $(CPP_LIB) -L$(CFG) vgui.so -L. libSDL2-2.0.so.0 libopenvr_api.so -lGL
+LDFLAGS=$(SHLIBLDFLAGS) $(CPP_LIB) -L$(CFG) vgui.so -L. libSDL2-2.0.so.0 libopenvr_api.so -lGL $(SDK_DIR)/lib/public/libtier0.so $(SDK_DIR)/lib/public/libvstdlib.so
 
 DO_CC=$(CPLUS) $(INCLUDEDIRS) $(CFLAGS) -o $@ -c $<
 
@@ -99,7 +109,9 @@ HL1_OBJS = \
 	$(HL1_OBJ_DIR)/vr/VRSteamworksManager.o \
 	$(HL1_OBJ_DIR)/vr/VRModExtraDataCacheHook.o \
 	$(HL1_OBJ_DIR)/vr/VRDebugPhysicsRenderer.o \
-	$(HL1_OBJ_DIR)/vr/VRGUIRenderer.o \
+	$(HL1_OBJ_DIR)/vr/VRSettingsPages.o \
+	$(HL1_OBJ_DIR)/vr/VRClientVGUI.o \
+	$(HL1_OBJ_DIR)/vr/VRClientVGUIExport.o \
 	$(HL1_OBJ_DIR)/vr/VRIntermissionAndMenuRenderer.o \
 	$(HL1_OBJ_DIR)/vr/VRHUDRenderer.o \
 	$(HL1_OBJ_DIR)/vr/VRWeaponWheel.o \
@@ -150,6 +162,69 @@ GAME_SHARED_OBJS = \
 	$(GAME_SHARED_OBJ_DIR)/vgui_slider2.o \
 	$(GAME_SHARED_OBJ_DIR)/voice_banmgr.o \
 
+SDK_OBJS = \
+	$(SDK_OBJ_DIR)/public/filesystem_helpers.o \
+	$(SDK_OBJ_DIR)/public/vgui_controls/vgui_controls.o \
+	$(SDK_OBJ_DIR)/tier1/characterset.o \
+	$(SDK_OBJ_DIR)/tier1/KeyValues.o \
+	$(SDK_OBJ_DIR)/tier1/mempool.o \
+	$(SDK_OBJ_DIR)/tier1/qsort_s.o \
+	$(SDK_OBJ_DIR)/tier1/strtools.o \
+	$(SDK_OBJ_DIR)/tier1/strtools_unicode.o \
+	$(SDK_OBJ_DIR)/tier1/tier1.o \
+	$(SDK_OBJ_DIR)/tier1/utlbuffer.o \
+	$(SDK_OBJ_DIR)/tier1/utlstring.o \
+	$(SDK_OBJ_DIR)/tier1/utlsymbol.o \
+	$(SDK_OBJ_DIR)/tier2/KeyValuesCompat.o \
+	$(SDK_OBJ_DIR)/tier2/steam_api.o \
+	$(SDK_OBJ_DIR)/tier2/tier2.o \
+	$(SDK_OBJ_DIR)/vgui_controls/AnimatingImagePanel.o \
+	$(SDK_OBJ_DIR)/vgui_controls/AnimationController.o \
+	$(SDK_OBJ_DIR)/vgui_controls/BitmapImagePanel.o \
+	$(SDK_OBJ_DIR)/vgui_controls/BuildFactoryHelper.o \
+	$(SDK_OBJ_DIR)/vgui_controls/BuildGroup.o \
+	$(SDK_OBJ_DIR)/vgui_controls/BuildModeDialog.o \
+	$(SDK_OBJ_DIR)/vgui_controls/Button.o \
+	$(SDK_OBJ_DIR)/vgui_controls/CheckButton.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ComboBox.o \
+	$(SDK_OBJ_DIR)/vgui_controls/controls.o \
+	$(SDK_OBJ_DIR)/vgui_controls/Divider.o \
+	$(SDK_OBJ_DIR)/vgui_controls/EditablePanel.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ExpandButton.o \
+	$(SDK_OBJ_DIR)/vgui_controls/FocusNavGroup.o \
+	$(SDK_OBJ_DIR)/vgui_controls/Frame.o \
+	$(SDK_OBJ_DIR)/vgui_controls/GraphPanel.o \
+	$(SDK_OBJ_DIR)/vgui_controls/Image.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ImageList.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ImagePanel.o \
+	$(SDK_OBJ_DIR)/vgui_controls/Label.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ListPanel.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ListViewPanel.o \
+	$(SDK_OBJ_DIR)/vgui_controls/MenuBar.o \
+	$(SDK_OBJ_DIR)/vgui_controls/MenuButton.o \
+	$(SDK_OBJ_DIR)/vgui_controls/Menu.o \
+	$(SDK_OBJ_DIR)/vgui_controls/MenuItem.o \
+	$(SDK_OBJ_DIR)/vgui_controls/MessageBox.o \
+	$(SDK_OBJ_DIR)/vgui_controls/Panel.o \
+	$(SDK_OBJ_DIR)/vgui_controls/PanelListPanel.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ProgressBar.o \
+	$(SDK_OBJ_DIR)/vgui_controls/PropertyDialog.o \
+	$(SDK_OBJ_DIR)/vgui_controls/PropertyPage.o \
+	$(SDK_OBJ_DIR)/vgui_controls/PropertySheet.o \
+	$(SDK_OBJ_DIR)/vgui_controls/RadioButton.o \
+	$(SDK_OBJ_DIR)/vgui_controls/RichText.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ScrollBar.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ScrollBarSlider.o \
+	$(SDK_OBJ_DIR)/vgui_controls/Slider.o \
+	$(SDK_OBJ_DIR)/vgui_controls/TextEntry.o \
+	$(SDK_OBJ_DIR)/vgui_controls/TextImage.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ToggleButton.o \
+	$(SDK_OBJ_DIR)/vgui_controls/Tooltip.o \
+	$(SDK_OBJ_DIR)/vgui_controls/ToolWindow.o \
+	$(SDK_OBJ_DIR)/vgui_controls/TreeView.o \
+	$(SDK_OBJ_DIR)/vgui_controls/TreeViewListControl.o \
+	$(SDK_OBJ_DIR)/vgui_controls/URLLabel.o \
+
 PM_SHARED_OBJS = \
 	$(PM_SHARED_OBJ_DIR)/pm_debug.o \
 	$(PM_SHARED_OBJ_DIR)/pm_shared.o \
@@ -157,8 +232,8 @@ PM_SHARED_OBJS = \
 
 all: client.$(SHLIBEXT)
 
-client.$(SHLIBEXT): $(HL1_OBJS) $(PUBLIC_OBJS) $(COMMON_OBJS) $(GAME_SHARED_OBJS) $(DLL_OBJS) $(PM_SHARED_OBJS) $(HL1_PARTICLEMAN_OBJS)
-	$(CPLUS) -o $(BUILD_DIR)/$@ $(HL1_OBJS) $(PUBLIC_OBJS) $(COMMON_OBJS) $(GAME_SHARED_OBJS) $(DLL_OBJS) $(PM_SHARED_OBJS) $(HL1_PARTICLEMAN_OBJS) $(LDFLAGS) $(CPP_LIB)
+client.$(SHLIBEXT): $(HL1_OBJS) $(PUBLIC_OBJS) $(COMMON_OBJS) $(GAME_SHARED_OBJS) $(DLL_OBJS) $(PM_SHARED_OBJS) $(HL1_PARTICLEMAN_OBJS) $(SDK_OBJS)
+	$(CPLUS) -o $(BUILD_DIR)/$@ $(HL1_OBJS) $(PUBLIC_OBJS) $(COMMON_OBJS) $(GAME_SHARED_OBJS) $(DLL_OBJS) $(PM_SHARED_OBJS) $(HL1_PARTICLEMAN_OBJS) $(SDK_OBJS) $(LDFLAGS) $(CPP_LIB)
 	./gendbg.sh $(BUILD_DIR)/client.$(SHLIBEXT)
 
 $(HL1_OBJ_DIR):
@@ -187,6 +262,22 @@ $(PM_SHARED_OBJ_DIR):
 
 $(VR_OBJ_DIR):
 	mkdir -p $(VR_OBJ_DIR)
+
+# Built with the VGUI2 SDK's headers, see SDK_DIR
+$(HL1_OBJ_DIR)/vr/VRClientVGUI.o: $(HL_SRC_DIR)/vr/VRClientVGUI.cpp
+	$(SDK_DO_CC)
+
+$(SDK_OBJ_DIR)/tier1/%.o: $(SDK_DIR)/tier1/%.cpp
+	$(SDK_DO_CC) -DTIER1_STATIC_LIB
+
+$(SDK_OBJ_DIR)/tier2/%.o: $(SDK_DIR)/tier2/%.cpp
+	$(SDK_DO_CC)
+
+$(SDK_OBJ_DIR)/vgui_controls/%.o: $(SDK_DIR)/vgui2/vgui_controls/%.cpp
+	$(SDK_DO_CC) $(SDK_FORCED_INCLUDES)
+
+$(SDK_OBJ_DIR)/public/%.o: $(SDK_DIR)/public/%.cpp
+	$(SDK_DO_CC) $(SDK_FORCED_INCLUDES)
 
 $(HL1_OBJ_DIR)/vr/%.o: $(HL_SRC_DIR)/vr/%.cpp $(filter-out $(wildcard  $(VR_OBJ_DIR)),  $(VR_OBJ_DIR))
 	$(DO_CC)

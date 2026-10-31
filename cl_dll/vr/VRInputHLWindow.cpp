@@ -14,6 +14,12 @@
 #include "VRCommon.h"
 #include "VRRenderer.h"
 
+#include <algorithm>
+#include <SDL2/SDL_events.h>
+#include <SDL2/SDL_mouse.h>
+#include <SDL2/SDL_timer.h>
+#include <SDL2/SDL_video.h>
+
 // TODO: Maybe add support for other systems as well?
 #ifdef _WIN32
 #define HSPRITE WINDOWS_HSPRITE
@@ -55,86 +61,8 @@ namespace
 		}
 	}
 
-	void VRGetAbsoluteHLWindowCoords(float x, float y, int* ix, int* iy)
-	{
-		VRFindHLWindow();
-		RECT rect;
-		GetWindowRect(hlWindow, &rect);
-		int width = (rect.right - rect.left);
-		int height = (rect.bottom - rect.top);
-		*ix = int(x * width);
-		*iy = int(y * height);
-	}
-
-	void VRSendMouseClickToHLWindow(float x, float y);
-	void VRSendMouseMessageToHLWindow(UINT msg, float x, float y)
-	{
-		int ix, iy;
-		VRGetAbsoluteHLWindowCoords(x, y, &ix, &iy);
-		PostMessageA(hlWindow, msg, 0, MAKELPARAM(ix, iy));
-
-		VRSendMouseClickToHLWindow(x, y);
-	}
-
-	bool blatest = false;
-	void VRSendMouseClickToHLWindow(float x, float y)
-	{
-		// With bits from here: https://stackoverflow.com/a/5790851/9199167
-		VRFindHLWindow();
-
-		bool mouseButtonsSwapped = GetSystemMetrics(SM_SWAPBUTTON) != 0;
-
-		const float XSCALEFACTOR = 65535.f / (GetSystemMetrics(SM_CXSCREEN) - 1.f);
-		const float YSCALEFACTOR = 65535.f / (GetSystemMetrics(SM_CYSCREEN) - 1.f);
-
-		HWND hPreviousForegroundWindow = GetForegroundWindow();
-
-		SetActiveWindow(hlWindow);
-		SetForegroundWindow(hlWindow);
-
-		RECT rect;
-		GetWindowRect(hlWindow, &rect);
-
-		RECT clientRect;
-		GetClientRect(hlWindow, &clientRect);
-
-		POINT cursorPos;
-		GetCursorPos(&cursorPos);
-
-		float previousCursorX = cursorPos.x * XSCALEFACTOR;
-		float previousCursorY = cursorPos.y * YSCALEFACTOR;
-
-		int ix, iy;
-		VRGetAbsoluteHLWindowCoords(x, y, &ix, &iy);
-
-		INPUT input{ 0 };
-		input.type = INPUT_MOUSE;
-		input.mi.dx = (ix + rect.left) * XSCALEFACTOR;
-		input.mi.dy = (iy + rect.top) * YSCALEFACTOR;
-		input.mi.mouseData = 0;
-		input.mi.time = 0;
-		input.mi.dwExtraInfo = 0;
-		input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
-		if (blatest)
-		{
-			if (mouseButtonsSwapped)
-			{
-				input.mi.dwFlags |= MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_RIGHTUP;
-			}
-			else
-			{
-				input.mi.dwFlags |= MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP;
-			}
-		}
-		SendInput(1, &input, sizeof(INPUT));
-
-		input.mi.dx = previousCursorX;
-		input.mi.dy = previousCursorY;
-		input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE;
-		//SendInput(1, &input, sizeof(INPUT));
-
-		SetForegroundWindow(hPreviousForegroundWindow);
-	}
+	// BSVR: VRGetAbsoluteHLWindowCoords, VRSendMouseMessageToHLWindow and VRSendMouseClickToHLWindow removed,
+	// the mouse is sent through SDL2 below
 
 	void VRForceWindowToForeground()
 	{
@@ -153,18 +81,85 @@ namespace
 }  // namespace
 #endif
 
+// The mouse is sent through SDL2, which the engine uses for its window and input, so this works on every platform
+// and doesn't need the game window in the foreground. x and y go from 0 to 1 across the window.
+namespace
+{
+	// The engine has one SDL window, SDL window IDs start at 1.
+	// (The SDL2 the client links against is too old for SDL_GL_GetCurrentWindow.)
+	SDL_Window* VRGetSDLGameWindow()
+	{
+		if (SDL_Window* focused = SDL_GetKeyboardFocus())
+			return focused;
+		for (Uint32 id = 1; id < 16; id++)
+		{
+			if (SDL_Window* window = SDL_GetWindowFromID(id))
+				return window;
+		}
+		return nullptr;
+	}
+
+	bool VRGetSDLWindowCoords(float x, float y, SDL_Window** window, int* ix, int* iy)
+	{
+		*window = VRGetSDLGameWindow();
+		if (*window == nullptr)
+			return false;
+		int width = 0, height = 0;
+		SDL_GetWindowSize(*window, &width, &height);
+		if (width <= 0 || height <= 0)
+			return false;
+		*ix = std::clamp(int(x * width), 0, width - 1);
+		*iy = std::clamp(int(y * height), 0, height - 1);
+		return true;
+	}
+
+	void VRSendSDLMouseButton(float x, float y, bool down)
+	{
+		SDL_Window* window;
+		int ix, iy;
+		if (!VRGetSDLWindowCoords(x, y, &window, &ix, &iy))
+			return;
+
+		SDL_Event event{};
+		event.type = down ? SDL_MOUSEBUTTONDOWN : SDL_MOUSEBUTTONUP;
+		event.button.timestamp = SDL_GetTicks();
+		event.button.windowID = SDL_GetWindowID(window);
+		event.button.which = 0;
+		event.button.button = SDL_BUTTON_LEFT;
+		event.button.state = down ? SDL_PRESSED : SDL_RELEASED;
+		event.button.clicks = 1;
+		event.button.x = ix;
+		event.button.y = iy;
+		SDL_PushEvent(&event);
+	}
+}  // namespace
+
 void VRInput::SendMousePosToHLWindow(float x, float y)
 {
-	#ifdef _WIN32
-	VRSendMouseMessageToHLWindow(WM_MOUSEMOVE, x, y);
-	#endif
+	SDL_Window* window;
+	int ix, iy;
+	if (!VRGetSDLWindowCoords(x, y, &window, &ix, &iy))
+		return;
+
+	// Warping also moves SDL's own cursor position (which the engine reads) and sends a motion event.
+	// Only warp when the position changed, so a real mouse still works while the beam rests.
+	static int lastX = -1;
+	static int lastY = -1;
+	if (ix == lastX && iy == lastY)
+		return;
+	lastX = ix;
+	lastY = iy;
+	SDL_WarpMouseInWindow(window, ix, iy);
 }
 
 void VRInput::SendMouseButtonClickToHLWindow(float x, float y)
 {
-	#ifdef _WIN32
-	VRSendMouseClickToHLWindow(x, y);
-	#endif
+	VRSendSDLMouseButton(x, y, true);
+}
+
+void VRInput::SendMouseButtonUpToHLWindow(float x, float y)
+{
+	VRSendSDLMouseButton(x, y, false);
 }
 
 void VRInput::DisplayErrorPopup(const char* errorMessage)

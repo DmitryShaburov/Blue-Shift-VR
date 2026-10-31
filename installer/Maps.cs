@@ -18,19 +18,30 @@ static class Maps
         Directory.CreateDirectory(targetDir);
 
         var maps = Directory.GetFiles(sourceDir, "*.bsp");
+        var converted = 0;
         foreach (var map in maps)
         {
             var name = Path.GetFileNameWithoutExtension(map);
             var entFile = Path.Combine(targetDir, name + ".ent");
             var entities = File.Exists(entFile) ? File.ReadAllBytes(entFile) : null;
 
-            Convert(map, Path.Combine(targetDir, name + ".bsp"), entities);
+            try
+            {
+                Convert(map, Path.Combine(targetDir, name + ".bsp"), entities);
+            }
+            catch (Exception ex) when (ex is ArgumentException or IndexOutOfRangeException)
+            {
+                // A truncated download or a custom map that is not a BSP: offsets point outside the file.
+                Console.WriteLine($"  warning: {name}.bsp is damaged and was skipped; verify Blue Shift's files in Steam");
+                continue;
+            }
+            converted++;
             if (entities is not null)
             {
                 Console.WriteLine($"  {name}.bsp: entities replaced from {name}.ent");
             }
         }
-        Console.WriteLine($"  {maps.Length} maps converted");
+        Console.WriteLine($"  {converted} maps converted");
     }
 
     static void Convert(string sourcePath, string targetPath, byte[]? entities)

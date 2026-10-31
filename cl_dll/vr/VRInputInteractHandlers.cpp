@@ -24,21 +24,21 @@ namespace VR
 
 		void Interact::HandleLegacyUse(const vr::InputDigitalActionData_t& data, const std::string& action)
 		{
-			if (g_vrInput.IsWeapon(g_vrInput.GetRole(data.activeOrigin)))
-				return;
-
-			if (data.bChanged)
+			// BSVR start
+			// Send +use/-use when the button state differs from what was sent, not only when OpenVR reports a change:
+			// a release while the menu is open (or by the weapon hand, which is ignored) would otherwise leave use held,
+			// and holding use slows the player to a third of the speed (PM_CheckParamters).
+			// if (g_vrInput.IsWeapon(g_vrInput.GetRole(data.activeOrigin))) - original
+			// 	return;
+			// if (data.bChanged) { data.bActive && data.bState ? +use : -use } - original
+			static bool useSent = false;
+			const bool on = data.bActive && data.bState && !g_vrInput.IsWeapon(g_vrInput.GetRole(data.activeOrigin));
+			if (on != useSent)
 			{
-				bool on = data.bActive && data.bState;
-				if (on)
-				{
-					EngineClientCmd("+use");
-				}
-				else
-				{
-					EngineClientCmd("-use");
-				}
+				useSent = on;
+				EngineClientCmd(on ? "+use" : "-use");
 			}
+			// BSVR end
 		}
 
 		void Interact::HandleTeleport(const vr::InputDigitalActionData_t& data, const std::string& action)

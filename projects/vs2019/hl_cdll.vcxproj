@@ -39,7 +39,12 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="UserMacros">
+    <!-- VGUI2 SDK subset (external/hl1_source_sdk/README_BSVR.md): include paths and defines of its files and VRClientVGUI.cpp, same as linux/Makefile.hl_cdll -->
+    <VguiSdkIncludeDirs>..\..\external\hl1_source_sdk\common;..\..\external\hl1_source_sdk\public;..\..\external\hl1_source_sdk\public\tier0;..\..\external\hl1_source_sdk\public\tier1</VguiSdkIncludeDirs>
+    <VguiSdkDefines>NO_MALLOC_OVERRIDE;MATHLIB_HEADER_ONLY;_DLL_EXT=.dll;SOURCE_SDK_GFX_PATH=&quot;gfx/vgui2&quot;;NO_STEAM</VguiSdkDefines>
+    <VguiSdkForcedIncludes>$(ProjectDir)..\..\external\hl1_source_sdk\vgui_controls_forced_includes.h</VguiSdkForcedIncludes>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>client</TargetName>
@@ -71,7 +76,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>..\..\utils\vgui\lib\win32_vc16\vgui.lib;wsock32.lib;..\..\lib\public\sdl2.lib;..\..\lib\public\openvr_api.lib;opengl32.lib;..\..\cl_dll\EasyHook\lib\EasyHook32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\..\utils\vgui\lib\win32_vc16\vgui.lib;wsock32.lib;..\..\lib\public\sdl2.lib;..\..\lib\public\openvr_api.lib;opengl32.lib;..\..\cl_dll\EasyHook\lib\EasyHook32.lib;..\..\external\hl1_source_sdk\lib\public\tier0.lib;..\..\external\hl1_source_sdk\lib\public\vstdlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>
       </BaseAddress>
     </Link>
@@ -107,7 +112,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>..\..\utils\vgui\lib\win32_vc16\vgui.lib;wsock32.lib;..\..\lib\public\sdl2.lib;..\..\lib\public\openvr_api.lib;opengl32.lib;..\..\cl_dll\EasyHook\lib\EasyHook32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\..\utils\vgui\lib\win32_vc16\vgui.lib;wsock32.lib;..\..\lib\public\sdl2.lib;..\..\lib\public\openvr_api.lib;opengl32.lib;..\..\cl_dll\EasyHook\lib\EasyHook32.lib;..\..\external\hl1_source_sdk\lib\public\tier0.lib;..\..\external\hl1_source_sdk\lib\public\vstdlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <BaseAddress>
       </BaseAddress>
     </Link>
@@ -199,7 +204,12 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\cl_dll\vr\VRSteamworksManager.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRModExtraDataCacheHook.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRDebugPhysicsRenderer.cpp" />
-    <ClCompile Include="..\..\cl_dll\vr\VRGUIRenderer.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRSettingsPages.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRClientVGUI.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRClientVGUIExport.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRIntermissionAndMenuRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRHUDRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRWeaponWheel.cpp" />
@@ -238,6 +248,357 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\pm_shared\pm_shared.cpp" />
     <ClCompile Include="..\..\public\interface.cpp" />
   </ItemGroup>
+  <!-- VGUI2 SDK subset for the VR Options dialog, built with its own include paths and defines (external/hl1_source_sdk/README_BSVR.md) -->
+  <ItemGroup>
+    <ClCompile Include="..\..\external\hl1_source_sdk\public\filesystem_helpers.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\public\vgui_controls\vgui_controls.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\KeyValues.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);TIER1_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\characterset.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);TIER1_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\mempool.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);TIER1_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\strtools.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);TIER1_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\strtools_unicode.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);TIER1_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\tier1.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);TIER1_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\utlbuffer.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);TIER1_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\utlstring.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);TIER1_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\utlsymbol.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);TIER1_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier2\KeyValuesCompat.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier2\steam_api.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier2\tier2.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\AnimatingImagePanel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\AnimationController.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\BitmapImagePanel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\BuildFactoryHelper.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\BuildGroup.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\BuildModeDialog.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Button.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\CheckButton.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ComboBox.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Divider.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\EditablePanel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ExpandButton.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\FocusNavGroup.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Frame.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\GraphPanel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Image.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ImageList.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ImagePanel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Label.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ListPanel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ListViewPanel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Menu.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\MenuBar.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\MenuButton.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\MenuItem.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\MessageBox.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Panel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\PanelListPanel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ProgressBar.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\PropertyDialog.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\PropertyPage.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\PropertySheet.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\RadioButton.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\RichText.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ScrollBar.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ScrollBarSlider.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Slider.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\TextEntry.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\TextImage.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ToggleButton.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ToolWindow.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Tooltip.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\TreeView.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\TreeViewListControl.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\URLLabel.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\controls.cpp">
+      <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ForcedIncludeFiles>$(VguiSdkForcedIncludes)</ForcedIncludeFiles>
+      <ObjectFileName>$(IntDir)hl1_source_sdk\</ObjectFileName>
+    </ClCompile>
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\cl_dll\ammo.h" />
     <ClInclude Include="..\..\cl_dll\ammohistory.h" />
@@ -269,8 +630,8 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClInclude Include="..\..\cl_dll\vgui_SpectatorPanel.h" />
     <ClInclude Include="..\..\cl_dll\view.h" />
     <ClInclude Include="..\..\cl_dll\vr\DoOnDestruct.h" />
-    <ClInclude Include="..\..\cl_dll\vr\VRGUIRenderer.h" />
-    <ClInclude Include="..\..\cl_dll\vr\nuklear.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRClientVGUI.h" />
+    <ClInclude Include="..\..\cl_dll\vr\VRSettingsPages.h" />
     <ClInclude Include="..\..\cl_dll\vr\Matrices.h" />
     <ClInclude Include="..\..\cl_dll\vr\openvr.h" />
     <ClInclude Include="..\..\cl_dll\vr\VRCommon.h" />

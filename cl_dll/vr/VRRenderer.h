@@ -74,6 +74,7 @@ public:
 	void RenderHUDSprites();
 	void RenderScreenOverlays();
 	void DrawScreenFade();
+	void DarkenScreen(float opacity);
 
 	// Called by HUD draw code
 	void VRHUDDrawBegin(const VRHUDRenderType renderType);
@@ -104,6 +105,10 @@ public:
 
 	bool IsDeadInGame();
 	bool IsInGame();
+	// The menu is open during a game: the paused world is rendered, darkened, behind the menu
+	bool IsGameShownBehindMenu() { return m_isInMenu && IsInGame(); }
+	// The game's menu with a transparent background, 0 when the menu is shown as captured
+	unsigned int GetHLMenuTransparentTexture() { return m_hlMenuTransparentTexture; }
 	struct cl_entity_s* SaveGetLocalPlayer();
 
 	void RotateVectorX(Vector& vecToRotate, const float angle);
@@ -142,7 +147,8 @@ private:
 
 	bool m_isInGame{ false };
 	bool m_isInMenu{ true };
-	bool m_wasMenuJustRendered{ false };
+	// BSVR: m_wasMenuJustRendered removed, the menu is captured every frame it is open (see Frame)
+	unsigned int m_hlMenuTransparentTexture{ 0 };
 	bool m_CalcRefdefWasCalled{ false };
 	bool m_HUDRedrawWasCalled{ false };
 

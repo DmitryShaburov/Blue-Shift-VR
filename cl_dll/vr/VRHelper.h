@@ -46,13 +46,11 @@ public:
 
 	unsigned int GetVRTexture(vr::EVREye eEye);
 	unsigned int GetHLMenuTexture();
-	unsigned int GetVRGLGUITexture();
+	// The game's menu from GetHLMenuTexture() with its black background made transparent, 0 if that isn't possible
+	unsigned int UpdateHLMenuTransparentTexture();
 
 	int GetHLMenuTextureWidth() { return m_vrGLHLMenuTextureWidth; }
 	int GetHLMenuTextureHeight() { return m_vrGLHLMenuTextureHeight; }
-
-	int GetVRGLGUITextureWidth() { return m_vrGLGUITextureWidth; }
-	int GetVRGLGUITextureHeight() { return m_vrGLGUITextureHeight; }
 
 	void GetViewAngles(vr::EVREye eEye, float* angles);
 	void GetViewMatrix(vr::EVREye eEye, float* matrix);
@@ -130,9 +128,10 @@ private:
 	int m_vrGLHLMenuTextureWidth = 0;
 	int m_vrGLHLMenuTextureHeight = 0;
 
-	unsigned int vrGLGUITexture = 0;
-	int m_vrGLGUITextureWidth = 0;
-	int m_vrGLGUITextureHeight = 0;
+	unsigned int vrGLHLMenuTransparentTexture = 0;
+	unsigned int vrGLHLMenuTransparentFrameBuffer = 0;
+	int m_vrGLHLMenuTransparentTextureWidth = 0;
+	int m_vrGLHLMenuTransparentTextureHeight = 0;
 
 	unsigned int vrRenderWidth = 0;
 	unsigned int vrRenderHeight = 0;
@@ -232,6 +231,8 @@ public:
 
 	// BSVR start
 	bool HasViewEntOverride() { return m_hasViewEntOverride; }
+	// Yaw of the tracking space in the world (turning, trains), in degrees
+	float GetWorldYaw() { return m_currentYaw; }
 
 	// Orderly teardown from HUD_Shutdown (uninstall GL hooks, VR_Shutdown)
 	void Shutdown();

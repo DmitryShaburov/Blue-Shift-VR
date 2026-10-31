@@ -120,6 +120,50 @@ void VRRenderer::DrawScreenFade()
 	glPopAttrib();
 }
 
+// BSVR start
+// Covers the current eye's view with black at the given opacity (0..1)
+void VRRenderer::DarkenScreen(float opacity)
+{
+	HLVR_UnlockGLMatrices();
+
+	glPushAttrib(GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT | GL_COLOR_BUFFER_BIT);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glColor4f(0.f, 0.f, 0.f, opacity);
+
+	glBegin(GL_QUADS);
+	glVertex2f(-1.f, -1.f);
+	glVertex2f(1.f, -1.f);
+	glVertex2f(1.f, 1.f);
+	glVertex2f(-1.f, 1.f);
+	glEnd();
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	glPopAttrib();
+
+	HLVR_LockGLMatrices();
+}
+// BSVR end
+
 void VRRenderer::RenderScreenOverlays()
 {
 	//hlvrUnlockGLMatrices();

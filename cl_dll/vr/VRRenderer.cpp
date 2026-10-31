@@ -5,8 +5,6 @@
 #include <regex>
 
 #include "VRTextureHelper.h"
-#include "VRGUIRenderer.h"
-#include "VRGameFunctions.h"
 
 #include "Matrices.h"
 
@@ -64,16 +62,8 @@ extern globalvars_t* gpGlobals;
 
 VRRenderer gVRRenderer;
 
-// Set when the menu starts a new game or loads a save, the menu stays hidden until the game is running
-// (or this much time has passed, in case the load failed or froze)
-static double gVR_GameLoadingStartTime = 0.0;
-constexpr double VR_GAME_LOADING_MAX_MENU_HIDE_SECONDS = 5.0;
-
-void VRNotifyGameLoading()
-{
-	gVR_GameLoadingStartTime = gVRRenderer.m_clientTime;
-	VRGameFunctions::StopMenuMusic();
-}
+// How dark the paused world behind the menu gets (opacity of black drawn over it)
+constexpr float MenuWorldDarkening = 0.6f;
 
 namespace
 {
@@ -134,38 +124,44 @@ void VRRenderer::Frame(double frametime)
 
 	UpdateGameRenderState();
 
-	bool isMenuVisible = false;
 	if (m_isInMenu || !IsInGame())
 	{
-		vrHelper->PollEvents(false, m_isInMenu);
+		// BSVR start
+		// During a game the in-game controls are updated with the menu open too, and their buttons are read without
+		// running them (VRInputAction::HandleInput). Otherwise a trigger press that clicks the menu and closes it,
+		// like Resume Game, is seen as a new press once the game runs again, and fires the weapon.
+		// vrHelper->PollEvents(false, m_isInMenu); - original
+		vrHelper->PollEvents(IsInGame(), m_isInMenu);
+		// BSVR end
 
 		// don't show menu during levelchange (we show it after 2 seconds, in case the load failed or froze)
-		const bool isGameLoading = gVR_GameLoadingStartTime != 0.0 && m_clientTime - gVR_GameLoadingStartTime < VR_GAME_LOADING_MAX_MENU_HIDE_SECONDS;
-		if (isGameLoading || (gVR_LastLevelChangeTime != 0.0 && gVR_LastLevelChangeTime > (m_clientTime - 2.f)))
+		if (gVR_LastLevelChangeTime != 0.0 && gVR_LastLevelChangeTime > (m_clientTime - 2.f))
 		{
 			g_vrInput.HideHLMenu();
 		}
 		else
 		{
 			g_vrInput.ShowHLMenu();
-			isMenuVisible = true;
 		}
 
 		ResetOffsetThingies();
 	}
 	else
 	{
-		gVR_GameLoadingStartTime = 0.0;  // game is running
-		VRGameFunctions::StopMenuMusic();  // also covers games that were not started from the menu
 		g_vrInput.HideHLMenu();
 	}
 
-	if (!IsInGame() || (m_isInMenu && m_wasMenuJustRendered))
+	// BSVR start
+	// The menu in VR is this copy of the game's menu, so it is needed every frame the menu is up
+	// if (!IsInGame() || (m_isInMenu && m_wasMenuJustRendered)) - original
+	if (!IsInGame() || m_isInMenu)
+	// BSVR end
 	{
 		CaptureCurrentScreenToTexture(vrHelper->GetHLMenuTexture());
-		m_wasMenuJustRendered = false;
 		ResetOffsetThingies();
 	}
+	// Over the game world the menu's black background is made transparent, so only the menu's dialogs float in front of the player
+	m_hlMenuTransparentTexture = IsGameShownBehindMenu() ? vrHelper->UpdateHLMenuTransparentTexture() : 0;
 
 	if (IsDeadInGame())
 	{
@@ -191,49 +187,6 @@ void VRRenderer::Frame(double frametime)
 		ResetOffsetThingies();
 	}
 
-
-	// Only render the GUI while the menu overlay is shown.
-	// Render the GUI into its own texture instead of the window, the window's framebuffer has no alpha channel
-	// and the menu needs to be transparent around the boxes.
-	// every time the menu is opened it starts at the main page
-	static bool wasMenuVisible = false;
-	if (isMenuVisible && !wasMenuVisible)
-	{
-		VRGUIRenderer::Instance().ResetMenu();
-		VRGameFunctions::StartMenuMusic();
-	}
-	wasMenuVisible = isMenuVisible;
-
-	if (isMenuVisible)
-	{
-		const GLuint guiTexture = vrHelper->GetVRGLGUITexture();  // (re)creates the texture if the viewport size changed
-		static GLuint guiFramebuffer = 0;
-		constexpr GLenum GL_FRAMEBUFFER_BINDING_ENUM = 0x8CA6;
-		GLint previousFramebuffer = 0;
-		glGetIntegerv(GL_FRAMEBUFFER_BINDING_ENUM, &previousFramebuffer);
-		if (guiFramebuffer == 0)
-		{
-			glGenFramebuffers(1, &guiFramebuffer);
-		}
-		glBindFramebuffer(GL_FRAMEBUFFER, guiFramebuffer);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, guiTexture, 0);
-
-		glClearColor(0, 0, 0, 0);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glPushAttrib(GL_ALL_ATTRIB_BITS);
-		glDisable(GL_CULL_FACE);
-		glDisable(GL_DEPTH_TEST);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		VRGUIRenderer::Instance().UpdateGUI(vrHelper->GetVRGLGUITextureWidth(), vrHelper->GetVRGLGUITextureHeight(), IsInGame());
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		glPopAttrib();
-
-		glBindFramebuffer(GL_FRAMEBUFFER, previousFramebuffer);
-	}
-
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 }
@@ -245,9 +198,6 @@ void VRRenderer::UpdateGameRenderState()
 
 	m_isInMenu = !m_HUDRedrawWasCalled;
 	m_HUDRedrawWasCalled = false;
-
-	if (!m_isInMenu)
-		m_wasMenuJustRendered = false;
 }
 
 
@@ -257,7 +207,13 @@ void VRRenderer::CalcRefdef(struct ref_params_s* pparams)
 
 	m_CalcRefdefWasCalled = true;
 
-	if (m_isInMenu || !IsInGame())
+	// BSVR start
+	// Upstream hid the game whenever the menu was open, because the OpenVR overlay menu ignored controller input
+	// while the game scene was rendered. The menu now finds where the controller points and draws its own beam,
+	// so during a game the paused world stays visible behind the menu, darkened (see RenderVRHandsAndHUDAndStuff).
+	// if (m_isInMenu || !IsInGame()) - original
+	if (!IsInGame())
+	// BSVR end
 	{
 		// Unfortunately the OpenVR overlay menu ignores controller input when we render the game scene.
 		// (in fact controllers themselves aren't rendered at all)
@@ -275,7 +231,14 @@ void VRRenderer::CalcRefdef(struct ref_params_s* pparams)
 	{
 		eyeMode = m_eyeMode = static_cast<VREyeMode>(std::atoi(CVAR_GET_STRING("vr_eye_mode")));
 
-		vrHelper->PollEvents(true, m_isInMenu); // 200~300�s
+		// BSVR start
+		// With the menu open, Frame() has already polled this frame's events and input
+		// vrHelper->PollEvents(true, m_isInMenu); // 200~300�s - original
+		if (!m_isInMenu)
+		{
+			vrHelper->PollEvents(true, false); // 200~300�s
+		}
+		// BSVR end
 
 		if (!vrHelper->UpdatePositions(pparams->viewentity > pparams->maxclients ? pparams->viewentity : -1)) // 100~200�s, sometimes spikes to 3000+�s(!)
 		{
@@ -400,13 +363,33 @@ void VRRenderer::RenderVRHandsAndHUDAndStuff()
 	// HUD attached to them) are still positioned at the body, so they would appear floating behind
 	// the player. Don't draw them. Screen fades and damage overlays below are view-relative and stay.
 	bool drawHandsAndHUD = !vrHelper->HasViewEntOverride();
+	// While the menu is open, the menu's beam comes from the controller, a weapon pointing elsewhere would be confusing,
+	// so a hand holding something is drawn empty: like the other hand if that one is empty, else as a plain hand model.
+	// The weapon's own data is kept, it's drawn again when the menu closes.
+	auto isEmptyHand = [this](const ControllerModelData& modelData) {
+		return IsHandModel(modelData.controller.modelname) || IsHandSkeletalModel(modelData.controller.modelname);
+	};
+	auto getShownModel = [&](const ControllerModelData& own, const ControllerModelData& other, ControllerModelData& emptyHand) -> const ControllerModelData& {
+		if (!m_isInMenu || isEmptyHand(own))
+			return own;
+		emptyHand = ControllerModelData{};
+		if (isEmptyHand(other))
+			emptyHand.controller = other.controller;  // not what the other hand carries
+		else
+			strncpy(emptyHand.controller.modelname, "models/v_hand.mdl", sizeof(emptyHand.controller.modelname) - 1);
+		return emptyHand;
+	};
+	ControllerModelData rightEmptyHand;
+	ControllerModelData leftEmptyHand;
+	const ControllerModelData& rightModel = getShownModel(gHUD.m_rightControllerModelData, gHUD.m_leftControllerModelData, rightEmptyHand);
+	const ControllerModelData& leftModel = getShownModel(gHUD.m_leftControllerModelData, gHUD.m_rightControllerModelData, leftEmptyHand);
 	// BSVR end
 
 	m_numRightControllerAttachments = 0;
 	if (drawHandsAndHUD && vrHelper->HasValidRightController())
 	{
 		g_StudioRenderer.StudioDrawVRHand(
-			gHUD.m_rightControllerModelData,
+			rightModel, // BSVR: gHUD.m_rightControllerModelData - original
 			vrHelper->GetRightControllerPosition(),
 			vrHelper->GetRightControllerAngles(),
 			false,
@@ -418,7 +401,7 @@ void VRRenderer::RenderVRHandsAndHUDAndStuff()
 	if (drawHandsAndHUD && vrHelper->HasValidLeftController())
 	{
 		g_StudioRenderer.StudioDrawVRHand(
-			gHUD.m_leftControllerModelData,
+			leftModel, // BSVR: gHUD.m_leftControllerModelData - original
 			vrHelper->GetLeftControllerPosition(),
 			vrHelper->GetLeftControllerAngles(),
 			true,
@@ -433,13 +416,20 @@ void VRRenderer::RenderVRHandsAndHUDAndStuff()
 
 	// BSVR start
 	// RenderHUDSprites(); - original, now skipped while a view entity controls the view (see above)
-	if (drawHandsAndHUD)
+	// and while the menu is open, the game doesn't update the HUD then
+	if (drawHandsAndHUD && !m_isInMenu)
 	{
 		RenderHUDSprites();
 		VR::WeaponWheel::Render();
 	}
 	// BSVR end
 	RenderScreenOverlays();
+	// BSVR start
+	if (m_isInMenu)
+	{
+		DarkenScreen(MenuWorldDarkening);
+	}
+	// BSVR end
 }
 
 bool VRRenderer::GetLeftControllerAttachment(Vector& out, int attachment)
@@ -472,14 +462,17 @@ void VRRenderer::DrawTransparent()
 {
 	if (!m_fIsOnlyClientDraw)
 	{
-		m_wasMenuJustRendered = false;
 		return;
 	}
 
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	if (CVAR_GET_FLOAT("vr_display_game") == 0.f)
+	// BSVR start
+	// The menu over the game world is captured from the window with its black background made transparent, so keep it black
+	// if (CVAR_GET_FLOAT("vr_display_game") == 0.f) - original
+	if (CVAR_GET_FLOAT("vr_display_game") == 0.f || m_hlMenuTransparentTexture != 0)
+	// BSVR end
 	{
 		return;
 	}
@@ -512,12 +505,10 @@ void VRRenderer::DrawTransparent()
 		if (m_isInMenu)
 		{
 			glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-			m_wasMenuJustRendered = true;
 		}
 		else
 		{
 			glBindTexture(GL_TEXTURE_2D, vrHelper->GetVRTexture(vr::EVREye::Eye_Left));
-			m_wasMenuJustRendered = false;
 			renderUpsideDown = true;
 		}
 
@@ -543,10 +534,6 @@ void VRRenderer::DrawTransparent()
 		glPopMatrix();
 
 		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-	else
-	{
-		m_wasMenuJustRendered = false;
 	}
 
 	glPopAttrib();
