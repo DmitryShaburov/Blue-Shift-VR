@@ -124,6 +124,20 @@ void VRRenderer::Frame(double frametime)
 
 	UpdateGameRenderState();
 
+	// BSVR start
+	// Captured before the menu overlay is shown below, which hands this texture to SteamVR. Otherwise the overlay gets
+	// the previous capture, and on the first frame of a pause the plain menu texture with an old menu on black.
+	// The menu in VR is this copy of the game's menu, so it is needed every frame the menu is up
+	// if (!IsInGame() || (m_isInMenu && m_wasMenuJustRendered)) - original
+	if (!IsInGame() || m_isInMenu)
+	{
+		CaptureCurrentScreenToTexture(vrHelper->GetHLMenuTexture());
+		ResetOffsetThingies();
+	}
+	// Over the game world the menu's black background is made transparent, so only the menu's dialogs float in front of the player
+	m_hlMenuTransparentTexture = IsGameShownBehindMenu() ? vrHelper->UpdateHLMenuTransparentTexture() : 0;
+	// BSVR end
+
 	if (m_isInMenu || !IsInGame())
 	{
 		// BSVR start
@@ -150,18 +164,6 @@ void VRRenderer::Frame(double frametime)
 	{
 		g_vrInput.HideHLMenu();
 	}
-
-	// BSVR start
-	// The menu in VR is this copy of the game's menu, so it is needed every frame the menu is up
-	// if (!IsInGame() || (m_isInMenu && m_wasMenuJustRendered)) - original
-	if (!IsInGame() || m_isInMenu)
-	// BSVR end
-	{
-		CaptureCurrentScreenToTexture(vrHelper->GetHLMenuTexture());
-		ResetOffsetThingies();
-	}
-	// Over the game world the menu's black background is made transparent, so only the menu's dialogs float in front of the player
-	m_hlMenuTransparentTexture = IsGameShownBehindMenu() ? vrHelper->UpdateHLMenuTransparentTexture() : 0;
 
 	if (IsDeadInGame())
 	{

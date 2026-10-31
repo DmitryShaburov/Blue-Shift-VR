@@ -39,7 +39,7 @@ is the look of the VR Options dialog, based on the game's `TrackerScheme.res`; t
 (`VROptionsScheme.res.i`) the first time the dialog opens. `skill.cfg`, `settings.scr` and `user.scr` are deliberately not shipped:
 the engine finds retail Blue Shift's through `fallback_dir`, which keeps Blue Shift's own skill values. `payload/dlls/hl.dll` and `payload/cl_dlls/client.dll` are not; the Visual Studio post-build step of
 `hldll` and `hl_cdll` copies them there, so publish after building the configuration you want to ship.
-copy them from the mod build before publishing. `delta.lst`, `LICENSE`, `THIRD_PARTY_LICENSES`,
+`delta.lst`, `LICENSE`, `THIRD_PARTY_LICENSES`,
 `lib/public/openvr_api.dll` and `cl_dll/EasyHook/bin/EasyHook32.dll` are embedded straight from the
 repository (see the csproj).
 

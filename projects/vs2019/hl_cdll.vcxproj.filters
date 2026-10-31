@@ -73,6 +73,9 @@
     <Filter Include="VR\Header Files">
       <UniqueIdentifier>{c9d3e5f2-4b57-4a83-8e21-6f84b2d7e138}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\hl1_source_sdk">
+      <UniqueIdentifier>{4e1b7c92-5d3a-4f68-a2b9-8c06e7d41f53}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\dlls\crossbow.cpp">
@@ -417,6 +420,192 @@
     <ClCompile Include="..\..\cl_dll\vr\lodepng.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRClientVGUI.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRClientVGUIExport.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\public\filesystem_helpers.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\public\vgui_controls\vgui_controls.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\KeyValues.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\characterset.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\mempool.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\strtools.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\strtools_unicode.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\tier1.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\utlbuffer.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\utlstring.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier1\utlsymbol.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier2\KeyValuesCompat.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier2\steam_api.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\tier2\tier2.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\AnimatingImagePanel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\AnimationController.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\BitmapImagePanel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\BuildFactoryHelper.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\BuildGroup.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\BuildModeDialog.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Button.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\CheckButton.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ComboBox.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Divider.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\EditablePanel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ExpandButton.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\FocusNavGroup.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Frame.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\GraphPanel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Image.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ImageList.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ImagePanel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Label.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ListPanel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ListViewPanel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Menu.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\MenuBar.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\MenuButton.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\MenuItem.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\MessageBox.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Panel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\PanelListPanel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ProgressBar.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\PropertyDialog.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\PropertyPage.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\PropertySheet.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\RadioButton.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\RichText.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ScrollBar.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ScrollBarSlider.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Slider.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\TextEntry.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\TextImage.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ToggleButton.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\ToolWindow.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\Tooltip.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\TreeView.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\TreeViewListControl.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\URLLabel.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\hl1_source_sdk\vgui2\vgui_controls\controls.cpp">
+      <Filter>Source Files\hl1_source_sdk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\cl_dll\kbutton.h">
@@ -757,6 +946,15 @@
     </ClInclude>
     <ClInclude Include="..\..\cl_dll\vr\VRSteamworksManager.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\VRClientVGUI.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\VRSettingsPages.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\vr\VRComModelHL25.h">
+      <Filter>VR\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -63,7 +63,9 @@ void VRInputAction::HandleDigitalInput(vr::VRInputValueHandle_t device, bool run
 	if (result == vr::VRInputError_None)
 	{
 		// BSVR start
-		if (!runHandler)
+		// While the menu is open, in-game buttons are read but presses are dropped (a press clicking Resume Game would
+		// otherwise fire once the game runs). Releases still go through, or a button let go in the menu would stay held.
+		if (!runHandler && !(data.bChanged && !data.bState))
 			return;
 		// BSVR end
 		if (data.bActive && data.bChanged && data.bState)

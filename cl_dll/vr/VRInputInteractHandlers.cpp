@@ -50,6 +50,13 @@ namespace VR
 				{
 					g_vrInput.RecenterHLMenu();
 				}
+				// BSVR start
+				// A teleport held when the menu opened and let go in the menu would otherwise stay active after resume
+				else if (data.bChanged && !data.bState && g_vrInput.IsInGame())
+				{
+					ServerCmd("vrtele 0");
+				}
+				// BSVR end
 				return;
 			}
 

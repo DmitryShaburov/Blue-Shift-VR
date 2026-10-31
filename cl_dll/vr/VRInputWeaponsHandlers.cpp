@@ -56,6 +56,16 @@ namespace VR
 		{
 			g_vrInput.SetFiring(g_vrInput.GetRole(data.activeOrigin), data.bActive && data.bState);
 
+			// BSVR start
+			// When SteamVR takes the input (dashboard), the release comes as inactive with no controller, so the hand
+			// can't be checked. Release anyway, or the weapon keeps firing until the trigger is pressed again.
+			if (data.bChanged && !data.bActive)
+			{
+				EngineClientCmd("-attack");
+				return;
+			}
+			// BSVR end
+
 			if (!g_vrInput.IsWeapon(g_vrInput.GetRole(data.activeOrigin)))
 				return;
 
@@ -74,6 +84,15 @@ namespace VR
 
 		void Weapons::HandleAltFire(const vr::InputDigitalActionData_t& data, const std::string& action)
 		{
+			// BSVR start
+			// Same as in HandleFire: a release when SteamVR takes the input comes with no controller
+			if (data.bChanged && !data.bActive)
+			{
+				EngineClientCmd("-attack2");
+				return;
+			}
+			// BSVR end
+
 			if (!g_vrInput.IsWeapon(g_vrInput.GetRole(data.activeOrigin)))
 				return;
 
@@ -129,6 +148,14 @@ namespace VR
 
 		void Weapons::HandleNext(const vr::InputDigitalActionData_t& data, const std::string& action)
 		{
+			// When SteamVR takes the input (dashboard) or the controller goes away, the release comes as inactive.
+			// An unbound action is inactive all the time but never reports a change, so it doesn't close the wheel.
+			if (data.bChanged && !data.bActive)
+			{
+				WeaponWheel::Close();
+				return;
+			}
+
 			// Hold to show the weapon selection wheel
 			if (data.bActive && data.bChanged)
 			{

@@ -21,9 +21,18 @@ static class Assets
         ("valve/sound/plats/train_use2.wav", "sound/plats/"),
     ];
 
+    // Files earlier versions installed that are no longer used (the old VR menu), removed on update
+    static readonly string[] Obsolete =
+    [
+        "fonts/Roboto-Regular.ttf",
+        "textures/null.png",
+        "THIRD_PARTY_LICENSES/Nuklear.txt",
+    ];
+
     public static void Install(string halfLifeDir, string halfLifeVrDir, string modDir)
     {
         Directory.CreateDirectory(modDir);
+        RemoveObsolete(modDir);
 
         Console.WriteLine("Mod files");
         ExtractPayload(modDir, halfLifeDir);
@@ -95,6 +104,26 @@ static class Assets
             using var source = assembly.GetManifestResourceStream(name)!;
             using var destination = File.Create(target);
             source.CopyTo(destination);
+        }
+    }
+
+    static void RemoveObsolete(string modDir)
+    {
+        foreach (var relative in Obsolete)
+        {
+            var path = Path.Combine(modDir, relative);
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+            Console.WriteLine($"Removing old {relative}");
+            File.Delete(path);
+
+            var dir = Path.GetDirectoryName(path)!;
+            if (!Directory.EnumerateFileSystemEntries(dir).Any())
+            {
+                Directory.Delete(dir);
+            }
         }
     }
 

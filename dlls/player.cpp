@@ -7007,7 +7007,8 @@ void CBasePlayer::UpdateVRLaserSpot()
 		weaponId = itemInfo.iId;
 	}
 
-	if (IsAlive() && IsWeaponWithVRLaserSpot(weaponId) && CVAR_GET_FLOAT("vr_enable_aim_laser") != 0.f)
+	// No laser dot while a camera controls the view (trigger_camera): the hands and weapon aren't drawn then
+	if (IsAlive() && IsWeaponWithVRLaserSpot(weaponId) && CVAR_GET_FLOAT("vr_enable_aim_laser") != 0.f && !m_hViewEntity)
 	{
 		if (!m_hLaserSpot)
 		{

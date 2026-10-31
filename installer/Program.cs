@@ -57,7 +57,7 @@ else
     }
     WaitForSteamToExit();
 }
-WaitForGameToExit();
+WaitForGameToExit(halfLifeDir);
 
 Console.WriteLine();
 try
@@ -100,15 +100,45 @@ static int Quit(string message)
 }
 
 // The running game keeps the mod DLLs and openvr_api.dll locked.
-static void WaitForGameToExit()
+static void WaitForGameToExit(string halfLifeDir)
 {
-    while (Process.GetProcessesByName("hl").Length > 0)
+    while (IsGameRunning(halfLifeDir))
     {
         Console.WriteLine();
         Console.WriteLine("The game (hl.exe) is running. Quit it so its files can be replaced.");
         Console.Write("Press Enter once the game has exited (close this window to cancel): ");
         ReadLine();
     }
+}
+
+// Only hl.exe from this Half-Life folder: Half-Life: VR and other GoldSrc games are hl.exe too, from other folders.
+static bool IsGameRunning(string halfLifeDir)
+{
+    var gameExe = Path.Combine(halfLifeDir, "hl.exe");
+    foreach (var process in Process.GetProcessesByName("hl"))
+    {
+        try
+        {
+            var path = process.MainModule?.FileName;
+            if (path is null || string.Equals(Path.GetFullPath(path), gameExe, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            // Can't tell where it runs from (no access, or it just exited): wait to be safe
+            if (!process.HasExited)
+            {
+                return true;
+            }
+        }
+        finally
+        {
+            process.Dispose();
+        }
+    }
+    return false;
 }
 
 static bool IsSteamRunning() =>

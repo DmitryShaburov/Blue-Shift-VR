@@ -573,6 +573,16 @@ namespace
 			DrawWeaponIcon(cell.weapon, GetCellPosition(cell), !cell.empty && i == g_wheel.hovered, color.r, color.g, color.b);
 		}
 	}
+
+	// Same check as CHudAmmo::UserCmd_NextWeapon: no weapon switching while dead or while the game hides the
+	// weapons (e.g. on a mounted gun, func_tank, which holsters the weapon itself).
+	// Also not while a camera controls the view (trigger_camera): the wheel isn't drawn then, like the hands.
+	bool IsWeaponSelectionAllowed()
+	{
+		VRHelper* helper = gVRRenderer.GetHelper();
+		return !gHUD.m_fPlayerDead && (gHUD.m_iHideHUDDisplay & (HIDEHUD_WEAPONS | HIDEHUD_ALL)) == 0
+			&& (helper == nullptr || !helper->HasViewEntOverride());
+	}
 }  // namespace
 
 namespace VR
@@ -581,6 +591,9 @@ namespace VR
 	{
 		void Open()
 		{
+			if (!IsWeaponSelectionAllowed())
+				return;
+
 			VRHelper* helper = gVRRenderer.GetHelper();
 			if (helper == nullptr || !helper->HasValidWeaponController())
 			{
@@ -611,7 +624,7 @@ namespace VR
 		Selection CloseAndGetSelection()
 		{
 			Selection selection;
-			if (g_wheel.isOpen)
+			if (g_wheel.isOpen && IsWeaponSelectionAllowed())
 			{
 				// The release comes before this frame's Update()
 				Refresh();
@@ -637,6 +650,13 @@ namespace VR
 		{
 			if (!g_wheel.isOpen)
 				return;
+
+			// Died or got on a mounted gun with the wheel open
+			if (!IsWeaponSelectionAllowed())
+			{
+				Close();
+				return;
+			}
 
 			Refresh();
 
