@@ -3361,8 +3361,8 @@ void CGraph::TestRoutingTables()
 						if (cPathSize2 == MAX_PATH_SIZE)
 							continue;
 
-							// Compare distances.
-							//
+						// Compare distances.
+						//
 #if 1
 						float flDistance1 = 0.0;
 

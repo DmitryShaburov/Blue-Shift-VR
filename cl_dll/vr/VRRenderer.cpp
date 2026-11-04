@@ -2,38 +2,18 @@
 #include <chrono>
 #include <unordered_set>
 #include <string>
-#include <regex>
 
 #include "VRTextureHelper.h"
 
-#include "Matrices.h"
-
 #include "hud.h"
 #include "cl_util.h"
-#include "cvardef.h"
-#include "usercmd.h"
-#include "const.h"
 
-#include "entity_state.h"
 #include "cl_entity.h"
 #include "ref_params.h"
-#include "in_defs.h"  // PITCH YAW ROLL
-#include "pm_movevars.h"
-#include "pm_shared.h"
 #include "pm_defs.h"
-#include "event_api.h"
-#include "pmtrace.h"
-#include "screenfade.h"
-#include "shake.h"
-#include "hltv.h"
-#include "keydefs.h"
 #include "com_model.h"
 #include "studio.h"
 
-#include "event_api.h"
-#include "triangleapi.h"
-#include "r_efx.h"
-#include "studio_util.h"
 #include "r_studioint.h"
 
 #include "StudioModelRenderer.h"
@@ -48,9 +28,6 @@
 #include "VRRandom.h"
 #include "VRSteamworksManager.h"
 #include "VRWeaponWheel.h"
-
-#include "com_model.h"
-#include "vr/VRComModelHL25.h"
 
 #include "vr_gl.h"
 
@@ -67,11 +44,11 @@ constexpr float MenuWorldDarkening = 0.6f;
 
 namespace
 {
-	std::unordered_set<std::string> g_handmodels{
-		{
-			"models/v_hand.mdl",
-		} };
-	std::unordered_set<std::string> g_handskeletalmodels{};
+std::unordered_set<std::string> g_handmodels{
+	{
+		"models/v_hand.mdl",
+	}};
+std::unordered_set<std::string> g_handskeletalmodels{};
 }
 
 
@@ -100,7 +77,7 @@ void VRRenderer::VidInit()
 {
 }
 
-void VRRenderer::Frame(double frametime)
+void VRRenderer::Frame()
 {
 	VRSteamworksManager::Update();
 
@@ -227,11 +204,9 @@ void VRRenderer::CalcRefdef(struct ref_params_s* pparams)
 		return;
 	}
 
-	VREyeMode eyeMode = m_eyeMode;
-
 	if (pparams->nextView == 0)
 	{
-		eyeMode = m_eyeMode = static_cast<VREyeMode>(std::atoi(CVAR_GET_STRING("vr_eye_mode")));
+		m_eyeMode = static_cast<VREyeMode>(std::atoi(CVAR_GET_STRING("vr_eye_mode")));
 
 		// BSVR start
 		// With the menu open, Frame() has already polled this frame's events and input
@@ -242,22 +217,7 @@ void VRRenderer::CalcRefdef(struct ref_params_s* pparams)
 		}
 		// BSVR end
 
-		if (!vrHelper->UpdatePositions(pparams->viewentity > pparams->maxclients ? pparams->viewentity : -1)) // 100~200�s, sometimes spikes to 3000+�s(!)
-		{
-			// No valid HMD input, render default (2D pancake mode)
-			eyeMode = VREyeMode::PancakeMode;
-			/*
-			auto* player = SaveGetLocalPlayer();
-			if (player)
-			{
-				VectorCopy(player->angles, pparams->cl_viewangles);
-				VectorCopy(player->angles, pparams->viewangles);
-			}
-			pparams->onlyClientDraw = 0;
-			m_fIsOnlyClientDraw = false;
-			return;
-			*/
-		}
+		vrHelper->UpdatePositions(pparams->viewentity > pparams->maxclients ? pparams->viewentity : -1); // 100~200�s, sometimes spikes to 3000+�s(!)
 
 		VRTextureHelper::Instance().Init();
 		UpdateSkyboxForMap();
@@ -368,15 +328,17 @@ void VRRenderer::RenderVRHandsAndHUDAndStuff()
 	// While the menu is open, the menu's beam comes from the controller, a weapon pointing elsewhere would be confusing,
 	// so a hand holding something is drawn empty: like the other hand if that one is empty, else as a plain hand model.
 	// The weapon's own data is kept, it's drawn again when the menu closes.
-	auto isEmptyHand = [this](const ControllerModelData& modelData) {
+	auto isEmptyHand = [this](const ControllerModelData& modelData)
+	{
 		return IsHandModel(modelData.controller.modelname) || IsHandSkeletalModel(modelData.controller.modelname);
 	};
-	auto getShownModel = [&](const ControllerModelData& own, const ControllerModelData& other, ControllerModelData& emptyHand) -> const ControllerModelData& {
+	auto getShownModel = [&](const ControllerModelData& own, const ControllerModelData& other, ControllerModelData& emptyHand) -> const ControllerModelData&
+	{
 		if (!m_isInMenu || isEmptyHand(own))
 			return own;
 		emptyHand = ControllerModelData{};
 		if (isEmptyHand(other))
-			emptyHand.controller = other.controller;  // not what the other hand carries
+			emptyHand.controller = other.controller; // not what the other hand carries
 		else
 			strncpy(emptyHand.controller.modelname, "models/v_hand.mdl", sizeof(emptyHand.controller.modelname) - 1);
 		return emptyHand;
@@ -481,62 +443,59 @@ void VRRenderer::DrawTransparent()
 
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
 
-	if (m_fIsOnlyClientDraw)
+	GLuint backgroundTexture = VRTextureHelper::Instance().GetTexture("background.png");
+
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glDisable(GL_CULL_FACE);
+	glCullFace(GL_FRONT_AND_BACK);
+
+	glDisable(GL_DEPTH_TEST);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+
+	glEnable(GL_TEXTURE_2D);
+
+	bool renderUpsideDown = false;
+	if (m_isInMenu)
 	{
-		GLuint backgroundTexture = VRTextureHelper::Instance().GetTexture("background.png");
-
-		glClearColor(0, 0, 0, 1);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		glDisable(GL_CULL_FACE);
-		glCullFace(GL_FRONT_AND_BACK);
-
-		glDisable(GL_DEPTH_TEST);
-
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-
-		glEnable(GL_TEXTURE_2D);
-
-		bool renderUpsideDown = false;
-		if (m_isInMenu)
-		{
-			glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-		}
-		else
-		{
-			glBindTexture(GL_TEXTURE_2D, vrHelper->GetVRTexture(vr::EVREye::Eye_Left));
-			renderUpsideDown = true;
-		}
-
-		glColor4f(1, 1, 1, 1);
-
-		float size = 1.f;
-
-		glBegin(GL_QUADS);
-		glTexCoord2f(0, renderUpsideDown ? 0 : 1);
-		glVertex3f(-size, -size, -1.f);
-		glTexCoord2f(1, renderUpsideDown ? 0 : 1);
-		glVertex3f(size, -size, -1.f);
-		glTexCoord2f(1, renderUpsideDown ? 1 : 0);
-		glVertex3f(size, size, -1.f);
-		glTexCoord2f(0, renderUpsideDown ? 1 : 0);
-		glVertex3f(-size, size, -1.f);
-		glEnd();
-
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
-
-		glBindTexture(GL_TEXTURE_2D, 0);
+		glBindTexture(GL_TEXTURE_2D, backgroundTexture);
 	}
+	else
+	{
+		glBindTexture(GL_TEXTURE_2D, vrHelper->GetVRTexture(vr::EVREye::Eye_Left));
+		renderUpsideDown = true;
+	}
+
+	glColor4f(1, 1, 1, 1);
+
+	float size = 1.f;
+
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, renderUpsideDown ? 0 : 1);
+	glVertex3f(-size, -size, -1.f);
+	glTexCoord2f(1, renderUpsideDown ? 0 : 1);
+	glVertex3f(size, -size, -1.f);
+	glTexCoord2f(1, renderUpsideDown ? 1 : 0);
+	glVertex3f(size, size, -1.f);
+	glTexCoord2f(0, renderUpsideDown ? 1 : 0);
+	glVertex3f(-size, size, -1.f);
+	glEnd();
+
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	glPopAttrib();
 }
@@ -553,19 +512,9 @@ void VRRenderer::InterceptHUDRedraw(float time, int intermission)
 	m_HUDRedrawWasCalled = true;
 }
 
-void VRRenderer::GetViewOrg(float* origin)
-{
-	vrHelper->GetViewOrg(origin);
-}
-
 void VRRenderer::GetViewAngles(float* angles)
 {
 	vrHelper->GetViewAngles(vr::EVREye::Eye_Right, angles);
-}
-
-void VRRenderer::GetViewVectors(Vector& forward, Vector& right, Vector& up)
-{
-	vrHelper->GetViewVectors(forward, right, up);
 }
 
 bool VRRenderer::GetWeaponControllerAttachment(Vector& out, int attachment)
@@ -612,15 +561,6 @@ void VRRenderer::UpdateSkyboxForMap()
 	}
 }
 
-// for studiomodelrenderer
-
-void VRRenderer::EnableDepthTest()
-{
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
-	glDepthRange(0, 1);
-}
-
 bool VRRenderer::IsDeadInGame()
 {
 	return gEngfuncs.pfnGetLevelName() != 0 && gEngfuncs.pfnGetLevelName()[0] != '\0' && gEngfuncs.GetMaxClients() > 0 && CL_IsDead();
@@ -646,11 +586,6 @@ cl_entity_t* VRRenderer::SaveGetLocalPlayer()
 cl_entity_t* SaveGetLocalPlayer()
 {
 	return gVRRenderer.SaveGetLocalPlayer();
-}
-
-vr::IVRSystem* VRRenderer::GetVRSystem()
-{
-	return vrHelper->GetVRSystem();
 }
 
 // For ev_common.cpp

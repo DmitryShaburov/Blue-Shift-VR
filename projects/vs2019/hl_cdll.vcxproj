@@ -203,7 +203,6 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\cl_dll\vr\VRGameFunctions.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRSteamworksManager.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRModExtraDataCacheHook.cpp" />
-    <ClCompile Include="..\..\cl_dll\vr\VRDebugPhysicsRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRSettingsPages.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRClientVGUI.cpp">
       <AdditionalIncludeDirectories>$(VguiSdkIncludeDirs)</AdditionalIncludeDirectories>

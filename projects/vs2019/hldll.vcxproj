@@ -231,32 +231,27 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\pm_shared\pm_shared.cpp" />
     <ClCompile Include="..\..\public\interface.cpp" />
     <ClCompile Include="..\..\dlls\vr\hlmv_mathlib.cpp" />
-    <ClCompile Include="..\..\dlls\vr\StudioModel.cpp" />
-    <ClCompile Include="..\..\dlls\vr\studio_render.cpp" />
-    <ClCompile Include="..\..\dlls\vr\studio_utils.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRCommons.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRController.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRControllerInteractionManager.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRControllerModel.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRControllerTeleporter.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRCrushEntityHandler.cpp" />
-    <ClCompile Include="..\..\dlls\vr\VRDebugBBoxDrawer.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRGroundEntityHandler.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRModelHelper.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRMovementHandler.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRPhysicsHelper.cpp" />
+    <ClCompile Include="..\..\dlls\vr\VRPlayer.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRRotatableEnt.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRAnimatedModelHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\dlls\vr\hlmv_mathlib.h" />
-    <ClInclude Include="..\..\dlls\vr\StudioModel.h" />
     <ClInclude Include="..\..\dlls\vr\VRCommons.h" />
     <ClInclude Include="..\..\dlls\vr\VRController.h" />
     <ClInclude Include="..\..\dlls\vr\VRControllerInteractionManager.h" />
     <ClInclude Include="..\..\dlls\vr\VRControllerModel.h" />
     <ClInclude Include="..\..\dlls\vr\VRControllerTeleporter.h" />
-    <ClInclude Include="..\..\dlls\vr\VRDebugBBoxDrawer.h" />
     <ClInclude Include="..\..\dlls\vr\VRGroundEntityHandler.h" />
     <ClInclude Include="..\..\dlls\vr\VRModelHelper.h" />
     <ClInclude Include="..\..\dlls\vr\VRMovementHandler.h" />

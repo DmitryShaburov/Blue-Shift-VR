@@ -1,64 +1,54 @@
 
-#include <iostream>
-#include <filesystem>
 #include <string>
-#include <functional>
 
 #include "hud.h"
 #include "cl_util.h"
 #include "openvr.h"
 #include "VRInput.h"
-#include "eiface.h"
-#include "VRRenderer.h"
 
-VRInputAction::VRInputAction() :
-	m_type{ ActionType::INVALID }
+VRInputAction::VRInputAction() : m_type{ActionType::INVALID}
 {
 }
 
-VRInputAction::VRInputAction(const std::string& id, vr::VRActionHandle_t handle, DigitalActionHandler handler, bool handleWhenNotInGame, bool handAgnostic) :
-	m_id{ id },
-	m_handle{ handle },
-	m_type{ ActionType::DIGITAL },
-	m_digitalActionHandler{ handler },
-	m_handleWhenNotInGame{ handleWhenNotInGame },
-	m_handAgnostic{ handAgnostic }
+VRInputAction::VRInputAction(const std::string& id, vr::VRActionHandle_t handle, DigitalActionHandler handler, bool handleWhenNotInGame, bool handAgnostic) : m_id{id},
+																																							  m_handle{handle},
+																																							  m_type{ActionType::DIGITAL},
+																																							  m_digitalActionHandler{handler},
+																																							  m_handleWhenNotInGame{handleWhenNotInGame},
+																																							  m_handAgnostic{handAgnostic}
 {
 }
 
-VRInputAction::VRInputAction(const std::string& id, vr::VRActionHandle_t handle, AnalogActionHandler handler, bool handleWhenNotInGame, bool handAgnostic) :
-	m_id{ id },
-	m_handle{ handle },
-	m_type{ ActionType::ANALOG },
-	m_analogActionHandler{ handler },
-	m_handleWhenNotInGame{ handleWhenNotInGame },
-	m_handAgnostic{ handAgnostic }
+VRInputAction::VRInputAction(const std::string& id, vr::VRActionHandle_t handle, AnalogActionHandler handler, bool handleWhenNotInGame, bool handAgnostic) : m_id{id},
+																																							 m_handle{handle},
+																																							 m_type{ActionType::ANALOG},
+																																							 m_analogActionHandler{handler},
+																																							 m_handleWhenNotInGame{handleWhenNotInGame},
+																																							 m_handAgnostic{handAgnostic}
 {
 }
 
-VRInputAction::VRInputAction(const std::string& id, vr::VRActionHandle_t handle, PoseActionHandler handler, bool handleWhenNotInGame, bool handAgnostic) :
-	m_id{ id },
-	m_handle{ handle },
-	m_type{ ActionType::POSE },
-	m_poseActionHandler{ handler },
-	m_handleWhenNotInGame{ handleWhenNotInGame },
-	m_handAgnostic{ handAgnostic }
+VRInputAction::VRInputAction(const std::string& id, vr::VRActionHandle_t handle, PoseActionHandler handler, bool handleWhenNotInGame, bool handAgnostic) : m_id{id},
+																																						   m_handle{handle},
+																																						   m_type{ActionType::POSE},
+																																						   m_poseActionHandler{handler},
+																																						   m_handleWhenNotInGame{handleWhenNotInGame},
+																																						   m_handAgnostic{handAgnostic}
 {
 }
 
-VRInputAction::VRInputAction(const std::string& id, vr::VRActionHandle_t handle, SkeletalActionHandler handler, bool handleWhenNotInGame, bool handAgnostic) :
-	m_id{ id },
-	m_handle{ handle },
-	m_type{ ActionType::SKELETAL },
-	m_skeletalActionHandler{ handler },
-	m_handleWhenNotInGame{ handleWhenNotInGame },
-	m_handAgnostic{ handAgnostic }
+VRInputAction::VRInputAction(const std::string& id, vr::VRActionHandle_t handle, SkeletalActionHandler handler, bool handleWhenNotInGame, bool handAgnostic) : m_id{id},
+																																							   m_handle{handle},
+																																							   m_type{ActionType::SKELETAL},
+																																							   m_skeletalActionHandler{handler},
+																																							   m_handleWhenNotInGame{handleWhenNotInGame},
+																																							   m_handAgnostic{handAgnostic}
 {
 }
 
 void VRInputAction::HandleDigitalInput(vr::VRInputValueHandle_t device, bool runHandler)
 {
-	vr::InputDigitalActionData_t data{ 0 };
+	vr::InputDigitalActionData_t data{};
 	vr::EVRInputError result = vr::VRInput()->GetDigitalActionData(m_handle, &data, sizeof(vr::InputDigitalActionData_t), device);
 	if (result == vr::VRInputError_None)
 	{
@@ -82,13 +72,11 @@ void VRInputAction::HandleDigitalInput(vr::VRInputValueHandle_t device, bool run
 
 void VRInputAction::HandleAnalogInput(vr::VRInputValueHandle_t device)
 {
-	vr::InputAnalogActionData_t data{ 0 };
+	vr::InputAnalogActionData_t data{};
 	vr::EVRInputError result = vr::VRInput()->GetAnalogActionData(m_handle, &data, sizeof(vr::InputAnalogActionData_t), device);
 	if (result == vr::VRInputError_None)
 	{
-		if (data.bActive && (fabs(data.deltaX) > CVAR_GET_FLOAT("vr_move_analog_deadzone")
-							|| fabs(data.deltaY) > CVAR_GET_FLOAT("vr_move_analog_deadzone")
-							|| fabs(data.deltaZ) > CVAR_GET_FLOAT("vr_move_analog_deadzone") ))
+		if (data.bActive && (fabs(data.deltaX) > CVAR_GET_FLOAT("vr_move_analog_deadzone") || fabs(data.deltaY) > CVAR_GET_FLOAT("vr_move_analog_deadzone") || fabs(data.deltaZ) > CVAR_GET_FLOAT("vr_move_analog_deadzone")))
 		{
 			g_vrInput.m_vrInputThisFrame = true;
 		}
@@ -102,7 +90,7 @@ void VRInputAction::HandleAnalogInput(vr::VRInputValueHandle_t device)
 
 void VRInputAction::HandlePoseInput(vr::VRInputValueHandle_t device)
 {
-	vr::InputPoseActionData_t data{ 0 };
+	vr::InputPoseActionData_t data{};
 	vr::EVRInputError result = vr::VRInput()->GetPoseActionDataRelativeToNow(m_handle, vr::TrackingUniverseStanding, 0.f, &data, sizeof(vr::InputPoseActionData_t), device);
 	if (result == vr::VRInputError_None)
 	{
@@ -116,13 +104,13 @@ void VRInputAction::HandlePoseInput(vr::VRInputValueHandle_t device)
 
 void VRInputAction::HandleSkeletalInput()
 {
-	vr::InputSkeletalActionData_t data{ 0 };
+	vr::InputSkeletalActionData_t data{};
 	vr::EVRInputError result = vr::VRInput()->GetSkeletalActionData(m_handle, &data, sizeof(vr::InputSkeletalActionData_t));
 	if (result == vr::VRInputError_None)
 	{
 		if (data.bActive)
 		{
-			vr::VRSkeletalSummaryData_t summaryData{ 0 };
+			vr::VRSkeletalSummaryData_t summaryData{0};
 			result = vr::VRInput()->GetSkeletalSummaryData(
 				m_handle,
 				vr::EVRSummaryType::VRSummaryType_FromAnimation,

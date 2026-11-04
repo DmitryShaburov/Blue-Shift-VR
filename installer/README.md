@@ -9,7 +9,7 @@ then creates `<Half-Life>\bsvr\` and `<Half-Life>\bsvr_hd\` with:
 - the embedded payload: `liblist.gam`, `delta.lst`, the `game.*` icons, `dlls\hl.dll`,
   `cl_dlls\client.dll`, `maps\ba_yard4a.ent`, the SD weapon view models in `models\` and `models\animov\`, licenses;
 - the HD weapon view models in `bsvr_hd\models\` and `bsvr_hd\models\animov\`. The engine puts `bsvr_hd` ahead of
-  `bsvr` when HD models are on (the game's own HD models option in **Options > Video**, which runs `_sethdmodels`);
+  `bsvr` when HD models are on (the game's own HD models checkbox, `OriginalModels` in **Options > Advanced**, which runs `_sethdmodels`);
 - `openvr_api.dll` and `EasyHook32.dll` next to `hl.exe` in the Half-Life folder, because `client.dll`
   imports them implicitly and Windows does not search `cl_dlls\` for imports;
 - VR runtime assets copied from Half-Life: VR Mod (see the tables in `Assets.cs`, derived from `Docs/VR_ASSETS.md`);
@@ -19,6 +19,10 @@ then creates `<Half-Life>\bsvr\` and `<Half-Life>\bsvr_hd\` with:
   options that do nothing in VR or that the mod overrides set to `"enabled" "0"`: HEV suit volume, all of Video except
   texture filtering, brightness and gamma (display mode is hidden, the game enables it itself), all of Aim and Keyboard
   (see `OptionsLocks.cs`). Rerun the installer after a game update that changes them.
+- `sound\sentences.txt`: the player's own sentences file (from `bshift`, else `valve`) with Half-Life: VR's gunpoint
+  and gib reaction lines for guards and scientists added (`BA_GUN_*`, `SC_GUN_*`, `BA_GIB_*`, `SC_GIB_*`; see
+  `Sentences.cs`). Blue Shift's file has none of them, so without it NPCs react silently. Rerun the installer after a
+  game update that changes it.
 - spaces removed from the names of files in `SAVE\`: the new game menu cannot load saves with spaces, which the old one allowed.
 
 Both folders come only from Steam; the installer quits with a hint when Steam or a game is not found.

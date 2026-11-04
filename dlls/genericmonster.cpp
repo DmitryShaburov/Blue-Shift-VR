@@ -155,7 +155,7 @@ void CGenericMonster::Spawn()
 		pev->takedamage = DAMAGE_NO;
 	}
 
-	if (pev->spawnflags & SF_GENERICMONSTER_CONTROLLER)
+	if ((pev->spawnflags & SF_GENERICMONSTER_CONTROLLER) != 0)
 	{
 		m_afCapability = bits_CAP_TURN_HEAD;
 	}
@@ -182,7 +182,7 @@ void CGenericMonster::PlayScriptedSentence(const char* pszSentence, float durati
 
 void CGenericMonster::MonsterThink()
 {
-	if (m_afCapability & bits_CAP_TURN_HEAD)
+	if ((m_afCapability & bits_CAP_TURN_HEAD) != 0)
 	{
 		if (m_hTalkTarget)
 		{
@@ -219,7 +219,7 @@ void CGenericMonster::MonsterThink()
 void CGenericMonster::IdleHeadTurn(Vector& vecFriend)
 {
 	// turn head in desired direction only if ent has a turnable head
-	if (m_afCapability & bits_CAP_TURN_HEAD)
+	if ((m_afCapability & bits_CAP_TURN_HEAD) != 0)
 	{
 		float yaw = VecToYaw(vecFriend - pev->origin) - pev->angles.y;
 

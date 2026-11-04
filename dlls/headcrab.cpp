@@ -507,7 +507,7 @@ void CHeadCrab::HandleDragStart()
 	ClearSchedule();
 	RouteClear();
 
-	pev->sequence = 13;	// "yaw_adjustment" - perfect for grabbing headcrab
+	pev->sequence = 13; // "yaw_adjustment" - perfect for grabbing headcrab
 	ResetSequenceInfo();
 	m_fSequenceLoops = true;
 }

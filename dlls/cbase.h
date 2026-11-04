@@ -158,9 +158,9 @@ class EHandleT
 	friend class EHandleT;
 
 private:
-	edict_t* m_pent{ nullptr };
-	int m_serialnumber{ 0 };
-	void* m_privateData{ nullptr };
+	edict_t* m_pent{nullptr};
+	int m_serialnumber{0};
+	void* m_privateData{nullptr};
 
 public:
 	EHandleT() {}
@@ -186,16 +186,13 @@ public:
 	}
 
 	template <class ENTITY2>
-	EHandleT(const EHandleT<ENTITY2>& other) :
-		EHandleT{ dynamic_cast<ENTITY*>(static_cast<CBaseEntity*>(const_cast<EHandleT<ENTITY2>&>(other).operator ENTITY2*())) }
+	EHandleT(const EHandleT<ENTITY2>& other) : EHandleT{dynamic_cast<ENTITY*>(static_cast<CBaseEntity*>(const_cast<EHandleT<ENTITY2>&>(other).operator ENTITY2*()))}
 	{
 	}
 
 	edict_t* Get() const
 	{
-		if (m_pent
-			&& m_pent->serialnumber == m_serialnumber
-			&& m_pent->pvPrivateData == m_privateData)
+		if (m_pent && m_pent->serialnumber == m_serialnumber && m_pent->pvPrivateData == m_privateData)
 		{
 			return m_pent;
 		}
@@ -292,9 +289,7 @@ public:
 	public:
 		bool operator()(const EHandleT& e1, const EHandleT& e2) const
 		{
-			return e1.m_serialnumber == e2.m_serialnumber
-				&& e1.m_pent == e2.m_pent
-				&& e1.m_privateData == e2.m_privateData;
+			return e1.m_serialnumber == e2.m_serialnumber && e1.m_pent == e2.m_pent && e1.m_privateData == e2.m_privateData;
 		}
 	};
 };
@@ -360,7 +355,7 @@ public:
 	// Made BloodColor() non-virtual and moved m_bloodColor member here
 	// to avoid issues when temporarily disabling blood in VR melee code.
 	// - Max Makes Mods, 2019-04-13
-	int m_bloodColor{ DONT_BLEED };
+	int m_bloodColor{DONT_BLEED};
 	int BloodColor() { return m_bloodColor; }
 	// BSVR end
 	virtual void TraceBleed(float flDamage, Vector vecDir, TraceResult* ptr, int bitsDamageType);
@@ -371,8 +366,8 @@ public:
 	virtual int GetToggleState() { return TS_AT_TOP; }
 	virtual void AddPoints(int score, bool bAllowNegativeScore) {}
 	virtual void AddPointsToTeam(int score, bool bAllowNegativeScore) {}
-	virtual bool AddPlayerItem(CBasePlayerItem* pItem) { return 0; }
-	virtual bool RemovePlayerItem(CBasePlayerItem* pItem) { return 0; }
+	virtual bool AddPlayerItem(CBasePlayerItem* pItem) { return false; }
+	virtual bool RemovePlayerItem(CBasePlayerItem* pItem) { return false; }
 	virtual int GiveAmmo(int iAmount, const char* szName, int iMax) { return -1; }
 	virtual float GetDelay() { return 0; }
 	virtual bool IsMoving() { return pev->velocity != g_vecZero; }
@@ -386,7 +381,7 @@ public:
 	virtual bool IsSneaking() { return false; }
 	virtual bool IsAlive() { return (pev->deadflag == DEAD_NO) && pev->health > 0; }
 	virtual bool IsBSPModel() { return pev->solid == SOLID_BSP || pev->movetype == MOVETYPE_PUSHSTEP; }
-	virtual bool ReflectGauss() { return (IsBSPModel() && !pev->takedamage); }
+	virtual bool ReflectGauss() { return (IsBSPModel() && pev->takedamage == DAMAGE_NO); }
 	virtual bool HasTarget(string_t targetname) { return FStrEq(STRING(targetname), STRING(pev->target)); }
 	virtual bool IsInWorld();
 	virtual bool IsPlayer() { return false; }
@@ -506,7 +501,7 @@ public:
 	inline static CBaseEntity* InstanceOrWorld(const entvars_t* pev) { return InstanceOrWorld(ENT(pev)); }
 	inline static CBaseEntity* InstanceOrWorld(int eoffset) { return InstanceOrWorld(ENT(eoffset)); }
 
-	template<class T>
+	template <class T>
 	inline static EHandleT<T> SafeInstance(const edict_t* pent)
 	{
 		if (FNullEnt(pent) && !FWorldEnt(pent))
@@ -532,13 +527,13 @@ public:
 	// 	}
 	// }
 
-	template<class T>
+	template <class T>
 	inline static EHandleT<T> SafeInstance(const entvars_t* pev)
 	{
 		return SafeInstance<T>(ENT(pev));
 	}
 
-	template<class T>
+	template <class T>
 	inline static EHandleT<T> SafeInstance(int eoffset)
 	{
 		return SafeInstance<T>(ENT(eoffset));
@@ -702,14 +697,12 @@ public:
 	}
 	void EXPORT DragThink(void);
 
-	inline bool IsBeingDragged() { return m_vrDragger && m_vrDragController != VRControllerID::INVALID; }
+	inline bool IsBeingDragged() { return nullptr != m_vrDragger && m_vrDragController != VRControllerID::INVALID; }
 
 	EHANDLE m_vrDragger;
-	VRControllerID m_vrDragController{ VRControllerID::INVALID };
-	Vector m_vrDragOriginOffset;
-	Vector m_vrDragAnglesOffset;
+	VRControllerID m_vrDragController{VRControllerID::INVALID};
 
-		// overriden by NPCs that react to the player throwing stuff at them
+	// overriden by NPCs that react to the player throwing stuff at them
 	virtual void GibAttack(EHandleT<CBaseEntity> thrower, const Vector& pos, int bloodcolor) {}
 
 	// Remember if entity is in PVS this frame (last frame? doesn't matter), set in AddToFullPack in client.cpp - Max Makes Mods, 2020-03-08
@@ -837,7 +830,7 @@ public:
 	void ResetSequenceInfo();
 	void DispatchAnimEvents(float flFutureInterval = 0.1); // Handle events that have happend since last time called up until X seconds into the future
 	// BSVR start
-	virtual void HandleClientAnimEvent(ClientAnimEvent_t* pEvent) { return; };  // Client side events for VR controller weapon models (fixes some issues) - Max Makes Mods - 2019-04-13
+	virtual void HandleClientAnimEvent(ClientAnimEvent_t* pEvent) { return; }; // Client side events for VR controller weapon models (fixes some issues) - Max Makes Mods - 2019-04-13
 	// BSVR end
 	virtual void HandleAnimEvent(MonsterEvent_t* pEvent) {}
 	float SetBoneController(int iController, float flValue);
@@ -1010,7 +1003,7 @@ public:
 
 	static TYPEDESCRIPTION m_SaveData[];
 	// Buttons that don't take damage can be IMPULSE used
-	int ObjectCaps() override { return (CBaseToggle::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | (pev->takedamage ? 0 : FCAP_IMPULSE_USE); }
+	int ObjectCaps() override { return (CBaseToggle::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | (pev->takedamage != DAMAGE_NO ? 0 : FCAP_IMPULSE_USE); }
 	virtual bool IsAllowedToSpeak() { return true; }
 
 	bool m_fStayPushed; // button stays pushed in until touched again?

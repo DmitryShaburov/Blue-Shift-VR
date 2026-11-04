@@ -324,12 +324,12 @@ void CSatchel::PrimaryAttack()
 	case 0:
 		// BSVR start - added condition
 		// Throw(); - original
-		if (!m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+		if (0 == m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 		{
 			m_flStartThrow = 1;
 		}
 		// BSVR end
-	break;
+		break;
 	case 1:
 	{
 		SendWeaponAnim(SATCHEL_RADIO_FIRE);
@@ -372,7 +372,7 @@ void CSatchel::SecondaryAttack()
 	{
 		// BSVR start - added condition
 		// Throw(); - original
-		if (!m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+		if (0 == m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 		{
 			m_flStartThrow = 1;
 		}
@@ -435,7 +435,7 @@ void CSatchel::Throw()
 void CSatchel::WeaponIdle()
 {
 	// BSVR start
-	if (m_flStartThrow)
+	if (0 != m_flStartThrow)
 	{
 		Throw();
 		m_flStartThrow = 0;

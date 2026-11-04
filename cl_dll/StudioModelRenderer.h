@@ -31,9 +31,8 @@ public:
 	virtual void StudioDrawVRHand(const ControllerModelData& controllerModelData, const Vector& origin, const Vector& angles, bool mirrored, int* out_numattachments, float out_attachments[4][3]);
 	// BSVR end
 
-// BSVR start
+	// BSVR start
 private:
-
 	void StudioDispatchVRSoundEvents(const char* modelname, const Vector& origin, bool mirrored);
 	bool DrawVREntity(
 		const char* modelname,
@@ -44,7 +43,7 @@ private:
 		int effects,
 		int rendermode, int renderamt, int renderfx, color24 rendercolor,
 		bool isController, bool mirrored);
-// BSVR end
+	// BSVR end
 
 public:
 	// Local interfaces
@@ -112,7 +111,7 @@ public:
 	// Process movement of player
 	virtual void StudioProcessGait(entity_state_t* pplayer);
 
-// BSVR start
+	// BSVR start
 private:
 	// Calculates bones for given matrices, leaving m_pbonetransform and m_plighttransform intact
 	// Max Makes Mods, 2019-10-23
@@ -129,9 +128,8 @@ private:
 	}
 
 protected:
-
 	bool m_isCurrentModelMirrored = false;
-// BSVR end
+	// BSVR end
 
 public:
 	// Client clock

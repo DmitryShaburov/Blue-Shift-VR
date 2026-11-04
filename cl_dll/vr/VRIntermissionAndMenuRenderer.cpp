@@ -1,43 +1,18 @@
 
-#include <chrono>
-#include <unordered_set>
 #include <algorithm>
 
-#include "VRTextureHelper.h"
-
-#include "Matrices.h"
-
 #include "hud.h"
-#include "cl_util.h"
-#include "cvardef.h"
-#include "usercmd.h"
 #include "const.h"
 
-#include "entity_state.h"
-#include "cl_entity.h"
-#include "ref_params.h"
-#include "in_defs.h"  // PITCH YAW ROLL
-#include "pm_movevars.h"
-#include "pm_shared.h"
-#include "pm_defs.h"
-#include "event_api.h"
-#include "pmtrace.h"
 #include "screenfade.h"
 #include "shake.h"
-#include "hltv.h"
-#include "keydefs.h"
 
-#include "event_api.h"
-#include "triangleapi.h"
-#include "r_efx.h"
 #include "r_studioint.h"
 
 #include "VRRenderer.h"
 #include "VRHelper.h"
 #include "VROpenGLInterceptor.h"
 #include "VRInput.h"
-
-#include "com_model.h"
 
 #include "vr_gl.h"
 
@@ -47,7 +22,7 @@ extern engine_studio_api_t IEngineStudio;
 
 void VRRenderer::DrawScreenFade()
 {
-	screenfade_t screenfade{ 0 };
+	screenfade_t screenfade{0};
 	gEngfuncs.pfnGetScreenFade(&screenfade);
 
 	if (screenfade.fadeReset == 0.f && screenfade.fadeEnd == 0.f)
@@ -65,7 +40,7 @@ void VRRenderer::DrawScreenFade()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	if (screenfade.fadeFlags & FFADE_MODULATE)
+	if ((screenfade.fadeFlags & FFADE_MODULATE) != 0)
 	{
 		IEngineStudio.GL_SetRenderMode(kRenderTransAdd);
 	}
@@ -83,13 +58,13 @@ void VRRenderer::DrawScreenFade()
 	glLoadIdentity();
 
 	float fadealpha = 0.f;
-	if (screenfade.fadeFlags & FFADE_STAYOUT)
+	if ((screenfade.fadeFlags & FFADE_STAYOUT) != 0)
 	{
 		fadealpha = screenfade.fadealpha;
 	}
 	else
 	{
-		if (screenfade.fadeFlags & FFADE_OUT)
+		if ((screenfade.fadeFlags & FFADE_OUT) != 0)
 		{
 			fadealpha = screenfade.fadealpha - fabs(screenfade.fadeSpeed * (screenfade.fadeEnd - m_hudRedrawTime));
 		}
@@ -185,9 +160,9 @@ void VRRenderer::RenderScreenOverlays()
 
 	// draw damage unless when being healed
 	// damage is drawn as pulsating red gradient overlay using a sine wave (well actually negative cosine so we start at 0, but who cares)
-	bool hasDamage = gHUD.m_Health.m_fAttackFront > 0 || gHUD.m_Health.m_fAttackRear > 0 || gHUD.m_Health.m_fAttackLeft > 0 || gHUD.m_Health.m_fAttackRight > 0 || gHUD.m_Health.m_iHealth <= 15 || gHUD.m_Health.m_bitsDamage || (gHUD.m_Health.m_fFade && gHUD.m_Health.m_healthLost);
+	bool hasDamage = gHUD.m_Health.m_fAttackFront > 0 || gHUD.m_Health.m_fAttackRear > 0 || gHUD.m_Health.m_fAttackLeft > 0 || gHUD.m_Health.m_fAttackRight > 0 || gHUD.m_Health.m_iHealth <= 15 || 0 != gHUD.m_Health.m_bitsDamage || (0 != gHUD.m_Health.m_fFade && gHUD.m_Health.m_healthLost);
 
-	bool isBeingHealed = gHUD.m_Health.m_fFade && gHUD.m_Health.m_healthGained;
+	bool isBeingHealed = 0 != gHUD.m_Health.m_fFade && gHUD.m_Health.m_healthGained;
 
 	if ((hasDamage || m_isDrawingDamage) && !isBeingHealed)
 	{
@@ -208,25 +183,25 @@ void VRRenderer::RenderScreenOverlays()
 		// recalculate damage color everytime we fade out
 		if (brightness < 0.01f)
 		{
-			if (gHUD.m_Health.m_bitsDamage & DMG_DROWN)
+			if ((gHUD.m_Health.m_bitsDamage & DMG_DROWN) != 0)
 			{
 				// dark blue
-				m_damageColor = Vector{ 0.2f, 0.3f, 0.7f };
+				m_damageColor = Vector{0.2f, 0.3f, 0.7f};
 			}
-			else if (gHUD.m_Health.m_bitsDamage & (DMG_FREEZE | DMG_SLOWFREEZE))
+			else if ((gHUD.m_Health.m_bitsDamage & (DMG_FREEZE | DMG_SLOWFREEZE)) != 0)
 			{
 				// light blue
-				m_damageColor = Vector{ 0.4f, 0.7f, 1.f };
+				m_damageColor = Vector{0.4f, 0.7f, 1.f};
 			}
-			else if (gHUD.m_Health.m_bitsDamage & (DMG_POISON | DMG_ACID | DMG_NERVEGAS | DMG_RADIATION))
+			else if ((gHUD.m_Health.m_bitsDamage & (DMG_POISON | DMG_ACID | DMG_NERVEGAS | DMG_RADIATION)) != 0)
 			{
 				// green
-				m_damageColor = Vector{ 0.4f, 0.8f, 0.f };
+				m_damageColor = Vector{0.4f, 0.8f, 0.f};
 			}
 			else
 			{
 				// any other damage is red
-				m_damageColor = Vector{ 1.f, 0.f, 0.f };
+				m_damageColor = Vector{1.f, 0.f, 0.f};
 			}
 		}
 
@@ -242,15 +217,15 @@ void VRRenderer::RenderScreenOverlays()
 			vrHelper->GetViewOrg(viewOrg);
 			vrHelper->GetViewAngles(vr::EVREye::Eye_Left, viewAngles);
 
-			Vector topleftfront{ 8.f, -32.f, 32.f };
-			Vector toprightfront{ 8.f, 32.f, 32.f };
-			Vector bottomleftfront{ 8.f, -32.f, -32.f };
-			Vector bottomrightfront{ 8.f, 32.f, -32.f };
-			Vector centerfront{ 8.f, 0.f, 0.f };
-			Vector topleftback{ -8.f, topleftfront.y * 100.f, topleftfront.z * 100.f };
-			Vector toprightback{ -8.f, toprightfront.y * 100.f, toprightfront.z * 100.f };
-			Vector bottomleftback{ -8.f, bottomleftfront.y * 100.f, bottomleftfront.z * 100.f };
-			Vector bottomrightback{ -8.f, bottomrightfront.y * 100.f, bottomrightfront.z * 100.f };
+			Vector topleftfront{8.f, -32.f, 32.f};
+			Vector toprightfront{8.f, 32.f, 32.f};
+			Vector bottomleftfront{8.f, -32.f, -32.f};
+			Vector bottomrightfront{8.f, 32.f, -32.f};
+			Vector centerfront{8.f, 0.f, 0.f};
+			Vector topleftback{-8.f, topleftfront.y * 100.f, topleftfront.z * 100.f};
+			Vector toprightback{-8.f, toprightfront.y * 100.f, toprightfront.z * 100.f};
+			Vector bottomleftback{-8.f, bottomleftfront.y * 100.f, bottomleftfront.z * 100.f};
+			Vector bottomrightback{-8.f, bottomrightfront.y * 100.f, bottomrightfront.z * 100.f};
 
 			RotateVector(topleftfront, viewAngles);
 			RotateVector(toprightfront, viewAngles);
@@ -353,118 +328,4 @@ void VRRenderer::RenderScreenOverlays()
 
 	//hlvrLockGLMatrices();
 	HLVR_LockGLMatrices();
-}
-
-void RenderCube()
-{
-	float scale = 1.f;
-
-	//Multi-colored side - FRONT
-	glBindTexture(GL_TEXTURE_2D, VRTextureHelper::Instance().GetTexture("/skybox/desertft.png"));
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0, 0);
-	glVertex3f(scale, -scale, -scale);
-	glTexCoord2f(1, 0);
-	glVertex3f(scale, scale, -scale);
-	glTexCoord2f(1, 1);
-	glVertex3f(-scale, scale, -scale);
-	glTexCoord2f(0, 1);
-	glVertex3f(-scale, -scale, -scale);
-	glEnd();
-
-	// White side - BACK
-	glBindTexture(GL_TEXTURE_2D, VRTextureHelper::Instance().GetTexture("/skybox/desertbk.png"));
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0, 0);
-	glVertex3f(scale, -scale, scale);
-	glTexCoord2f(1, 0);
-	glVertex3f(scale, scale, scale);
-	glTexCoord2f(1, 1);
-	glVertex3f(-scale, scale, scale);
-	glTexCoord2f(0, 1);
-	glVertex3f(-scale, -scale, scale);
-	glEnd();
-
-	// Purple side - RIGHT
-	glBindTexture(GL_TEXTURE_2D, VRTextureHelper::Instance().GetTexture("/skybox/desertrt.png"));
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0, 0);
-	glVertex3f(scale, -scale, -scale);
-	glTexCoord2f(1, 0);
-	glVertex3f(scale, scale, -scale);
-	glTexCoord2f(1, 1);
-	glVertex3f(scale, scale, scale);
-	glTexCoord2f(0, 1);
-	glVertex3f(scale, -scale, scale);
-	glEnd();
-
-	// Green side - LEFT
-	glBindTexture(GL_TEXTURE_2D, VRTextureHelper::Instance().GetTexture("/skybox/desertlf.png"));
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0, 0);
-	glVertex3f(-scale, -scale, scale);
-	glTexCoord2f(1, 0);
-	glVertex3f(-scale, scale, scale);
-	glTexCoord2f(1, 1);
-	glVertex3f(-scale, scale, -scale);
-	glTexCoord2f(0, 1);
-	glVertex3f(-scale, -scale, -scale);
-	glEnd();
-
-	// Blue side - TOP
-	glBindTexture(GL_TEXTURE_2D, VRTextureHelper::Instance().GetTexture("/skybox/desertup.png"));
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0, 0);
-	glVertex3f(scale, scale, scale);
-	glTexCoord2f(1, 0);
-	glVertex3f(scale, scale, -scale);
-	glTexCoord2f(1, 1);
-	glVertex3f(-scale, scale, -scale);
-	glTexCoord2f(0, 1);
-	glVertex3f(-scale, scale, scale);
-	glEnd();
-
-	// Red side - BOTTOM
-	glBindTexture(GL_TEXTURE_2D, VRTextureHelper::Instance().GetTexture("/skybox/desertdn.png"));
-	glBegin(GL_POLYGON);
-	glTexCoord2f(0, 0);
-	glVertex3f(scale, -scale, -scale);
-	glTexCoord2f(1, 0);
-	glVertex3f(scale, -scale, scale);
-	glTexCoord2f(1, 1);
-	glVertex3f(-scale, -scale, scale);
-	glTexCoord2f(0, 1);
-	glVertex3f(-scale, -scale, -scale);
-	glEnd();
-}
-
-void VRRenderer::RenderIntermissionRoom()
-{
-	glPushAttrib(GL_CURRENT_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT | GL_POLYGON_BIT | GL_TEXTURE_BIT);
-
-	glClearColor(0, 1, 1, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_DEPTH_TEST);
-
-	glEnable(GL_TEXTURE_2D);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	glPushMatrix();
-
-	//Vector origin;
-	//vrHelper->GetViewOrg(origin);
-	//glTranslatef(origin.x, origin.y, origin.z);
-
-	glColor4f(1, 1, 1, 1);
-
-	RenderCube();
-
-	glPopMatrix();
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	glPopAttrib();
 }

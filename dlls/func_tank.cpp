@@ -426,9 +426,7 @@ void CFuncTank::ControllerPostFrame()
 		return;
 
 	// BSVR start added additional checks
-	if (((m_pController->pev->button & IN_ATTACK) != 0)
-		|| (m_pController->GetAnalogFire() > 0.f)
-		|| m_pController->IsAnyControllerFiringAndHoldingThisTank(this))
+	if (((m_pController->pev->button & IN_ATTACK) != 0) || m_pController->IsAnyControllerFiringAndHoldingThisTank(this))
 	// BSVR end
 	{
 		Vector vecForward;

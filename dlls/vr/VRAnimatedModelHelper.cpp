@@ -1,6 +1,5 @@
 #include "extdll.h"
 #include "util.h"
-#include "cbase.h"
 
 extern const char* GetAnimatedWeaponModelName(const char* modelName);
 

@@ -73,24 +73,9 @@ typedef struct msurface_hl25_s
 	mdisplaylist_t displaylist; // 25th anniversary engine only
 } msurface_hl25_t;
 
-typedef struct texture_hl25_s
-{
-	char name[16];
-	unsigned width, height;
-	int gl_texturenum;
-	struct msurface_hl25_s* texturechain;	// for gl_texsort drawing
-	int anim_total;							// total tenths in sequence ( 0 = no)
-	int anim_min, anim_max;					// time for this frame min <=time< max
-	struct texture_hl25_s* anim_next;		// in the animation sequence
-	struct texture_hl25_s* alternate_anims; // bmodels in frame 1 use these
-	unsigned offsets[MIPLEVELS];			// four mip maps stored
-	unsigned paloffset;
-} texture_hl25_t;
-
 // Both DLLs are built 32-bit for the 32-bit engine; these sizes are what the engine uses.
 static_assert(sizeof(void*) == 4, "VRComModelHL25.h layouts assume a 32-bit build");
 static_assert(sizeof(msurface_hl25_t) == 108, "msurface_hl25_t must match the 25th anniversary OpenGL engine layout");
-static_assert(offsetof(texture_hl25_t, gl_texturenum) == 24, "texture_hl25_t must match the OpenGL engine layout");
 
 // Accessors that reinterpret the SDK-typed model_t pointers as the live engine layout.
 inline const msurface_hl25_t* VRGetSurface(const model_t* model, int index)
@@ -101,11 +86,6 @@ inline const msurface_hl25_t* VRGetSurface(const model_t* model, int index)
 inline const msurface_hl25_t* VRGetMarkSurface(const model_t* model, int index)
 {
 	return reinterpret_cast<const msurface_hl25_t*>(model->marksurfaces[index]);
-}
-
-inline texture_hl25_t* VRGetTexture(const model_t* model, int index)
-{
-	return reinterpret_cast<texture_hl25_t*>(model->textures[index]);
 }
 
 // Runtime sanity check that the engine really uses the msurface_hl25_t stride: the plane and

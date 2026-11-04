@@ -39,7 +39,7 @@ public:
 	int ObjectCaps() override
 	{
 		int flags = 0;
-		if (pev->spawnflags & SF_SPRITE_TEMPORARY)
+		if ((pev->spawnflags & SF_SPRITE_TEMPORARY) != 0)
 			flags = FCAP_DONT_SAVE;
 		return (CBaseEntity::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | flags;
 	}
@@ -100,10 +100,6 @@ public:
 private:
 	float m_lastTime;
 	float m_maxFrame;
-
-	// BSVR start
-	bool m_fSetAnimtime{ false };
-	// BSVR end
 };
 
 
@@ -115,7 +111,7 @@ public:
 	int ObjectCaps() override
 	{
 		int flags = 0;
-		if (pev->spawnflags & SF_BEAM_TEMPORARY)
+		if ((pev->spawnflags & SF_BEAM_TEMPORARY) != 0)
 			flags = FCAP_DONT_SAVE;
 		return (CBaseEntity::ObjectCaps() & ~FCAP_ACROSS_TRANSITION) | flags;
 	}
@@ -128,13 +124,6 @@ public:
 	inline void SetFlags(int flags) { pev->rendermode = (pev->rendermode & 0x0F) | (flags & 0xF0); }
 	inline void SetStartPos(const Vector& pos) { pev->origin = pos; }
 	inline void SetEndPos(const Vector& pos) { pev->angles = pos; }
-	// BSVR start
-	inline void SetStartAndEndPos(const Vector& start, const Vector& end)
-	{
-		SetStartPos(start);
-		SetEndPos(end);
-	}
-	// BSVR end
 	void SetStartEntity(int entityIndex);
 	void SetEndEntity(int entityIndex);
 

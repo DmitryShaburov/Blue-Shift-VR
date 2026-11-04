@@ -1,5 +1,4 @@
 
-#include <algorithm>
 #include <string>
 #include <unordered_map>
 
@@ -17,7 +16,7 @@
 
 namespace
 {
-	const std::unordered_set<std::string> ValidGroundEntityClassnames =
+const std::unordered_set<std::string> ValidGroundEntityClassnames =
 	{
 		"func_train",
 		"func_tracktrain",
@@ -25,37 +24,37 @@ namespace
 		"func_platrot",
 		"func_door_rotating",
 		//"func_rotating"
-	};
-	const std::unordered_map<std::string, const char*> IntroTrainRideMapNames = {};
-	// {
-	// 	{ "maps/ba_tram1.bsp", "barney_tram" },
-	// 	{ "maps/ba_tram2.bsp", "barney_tram" },
-	// 	{ "maps/ba_tram3.bsp", "barney_tram" },
-	// 	{ "maps/ba_elevator.bsp", "elevator" } };
+};
+const std::unordered_map<std::string, const char*> IntroTrainRideMapNames = {};
+// {
+// 	{ "maps/ba_tram1.bsp", "barney_tram" },
+// 	{ "maps/ba_tram2.bsp", "barney_tram" },
+// 	{ "maps/ba_tram3.bsp", "barney_tram" },
+// 	{ "maps/ba_elevator.bsp", "elevator" } };
 
-	// BSVR start
-	// Brush entities that must never be used as ground entity on specific maps.
-	// ba_elevator: "fake_elevator" is a stationary func_train the player stands in before the ride; when the button is pressed
-	// the map teleports the player into the real "elevator" and resets/removes fake_elevator, which would otherwise be read
-	// as a huge move and drag the player away.
-	const std::unordered_map<std::string, std::unordered_set<std::string>> MapSpecificExcludedGroundEntities =
+// BSVR start
+// Brush entities that must never be used as ground entity on specific maps.
+// ba_elevator: "fake_elevator" is a stationary func_train the player stands in before the ride; when the button is pressed
+// the map teleports the player into the real "elevator" and resets/removes fake_elevator, which would otherwise be read
+// as a huge move and drag the player away.
+const std::unordered_map<std::string, std::unordered_set<std::string>> MapSpecificExcludedGroundEntities =
 	{
-		{ "maps/ba_elevator.bsp", { "fake_elevator" } },
-	};
+		{"maps/ba_elevator.bsp", {"fake_elevator"}},
+};
 
-	bool IsExcludedByMapSpecificRule(edict_t* pent)
-	{
-		if (FNullEnt(pent) || !pent->v.targetname)
-			return false;
+bool IsExcludedByMapSpecificRule(edict_t* pent)
+{
+	if (FNullEnt(pent) || 0 == pent->v.targetname)
+		return false;
 
-		auto mapEntry = MapSpecificExcludedGroundEntities.find(STRING(INDEXENT(0)->v.model));
-		if (mapEntry == MapSpecificExcludedGroundEntities.end())
-			return false;
+	auto mapEntry = MapSpecificExcludedGroundEntities.find(STRING(INDEXENT(0)->v.model));
+	if (mapEntry == MapSpecificExcludedGroundEntities.end())
+		return false;
 
-		return mapEntry->second.count(STRING(pent->v.targetname)) != 0;
-	}
-	// BSVR end
-}  // namespace
+	return mapEntry->second.count(STRING(pent->v.targetname)) != 0;
+}
+// BSVR end
+} // namespace
 
 void VRGroundEntityHandler::HandleMovingWithSolidGroundEntities()
 {
@@ -80,7 +79,7 @@ void VRGroundEntityHandler::DetectAndSetGroundEntity()
 	edict_t* pentground = nullptr;
 
 	// Take train if conditions are met
-	std::string mapName{ STRING(INDEXENT(0)->v.model) };
+	std::string mapName{STRING(INDEXENT(0)->v.model)};
 	auto introTrain = IntroTrainRideMapNames.find(mapName);
 	if (introTrain != IntroTrainRideMapNames.end())
 	{
@@ -130,7 +129,7 @@ void VRGroundEntityHandler::DetectAndSetGroundEntity()
 				int entindex = pmove->PM_TestPlayerPosition(m_pPlayer->pev->origin, nullptr);
 				if (entindex > 0)
 				{
-					edict_t *pentground = INDEXENT(pmove->physents[entindex].info);
+					edict_t* pentground = INDEXENT(pmove->physents[entindex].info);
 					if (IsExcludedAsGroundEntity(pentground))
 					{
 						pentground = nullptr;
@@ -217,7 +216,7 @@ bool VRGroundEntityHandler::CheckIfPotentialGroundEntityForPlayer(edict_t* pent)
 		return false;
 
 	// Detect if player is in control area of a usable train
-	if ((hEntity->ObjectCaps() & FCAP_DIRECTIONAL_USE) && hEntity->OnControls(m_pPlayer->pev))
+	if ((hEntity->ObjectCaps() & FCAP_DIRECTIONAL_USE) != 0 && hEntity->OnControls(m_pPlayer->pev))
 		return true;
 
 	// We use the physics engine to do proper collision detection with the bsp model.
@@ -225,7 +224,7 @@ bool VRGroundEntityHandler::CheckIfPotentialGroundEntityForPlayer(edict_t* pent)
 	// We extend the player's height and lower the origin a bit to make sure we detect movement even if slightly above ground (HMD jittering etc.)
 	return VRPhysicsHelper::Instance().ModelIntersectsCapsule(
 		hEntity,
-		/*center*/ m_pPlayer->pev->origin - Vector{ 0.f, 0.f, 8.f },
+		/*center*/ m_pPlayer->pev->origin - Vector{0.f, 0.f, 8.f},
 		/*radius*/ m_pPlayer->pev->size.x,
 		/*height*/ double(m_pPlayer->pev->size.z) + 8.0);
 }

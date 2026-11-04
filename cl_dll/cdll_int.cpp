@@ -126,7 +126,8 @@ static bool CL_InitClient()
 	{
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error",
 			"This mod has detected that it is being run from a Valve game directory which is not supported\n"
-			"Run this mod from its intended location\n\nThe game will now shut down", nullptr);
+			"Run this mod from its intended location\n\nThe game will now shut down",
+			nullptr);
 		return false;
 	}
 
@@ -271,8 +272,8 @@ void DLLEXPORT HUD_Frame(double time)
 
 	GetClientVoiceMgr()->Frame(time);
 
-    // BSVR start
-	gVRRenderer.Frame(time);
+	// BSVR start
+	gVRRenderer.Frame();
 	// BSVR end
 }
 
@@ -438,6 +439,6 @@ EXPOSE_SINGLE_INTERFACE(CClientExports, IGameClientExports, GAMECLIENTEXPORTS_IN
 // For weapons.cpp - Max Makes Mods, 2018-02-04
 bool GetHUDWeaponBlocked()
 {
-	return gHUD.m_iHideHUDDisplay & HIDEHUD_WEAPONBLOCKED;
+	return (gHUD.m_iHideHUDDisplay & HIDEHUD_WEAPONBLOCKED) != 0;
 }
 // BSVR end

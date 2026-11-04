@@ -372,7 +372,7 @@ public:
 	bool MsgFunc_Flashlight(const char* pszName, int iSize, void* pbuf);
 	bool MsgFunc_FlashBat(const char* pszName, int iSize, void* pbuf);
 	// BSVR start
-	bool IsOn() const { return m_fOn != 0; }
+	bool IsOn() const { return m_fOn; }
 	// BSVR end
 
 private:
@@ -509,27 +509,25 @@ struct ControllerModelData
 {
 	struct ModelData
 	{
-		int body{ 0 };
-		int skin{ 0 };
-		float scale{ 1.f };
-		int sequence{ 0 };
-		float frame{ 0.f };
-		float framerate{ 0.f };
-		float animtime{ 0.f };
-		int effects{ 0 };
-		int rendermode{ 0 };
-		int renderamt{ 0 };
-		int renderfx{ 0 };
-		color24 rendercolor{ 0, 0, 0 };
+		int body{0};
+		int skin{0};
+		float scale{1.f};
+		int sequence{0};
+		float frame{0.f};
+		float framerate{0.f};
+		float animtime{0.f};
+		int effects{0};
+		int rendermode{0};
+		int renderamt{0};
+		int renderfx{0};
+		color24 rendercolor{0, 0, 0};
 		char modelname[1024];
 	};
 
 	ModelData controller;
 
-	bool hasDraggedEnt{ false };
-	int draggedEntIndex{ 0 };
-	Vector draggedEntOriginOffset;
-	Vector draggedEntAnglesOffset;
+	bool hasDraggedEnt{false};
+	int draggedEntIndex{0};
 	ModelData draggedEnt;
 };
 // BSVR end
@@ -548,18 +546,18 @@ private:
 	int m_iConcussionEffect;
 
 	// BSVR start
-	int m_iGroundEntIndex{ 0 };
+	int m_iGroundEntIndex{0};
 	Vector m_trainControlPosition;
-	float m_trainControlYaw{ 0.f };
+	float m_trainControlYaw{0.f};
 	// BSVR end
 
 public:
 	// BSVR start
-	ControllerModelData m_leftControllerModelData{ 0 };
-	ControllerModelData m_rightControllerModelData{ 0 };
+	ControllerModelData m_leftControllerModelData{0};
+	ControllerModelData m_rightControllerModelData{0};
 
-	int m_vrGrabbedLadderEntIndex{ -1 };
-	bool m_vrIsPullingOnLedge{ false };
+	int m_vrGrabbedLadderEntIndex{-1};
+	bool m_vrIsPullingOnLedge{false};
 
 	float m_screenShakeAmplitude = 0;
 	float m_screenShakeDuration = 0;

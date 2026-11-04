@@ -6,8 +6,9 @@
 class DoOnDestruct
 {
 public:
-	DoOnDestruct(std::function<void()> dothething) : dothething{ dothething } {}
+	DoOnDestruct(std::function<void()> dothething) : dothething{dothething} {}
 	~DoOnDestruct() { dothething(); }
+
 private:
 	std::function<void()> dothething;
 };

@@ -151,8 +151,7 @@ void CCrowbar::ItemPostFrame()
 	}
 #endif
 
-	if (CVAR_GET_FLOAT("vr_crowbar_vanilla_attack_enabled") != 0.f
-		&& (m_pPlayer->pev->button & IN_ATTACK || m_pPlayer->GetAnalogFire() > 0.f))
+	if (CVAR_GET_FLOAT("vr_crowbar_vanilla_attack_enabled") != 0.f && (m_pPlayer->pev->button & IN_ATTACK) != 0)
 	{
 		// Blue Shift SDK has one shared ItemPostFrame/CanAttack in weapons_shared.cpp for both DLLs,
 		// so upstream's client-only CanAttack(float) from hl_weapons.cpp does not exist here.
@@ -160,7 +159,7 @@ void CCrowbar::ItemPostFrame()
 		// 		extern bool CanAttack(float flNextAttack);
 		// 		if (CanAttack(m_flNextPrimaryAttack))
 		// #else
-		extern bool CanAttack(CBasePlayer* pPlayer, float attack_time, float curtime, bool isPredicted);
+		extern bool CanAttack(CBasePlayer * pPlayer, float attack_time, float curtime, bool isPredicted);
 		if (CanAttack(m_pPlayer, m_flNextPrimaryAttack, gpGlobals->time, UseDecrement()))
 		// #endif
 		{

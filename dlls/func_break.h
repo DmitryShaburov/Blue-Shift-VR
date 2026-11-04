@@ -92,7 +92,6 @@ public:
 	int m_numGibBodies = 0;
 
 private:
-
 	void VRSpawnBreakModels(
 		const Vector& pos,
 		const Vector& size,
@@ -141,7 +140,7 @@ private:
 
 	// Remember who killed us and how (for deciding how many interactive gibs to spawn)
 	EHandleT<CBaseEntity> m_hKiller;
-	KillMethod m_killMethod{ KillMethod::UNKNOWN };
+	KillMethod m_killMethod{KillMethod::UNKNOWN};
 	// BSVR end
 };
 

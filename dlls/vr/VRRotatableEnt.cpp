@@ -3,7 +3,6 @@
 #include "util.h"
 #include "vector.h"
 #include "cbase.h"
-#include "player.h"
 #include "doors.h"
 
 #include "VRRotatableEnt.h"
@@ -11,7 +10,7 @@
 Vector VRRotatableEnt::GetUpdatedAngles(float delta)
 {
 	Vector angles = m_vrRotateStartAngles;
-	if (FBitSet(MyEntityPointer()->pev->spawnflags, SF_DOOR_ROTATE_Z)) 
+	if (FBitSet(MyEntityPointer()->pev->spawnflags, SF_DOOR_ROTATE_Z))
 	{
 		angles.z += delta;
 	}
@@ -19,7 +18,7 @@ Vector VRRotatableEnt::GetUpdatedAngles(float delta)
 	{
 		angles.x += delta;
 	}
-	else  // Y
+	else // Y
 	{
 		angles.y += delta;
 	}
@@ -31,15 +30,15 @@ Vector2D VRRotatableEnt::CalculateDeltaPos2D(const Vector& pos)
 {
 	if (FBitSet(MyEntityPointer()->pev->spawnflags, SF_DOOR_ROTATE_Z))
 	{
-		return Vector2D{ pos.y, pos.z }; // z is roll, around x-axis
+		return Vector2D{pos.y, pos.z}; // z is roll, around x-axis
 	}
 	else if (FBitSet(MyEntityPointer()->pev->spawnflags, SF_DOOR_ROTATE_X))
 	{
-		return Vector2D{ pos.x, pos.z };  // x is pitch, around y-axis
+		return Vector2D{pos.x, pos.z}; // x is pitch, around y-axis
 	}
-	else  // Y
+	else // Y
 	{
-		return Vector2D{ pos.x, pos.y };  // y is yaw, around z-axis
+		return Vector2D{pos.x, pos.y}; // y is yaw, around z-axis
 	}
 }
 
@@ -106,8 +105,7 @@ void VRRotatableEnt::VRRotate(CBaseEntity* pPlayer, const Vector& pos, bool fSta
 
 void VRRotatableEnt::UpdateAngles(CBaseEntity* pPlayer, const Vector& newAngles, const Vector& angleStart, const Vector& angleEnd)
 {
-	float delta = CBaseToggle::AxisDelta(MyEntityPointer()->pev->spawnflags, newAngles, angleStart)
-		/ CBaseToggle::AxisDelta(MyEntityPointer()->pev->spawnflags, angleEnd, angleStart);
+	float delta = CBaseToggle::AxisDelta(MyEntityPointer()->pev->spawnflags, newAngles, angleStart) / CBaseToggle::AxisDelta(MyEntityPointer()->pev->spawnflags, angleEnd, angleStart);
 
 	if (delta <= 0.f)
 	{

@@ -9,7 +9,11 @@
 
 struct VRSettingItem
 {
-	enum class Type { Choice, Stepper };
+	enum class Type
+	{
+		Choice,
+		Stepper
+	};
 
 	std::string label;
 	Type type = Type::Choice;
@@ -27,10 +31,6 @@ struct VRSettingItem
 	float step = 0.1f;
 	std::string suffix;
 	float displayScale = 1.f;
-
-	// Tooltip, a choice can also describe each option
-	std::string description;
-	std::vector<std::string> optionDescriptions;
 };
 
 // The settings pages in menu order (Hands, Movement and Comfort, ...)

@@ -3,10 +3,7 @@
 #include "util.h"
 #include "vector.h"
 #include "cbase.h"
-#include "player.h"
 #include "weapons.h"
-#include "animation.h"
-#include "activity.h"
 #include "VRControllerModel.h"
 
 LINK_ENTITY_TO_CLASS(vr_controllermodel, CVRControllerModel);
@@ -50,7 +47,7 @@ void CVRControllerModel::SetModel(string_t model)
 void CVRControllerModel::TurnOff()
 {
 	// already off!
-	if ((pev->effects & EF_NODRAW) && !m_pfnThink)
+	if ((pev->effects & EF_NODRAW) != 0 && !m_pfnThink)
 		return;
 
 	SetSequence(0);
@@ -63,7 +60,7 @@ void CVRControllerModel::TurnOff()
 void CVRControllerModel::TurnOn()
 {
 	// already on!
-	if (!(pev->effects & EF_NODRAW) && m_pfnThink)
+	if ((pev->effects & EF_NODRAW) == 0 && m_pfnThink)
 		return;
 
 	pev->effects &= ~EF_NODRAW;

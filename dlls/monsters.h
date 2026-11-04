@@ -176,14 +176,15 @@ public:
 	// BSVR start
 	// float m_lifeTime; - original
 
-	virtual bool IsDraggable() override { return !(pev->effects & EF_NODRAW) && pev->rendermode != kRenderTransTexture; }
+	virtual bool IsDraggable() override { return (pev->effects & EF_NODRAW) == 0 && pev->rendermode != kRenderTransTexture; }
 	virtual void HandleDragStart() override
 	{
 		pev->movetype = MOVETYPE_NONE;
-		if (m_pfnTouch) sticky = m_pfnTouch == &CGib::StickyGibTouch;
+		if (m_pfnTouch)
+			sticky = m_pfnTouch == &CGib::StickyGibTouch;
 		SetThink(nullptr);
 		SetTouch(nullptr);
-		m_hThrower = m_vrDragger;	// set this here. once the player let's go we check in StickyGibTouch or BounceGibTouch if we hit an NPC
+		m_hThrower = m_vrDragger; // set this here. once the player let's go we check in StickyGibTouch or BounceGibTouch if we hit an NPC
 	}
 	virtual void HandleDragStop() override
 	{
@@ -201,7 +202,7 @@ private:
 
 	static void LimitNumberOfGibs();
 	static int m_numGibs;
-// BSVR end
+	// BSVR end
 };
 
 

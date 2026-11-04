@@ -69,7 +69,9 @@ char* CHudTextMessage::LocaliseTextString(const char* msg, char* dst_buffer, int
 
 			{
 				const auto end = std::find_if_not(src, src + std::strlen(src), [](auto c)
-					{ return (c >= 'A' && c <= 'z') || (c >= '0' && c <= '9'); });
+					{
+						return (c >= 'A' && c <= 'z') || (c >= '0' && c <= '9');
+					});
 
 				const std::size_t nameLength = end - src;
 

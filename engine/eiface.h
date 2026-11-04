@@ -206,7 +206,7 @@ typedef struct enginefuncs_s
 	int (*pfnIsMapValid)(const char* filename);
 	void (*pfnStaticDecal)(const float* origin, int decalIndex, int entityIndex, int modelIndex);
 	int (*pfnPrecacheGeneric3)(const char* s); // BSVR: renamed from pfnPrecacheGeneric
-	int (*pfnGetPlayerUserId)(edict_t* e); // returns the server assigned userid for this player.  useful for logging frags, etc.  returns -1 if the edict couldn't be found in the list of clients
+	int (*pfnGetPlayerUserId)(edict_t* e);	   // returns the server assigned userid for this player.  useful for logging frags, etc.  returns -1 if the edict couldn't be found in the list of clients
 	void (*pfnBuildSoundMsg)(edict_t* entity, int channel, const char* sample, /*int*/ float volume, float attenuation, int fFlags, int pitch, int msg_dest, int msg_type, const float* pOrigin, edict_t* ed);
 	int (*pfnIsDedicatedServer)(); // is this a dedicated server?
 	cvar_t* (*pfnCVarGetPointer)(const char* szVarName);

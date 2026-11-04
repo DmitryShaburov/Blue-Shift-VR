@@ -669,7 +669,10 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 		//viewangles[ 0 ] = viewangles[ 1 ] = viewangles[ 2 ] = 0.0;
 		gEngfuncs.GetViewAngles((float*)viewangles);
 
-		CL_AdjustAngles(frametime, viewangles);
+		// BSVR start
+		// View angles come from the HMD; no keyboard/mouse turning
+		// CL_AdjustAngles(frametime, viewangles);
+		// BSVR end
 
 		memset(cmd, 0, sizeof(*cmd));
 
@@ -709,8 +712,6 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 			cmd->forwardmove += g_vrInput.analogforward * cl_backspeed->value;
 		if (fabs(g_vrInput.analogsidemove) > EPSILON)
 			cmd->sidemove += g_vrInput.analogsidemove * cl_sidespeed->value;
-		if (fabs(g_vrInput.analogupmove) > EPSILON)
-			cmd->upmove += g_vrInput.analogupmove * cl_upspeed->value;
 		// BSVR end
 
 		// clip to maxspeed
@@ -729,8 +730,11 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 			}
 		}
 
-		// Allow mice and other controllers to add their inputs
-		IN_Move(frametime, cmd);
+		// BSVR start
+		// All movement comes from the VR setup; no mouse/joystick movement
+		// // Allow mice and other controllers to add their inputs
+		// IN_Move(frametime, cmd);
+		// BSVR end
 	}
 
 	cmd->impulse = in_impulse;
@@ -758,23 +762,9 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 		cmd->buttons |= IN_MOVERIGHT;
 	if (g_vrInput.analogsidemove < -EPSILON)
 		cmd->buttons |= IN_MOVELEFT;
-	if (g_vrInput.analogupmove > EPSILON)
-		cmd->buttons_ex |= X_IN_UP;
-	if (g_vrInput.analogupmove < -EPSILON)
-		cmd->buttons_ex |= X_IN_DOWN;
-	if (g_vrInput.analogupmove > EPSILON)
-		cmd->buttons_ex |= X_IN_UP;
-	if (g_vrInput.analogupmove < -EPSILON)
-		cmd->buttons_ex |= X_IN_DOWN;
 	if (g_vrInput.IsVRDucking())
 		cmd->buttons_ex |= X_IN_VRDUCK;
-	if (g_vrInput.ShouldLetGoOffLadder())
-		cmd->buttons_ex |= X_IN_LETLADDERGO;
 
-	if (in_up.state & 3)
-		cmd->buttons_ex |= X_IN_UP;
-	if (in_down.state & 3)
-		cmd->buttons_ex |= X_IN_DOWN;
 	in_up.state &= ~2;
 	in_down.state &= ~2;
 	// BSVR end
@@ -825,7 +815,6 @@ void DLLEXPORT CL_CreateMove(float frametime, struct usercmd_s* cmd, int active)
 	// Clear analog VR input data
 	g_vrInput.analogforward = 0.f;
 	g_vrInput.analogsidemove = 0.f;
-	g_vrInput.analogupmove = 0.f;
 	// BSVR end
 }
 

@@ -2,9 +2,6 @@
 #include <string>
 #include <algorithm>
 #include <cmath>
-#include <unordered_set>
-#include <mutex>
-#include <thread>
 #include <fstream>
 #include <regex>
 
@@ -12,9 +9,6 @@
 #include "hud.h"
 #include "cl_util.h"
 #include "r_studioint.h"
-#include "ref_params.h"
-#include "com_model.h"
-#include "studio.h"
 #include "event_api.h"
 #include "VRHelper.h"
 #include "VRTextureHelper.h"
@@ -22,16 +16,10 @@
 #include "vr_gl.h"
 #include "VRInput.h"
 #include "pm_defs.h"
-// #include "VRSpeechListener.h"
 #include "VRSettings.h"
 #include "vr/VRShared.h"
 #include "VROpenGLInterceptor.h"
-#include "VRCommon.h"
 #include "VREngineInterceptor.h"
-
-#ifndef DUCK_SIZE
-#define DUCK_SIZE 36
-#endif
 
 #ifndef MAX_COMMAND_SIZE
 #define MAX_COMMAND_SIZE 256
@@ -39,64 +27,68 @@
 
 namespace
 {
-	std::mutex g_vr_compositorMutex;
+// BSVR start migrated from utils.cpp in Half-Life: VR
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
+constexpr float VR_EPSILON = 0.000001f;
 
-	// BSVR start migrated from utils.cpp in Half-Life: VR
-	#ifndef M_PI
-	#define M_PI 3.14159265358979323846f
-	#endif
-	constexpr float VR_EPSILON = 0.000001f;
+// Added NormalizeAngles and GetAnglesFromVectors - Max Makes Mods, 2017-08-17
+void NormalizeAngles(Vector& angles)
+{
+	while (angles.x >= 360)
+		angles.x -= 360;
+	while (angles.y >= 360)
+		angles.y -= 360;
+	while (angles.z >= 360)
+		angles.z -= 360;
+	while (angles.x < 0)
+		angles.x += 360;
+	while (angles.y < 0)
+		angles.y += 360;
+	while (angles.z < 0)
+		angles.z += 360;
+}
 
-	// Added NormalizeAngles and GetAnglesFromVectors - Max Makes Mods, 2017-08-17
-	void NormalizeAngles(Vector& angles)
-	{
-		while (angles.x >= 360) angles.x -= 360;
-		while (angles.y >= 360) angles.y -= 360;
-		while (angles.z >= 360) angles.z -= 360;
-		while (angles.x < 0) angles.x += 360;
-		while (angles.y < 0) angles.y += 360;
-		while (angles.z < 0) angles.z += 360;
-	}
+void GetAnglesFromVectors(const Vector& forward, const Vector& right, const Vector& up, Vector& angles)
+{
+	float sr, sp, sy, cr, cp, cy;
 
-	void GetAnglesFromVectors(const Vector& forward, const Vector& right, const Vector& up, Vector& angles)
-	{
-		float sr, sp, sy, cr, cp, cy;
+	sp = -forward[2];
 
-		sp = -forward[2];
+	float cp_x_cy = forward[0];
+	float cp_x_sy = forward[1];
+	float cp_x_sr = -right[2];
+	float cp_x_cr = up[2];
 
-		float cp_x_cy = forward[0];
-		float cp_x_sy = forward[1];
-		float cp_x_sr = -right[2];
-		float cp_x_cr = up[2];
+	float yaw = atan2(cp_x_sy, cp_x_cy);
+	float roll = atan2(cp_x_sr, cp_x_cr);
 
-		float yaw = atan2(cp_x_sy, cp_x_cy);
-		float roll = atan2(cp_x_sr, cp_x_cr);
+	cy = cos(yaw);
+	sy = sin(yaw);
+	cr = cos(roll);
+	sr = sin(roll);
 
-		cy = cos(yaw);
-		sy = sin(yaw);
-		cr = cos(roll);
-		sr = sin(roll);
+	if (fabs(cy) > VR_EPSILON)
+		cp = cp_x_cy / cy;
+	else if (fabs(sy) > VR_EPSILON)
+		cp = cp_x_sy / sy;
+	else if (fabs(sr) > VR_EPSILON)
+		cp = cp_x_sr / sr;
+	else if (fabs(cr) > VR_EPSILON)
+		cp = cp_x_cr / cr;
+	else
+		cp = cos(asin(sp));
 
-		if (fabs(cy) > VR_EPSILON)
-			cp = cp_x_cy / cy;
-		else if (fabs(sy) > VR_EPSILON)
-			cp = cp_x_sy / sy;
-		else if (fabs(sr) > VR_EPSILON)
-			cp = cp_x_sr / sr;
-		else if (fabs(cr) > VR_EPSILON)
-			cp = cp_x_cr / cr;
-		else
-			cp = cos(asin(sp));
+	float pitch = atan2(sp, cp);
 
-		float pitch = atan2(sp, cp);
+	angles[0] = pitch / (M_PI * 2.f / 360.f);
+	angles[1] = yaw / (M_PI * 2.f / 360.f);
+	angles[2] = roll / (M_PI * 2.f / 360.f);
 
-		angles[0] = pitch / (M_PI * 2.f / 360.f);
-		angles[1] = yaw / (M_PI * 2.f / 360.f);
-		angles[2] = roll / (M_PI * 2.f / 360.f);
-
-		NormalizeAngles(angles);
-	}
-	// BSVR end
+	NormalizeAngles(angles);
+}
+// BSVR end
 }
 
 // Set by message from server on load/restore/levelchange
@@ -135,7 +127,7 @@ VRHelper::~VRHelper()
 }
 
 // TODO: Make member
-vr::Texture_t m_skyboxTextures[6]{ 0 };
+vr::Texture_t m_skyboxTextures[6]{0};
 
 constexpr const float MAGIC_HL_TO_VR_FACTOR = 3.75f;
 constexpr const float MAGIC_VR_TO_HL_FACTOR = 10.f;
@@ -177,35 +169,6 @@ void VRHelper::UpdateVRHLConversionVectors()
 
 void VRHelper::UpdateWorldRotation()
 {
-	/*
-	// Is rotating disabled?
-	if (CVAR_GET_FLOAT("vr_playerturn_enabled") == 0.f)
-	{
-		m_lastYawUpdateTime = -1;
-		m_prevYaw = 0.f;
-		m_currentYaw = 0.f;
-		m_instantRotateYawValue = 0.f;
-		m_currentYawOffsetDelta = Vector2D{};
-
-		if (g_vrRestoreYaw_HasData)
-		{
-			g_vrRestoreYaw_PrevYaw = 0.f;
-			g_vrRestoreYaw_CurrentYaw = 0.f;
-			g_vrRestoreYaw_HasData = false;
-			m_hasReceivedYawUpdate = true;
-		}
-
-		if (g_vrSpawnYaw_HasData)
-		{
-			g_vrSpawnYaw = 0.f;
-			g_vrSpawnYaw_HasData = false;
-			m_hasReceivedSpawnYaw = true;
-		}
-
-		return;
-	}
-	*/
-
 	if (m_lastYawUpdateTime == gVRRenderer.m_clientTime)
 	{
 		// already up-to-date
@@ -316,7 +279,6 @@ void VRHelper::UpdateWorldRotation()
 			m_groundEntityYaw = 0.f;
 			m_hasGroundEntityYaw = false;
 		}
-		//g_vrInput.MoveWithGroundEntity(m_groundEntity);
 
 		// Normalize angle
 		m_currentYaw = std::fmod(m_currentYaw, 360.f);
@@ -415,7 +377,7 @@ void VRHelper::Init()
 
 	g_vrSettings.Init();
 
-	if (!IEngineStudio.IsHardware())
+	if (0 == IEngineStudio.IsHardware())
 	{
 		Exit("Software mode not supported. Please start this game with OpenGL renderer. (Start Half-Life, open the Options menu, select Video, chose OpenGL as Renderer, save, quit Half-Life, then start Half-Life: VR)");
 	}
@@ -439,8 +401,6 @@ void VRHelper::Init()
 		else
 		{
 			vrSystem->GetRecommendedRenderTargetSize(&vrRenderWidth, &vrRenderHeight);
-			//vrRenderWidth = 640;
-			//vrRenderHeight = 480;
 			gEngfuncs.Con_DPrintf("VR render target size is: %u, %u\n", vrRenderWidth, vrRenderHeight);
 			CreateGLTexture(&vrGLLeftEyeTexture, vrRenderWidth, vrRenderHeight);
 			CreateGLTexture(&vrGLRightEyeTexture, vrRenderWidth, vrRenderHeight);
@@ -486,7 +446,7 @@ void VRHelper::Exit(const char* lpErrorMessage)
 	{
 		gEngfuncs.Con_DPrintf("Error starting Half-Life: VR: %s\n", lpErrorMessage);
 		std::cerr << "Error starting Half-Life: VR: " << lpErrorMessage << std::endl
-			<< std::flush;
+				  << std::flush;
 		g_vrInput.DisplayErrorPopup(lpErrorMessage);
 	}
 	vr::VR_Shutdown();
@@ -553,19 +513,19 @@ Vector VRHelper::GetHLViewAnglesFromVRMatrix(const Matrix4& mat)
 	v3.normalize();
 	Vector angles;
 	VectorAngles(Vector(-v1.z, -v2.z, -v3.z), angles);
-	angles.x = 360.f - angles.x;  // viewangles pitch is inverted
+	angles.x = 360.f - angles.x; // viewangles pitch is inverted
 	return angles;
 }
 
 Vector VRHelper::GetHLAnglesFromVRMatrix(const Matrix4& mat)
 {
-	Vector4 forwardInVRSpace = mat * Vector4{ 0, 0, -1, 0 };
-	Vector4 rightInVRSpace = mat * Vector4{ 1, 0, 0, 0 };
-	Vector4 upInVRSpace = mat * Vector4{ 0, 1, 0, 0 };
+	Vector4 forwardInVRSpace = mat * Vector4{0, 0, -1, 0};
+	Vector4 rightInVRSpace = mat * Vector4{1, 0, 0, 0};
+	Vector4 upInVRSpace = mat * Vector4{0, 1, 0, 0};
 
-	Vector forward{ forwardInVRSpace.x, -forwardInVRSpace.z, forwardInVRSpace.y };
-	Vector right{ rightInVRSpace.x, -rightInVRSpace.z, rightInVRSpace.y };
-	Vector up{ upInVRSpace.x, -upInVRSpace.z, upInVRSpace.y };
+	Vector forward{forwardInVRSpace.x, -forwardInVRSpace.z, forwardInVRSpace.y};
+	Vector right{rightInVRSpace.x, -rightInVRSpace.z, rightInVRSpace.y};
+	Vector up{upInVRSpace.x, -upInVRSpace.z, upInVRSpace.y};
 
 	forward.Normalize();
 	right.Normalize();
@@ -643,16 +603,6 @@ void VRHelper::PollEvents(bool isInGame, bool isInMenu)
 	{
 		UpdateWorldRotation();
 	}
-	if (isInGame && !isInMenu)
-	{
-		// auto command = VRSpeechListener::Instance().GetCommand();
-		// if (command != VRSpeechCommand::NONE)
-		// {
-		// 	char speechCommand[MAX_COMMAND_SIZE] = { 0 };
-		// 	sprintf_s(speechCommand, "vrspeech %i", int(command));
-		// 	gEngfuncs.pfnClientCmd(speechCommand);
-		// }
-	}
 	vr::VREvent_t vrEvent;
 	while (vrSystem != nullptr && vrSystem->PollNextEvent(&vrEvent, sizeof(vr::VREvent_t)))
 	{
@@ -680,7 +630,7 @@ bool VRHelper::UpdatePositions(int viewent)
 
 	if (vrSystem != nullptr && vrCompositor != nullptr)
 	{
-		vrCompositor->SetTrackingSpace(isVRRoomScale ? vr::TrackingUniverseStanding : vr::TrackingUniverseSeated);
+		vrCompositor->SetTrackingSpace(vr::TrackingUniverseStanding);
 
 		vrCompositor->WaitGetPoses(positions.m_rTrackedDevicePose.data(), vr::k_unMaxTrackedDeviceCount, nullptr, 0);
 
@@ -708,16 +658,8 @@ void VRHelper::PrepareVRScene(VRSceneMode sceneMode)
 
 	try
 	{
-		if (sceneMode == VRSceneMode::Engine)
-		{
-			TryGLCall(glBindFramebuffer, GL_FRAMEBUFFER, 0);
-			TryGLCall(glViewport, 0, 0, 640, 480);
-		}
-		else
-		{
-			TryGLCall(glBindFramebuffer, GL_FRAMEBUFFER, sceneMode == VRSceneMode::LeftEye ? vrGLLeftEyeFrameBuffer : vrGLRightEyeFrameBuffer);
-			TryGLCall(glViewport, 0, 0, vrRenderWidth, vrRenderHeight);
-		}
+		TryGLCall(glBindFramebuffer, GL_FRAMEBUFFER, sceneMode == VRSceneMode::LeftEye ? vrGLLeftEyeFrameBuffer : vrGLRightEyeFrameBuffer);
+		TryGLCall(glViewport, 0, 0, vrRenderWidth, vrRenderHeight);
 
 		TryGLCall(glClearColor, 0, 0, 0, 0);
 		TryGLCall(glClear, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -734,12 +676,11 @@ void VRHelper::PrepareVRScene(VRSceneMode sceneMode)
 
 		TryGLCall(glDisable, GL_CULL_FACE);
 	}
-	catch (const OGLErrorException & e)
+	catch (const OGLErrorException& e)
 	{
-		Exit((std::string{ "VRHelper::PrepareVRScene failed: " } +e.what()).data());
+		Exit((std::string{"VRHelper::PrepareVRScene failed: "} + e.what()).data());
 	}
 
-	//hlvrLockGLMatrices();
 	HLVR_LockGLMatrices();
 
 	vr_scenePushCount++;
@@ -750,7 +691,6 @@ void VRHelper::FinishVRScene(float width, float height)
 	if (vr_scenePushCount <= 0)
 		return;
 
-	//hlvrUnlockGLMatrices();
 	HLVR_UnlockGLMatrices();
 
 	glMatrixMode(GL_MODELVIEW);
@@ -805,8 +745,6 @@ void VRHelper::InternalSubmitImage(VREyeMode eyeMode, vr::EVREye eEye)
 
 void VRHelper::InternalSubmitImages(VREyeMode eyeMode)
 {
-	//std::lock_guard<std::mutex> lockCompositor{ g_vr_compositorMutex };
-
 	InternalSubmitImage(eyeMode, vr::EVREye::Eye_Left);
 	InternalSubmitImage(eyeMode, vr::EVREye::Eye_Right);
 	glFlush();
@@ -816,8 +754,6 @@ void VRHelper::InternalSubmitImages(VREyeMode eyeMode)
 void VRHelper::SubmitImages(VREyeMode eyeMode)
 {
 	InternalSubmitImages(eyeMode);
-	//std::thread thread{ [this] { InternalSubmitImages(); } };
-	//thread.detach();
 }
 
 unsigned int VRHelper::GetVRTexture(vr::EVREye eEye)
@@ -877,42 +813,19 @@ void VRHelper::GetViewAngles(vr::EVREye eEye, float* angles)
 	}
 }
 
-void ExtractRotationMatrix(const Matrix4& source, float* target)
-{
-	const float* sourceTranspose = const_cast<Matrix4&>(source).getTranspose();
-	for (int i = 0; i < 16; i++)
-	{
-		target[i] = sourceTranspose[i];
-	}
-	target[3] = target[7] = target[11] = target[12] = target[13] = target[14] = 0.f;
-	target[15] = 1.f;
-}
-
 void VRHelper::MatrixVectors(const Matrix4& source, Vector& forward, Vector& right, Vector& up)
 {
 	Vector4 forwardInVRSpace = source * Vector4(0, 0, -1, 0);
 	Vector4 rightInVRSpace = source * Vector4(1, 0, 0, 0);
 	Vector4 upInVRSpace = source * Vector4(0, 1, 0, 0);
 
-	forward = Vector{ forwardInVRSpace.x * GetVRToHL().x, -forwardInVRSpace.z * GetVRToHL().z, forwardInVRSpace.y * GetVRToHL().y };
-	right = Vector{ rightInVRSpace.x * GetVRToHL().x, -rightInVRSpace.z * GetVRToHL().z, rightInVRSpace.y * GetVRToHL().y };
-	up = Vector{ upInVRSpace.x * GetVRToHL().x, -upInVRSpace.z * GetVRToHL().z, upInVRSpace.y * GetVRToHL().y };
+	forward = Vector{forwardInVRSpace.x * GetVRToHL().x, -forwardInVRSpace.z * GetVRToHL().z, forwardInVRSpace.y * GetVRToHL().y};
+	right = Vector{rightInVRSpace.x * GetVRToHL().x, -rightInVRSpace.z * GetVRToHL().z, rightInVRSpace.y * GetVRToHL().y};
+	up = Vector{upInVRSpace.x * GetVRToHL().x, -upInVRSpace.z * GetVRToHL().z, upInVRSpace.y * GetVRToHL().y};
 
 	forward = forward.Normalize();
 	right = right.Normalize();
 	up = up.Normalize();
-}
-
-void VRHelper::GetViewMatrix(vr::EVREye eEye, float* matrix)
-{
-	if (eEye == vr::EVREye::Eye_Left)
-	{
-		ExtractRotationMatrix(positions.m_mat4LeftModelView, matrix);
-	}
-	else
-	{
-		ExtractRotationMatrix(positions.m_mat4RightModelView, matrix);
-	}
 }
 
 void VRHelper::GetViewVectors(Vector& forward, Vector& right, Vector& up)
@@ -958,21 +871,21 @@ Matrix4 VRHelper::GetAbsoluteHMDTransform()
 
 		cl_entity_t* localPlayer = SaveGetLocalPlayer();
 		float maxPlayerViewPosHeight_meter = originalHeight_meter;
-		if (!g_vrInput.IsVRDucking() && (pmove->flags & FL_DUCKING))
+		if (!g_vrInput.IsVRDucking() && (pmove->flags & FL_DUCKING) != 0)
 		{
 			maxPlayerViewPosHeight_meter = UnitToMeter(VEC_DUCK_HULL_MAX.z - VEC_DUCK_HULL_MIN.z - headToCeilingDistance_units);
 		}
 		else if (localPlayer)
 		{
-			pmtrace_t tr{ 0 };
-			gEngfuncs.pEventAPI->EV_SetTraceHull(2);  // point hull
+			pmtrace_t tr{0};
+			gEngfuncs.pEventAPI->EV_SetTraceHull(2); // point hull
 			Vector wayup = localPlayer->curstate.origin;
 			wayup.z += 1024.f;
 			gEngfuncs.pEventAPI->EV_PlayerTrace(localPlayer->curstate.origin, wayup, PM_STUDIO_IGNORE | PM_GLASS_IGNORE, -1, &tr);
-			if (!tr.allsolid && tr.fraction < 1.f && tr.fraction > 0.f && !tr.startsolid)
+			if (0 == tr.allsolid && tr.fraction < 1.f && tr.fraction > 0.f && 0 == tr.startsolid)
 			{
 				float totalDistance_units = 1024.f * tr.fraction;
-				if (pmove->flags & FL_DUCKING)
+				if ((pmove->flags & FL_DUCKING) != 0)
 				{
 					maxPlayerViewPosHeight_meter = UnitToMeter(totalDistance_units - VEC_DUCK_HULL_MIN.z - headToCeilingDistance_units);
 				}
@@ -998,14 +911,14 @@ Matrix4 VRHelper::GetAbsoluteHMDTransform()
 		Matrix4 hlPrevYawTransform = Matrix4{}.rotateY(m_prevYaw) * hlTransform;
 		Matrix4 hlCurrentYawTransform = Matrix4{}.rotateY(m_currentYaw) * hlTransform;
 
-		Vector3 previousOffset{ hlPrevYawTransform.get()[12], hlPrevYawTransform.get()[13], hlPrevYawTransform.get()[14] };
-		Vector3 newOffset{ hlCurrentYawTransform.get()[12], hlCurrentYawTransform.get()[13], hlCurrentYawTransform.get()[14] };
+		Vector3 previousOffset{hlPrevYawTransform.get()[12], hlPrevYawTransform.get()[13], hlPrevYawTransform.get()[14]};
+		Vector3 newOffset{hlCurrentYawTransform.get()[12], hlCurrentYawTransform.get()[13], hlCurrentYawTransform.get()[14]};
 
 		Vector3 yawOffsetDelta = newOffset - previousOffset;
 
 		m_currentYawOffsetDelta = Vector2D{
 			yawOffsetDelta.x * GetVRToHL().x,
-			-yawOffsetDelta.z * GetVRToHL().z };
+			-yawOffsetDelta.z * GetVRToHL().z};
 	}
 	else
 	{
@@ -1027,10 +940,10 @@ Matrix4 VRHelper::GetAbsoluteTransform(const vr::HmdMatrix34_t& vrTransform)
 	auto hlRawHMDTransform = ConvertSteamVRMatrixToMatrix4(vrRawHMDTransform);
 	auto hlCurrentYawHMDTransform = GetAbsoluteHMDTransform();
 
-	Vector3 rawHMDPos{ hlRawHMDTransform[12], hlRawHMDTransform[13], hlRawHMDTransform[14] };
-	Vector3 currentYawHMDPos{ hlCurrentYawHMDTransform[12], hlCurrentYawHMDTransform[13], hlCurrentYawHMDTransform[14] };
+	Vector3 rawHMDPos{hlRawHMDTransform[12], hlRawHMDTransform[13], hlRawHMDTransform[14]};
+	Vector3 currentYawHMDPos{hlCurrentYawHMDTransform[12], hlCurrentYawHMDTransform[13], hlCurrentYawHMDTransform[14]};
 
-	Vector4 controllerPos{ hlTransform[12], hlTransform[13], hlTransform[14], 1.f };
+	Vector4 controllerPos{hlTransform[12], hlTransform[13], hlTransform[14], 1.f};
 	controllerPos.x -= rawHMDPos.x;
 	controllerPos.z -= rawHMDPos.z;
 	Vector4 rotatedControllerPos = Matrix4{}.rotateY(m_currentYaw) * controllerPos;
@@ -1056,7 +969,7 @@ Matrix4 VRHelper::GetAbsoluteTransform(const vr::HmdMatrix34_t& vrTransform)
 		rotatedControllerPos.x,
 		rotatedControllerPos.y,
 		rotatedControllerPos.z,
-		hlRotatedTransform.get()[15] };
+		hlRotatedTransform.get()[15]};
 }
 
 Matrix4 VRHelper::GetAbsoluteControllerTransform(vr::TrackedDeviceIndex_t controllerIndex)
@@ -1099,7 +1012,7 @@ bool VRHelper::UpdateController(
 		}
 		controllerPosition = GetPositionInHLSpaceFromAbsoluteTrackingMatrix(controllerMatrix);
 		controllerAngles = GetHLAnglesFromVRMatrix(controllerMatrix);
-		controllerVelocity = Vector{ velocityInVRSpace.x * GetVRToHL().x, -velocityInVRSpace.z * GetVRToHL().z, velocityInVRSpace.y * GetVRToHL().y };
+		controllerVelocity = Vector{velocityInVRSpace.x * GetVRToHL().x, -velocityInVRSpace.z * GetVRToHL().z, velocityInVRSpace.y * GetVRToHL().y};
 
 		return true;
 	}
@@ -1116,19 +1029,17 @@ public:
 	std::array<double, 3> velocity;
 	double time;
 
-	OffsetThingy() :
-		offset{ 0.f, 0.f, 0.f },
-		smoothedOffset{ 0.f, 0.f, 0.f },
-		velocity{ 0.0, 0.0, 0.0 },
-		time{ 0.0 }
+	OffsetThingy() : offset{0.f, 0.f, 0.f},
+					 smoothedOffset{0.f, 0.f, 0.f},
+					 velocity{0.0, 0.0, 0.0},
+					 time{0.0}
 	{
 	}
 
-	OffsetThingy(const Vector& offset, const Vector& smoothedOffset, const std::array<double, 3>& velocity, double time) :
-		offset{ offset },
-		smoothedOffset{ smoothedOffset },
-		velocity{ velocity },
-		time{ time }
+	OffsetThingy(const Vector& offset, const Vector& smoothedOffset, const std::array<double, 3>& velocity, double time) : offset{offset},
+																														   smoothedOffset{smoothedOffset},
+																														   velocity{velocity},
+																														   time{time}
 	{
 	}
 };
@@ -1165,25 +1076,18 @@ Vector SmoothRapidOffsetChanges(const Vector& currentOffset)
 	}
 
 	// Side smooth only while running into a wall
-	bool smoothSideMotion = false;// g_vrWalkedIntoWall >= (gVRRenderer.m_clientTime - smoothTime);
+	bool smoothSideMotion = false; // g_vrWalkedIntoWall >= (gVRRenderer.m_clientTime - smoothTime);
 
 	// Up smooth only when onground
 	bool smoothUpMotion = pmove->onground >= 0;
 
-	/*
-	gEngfuncs.Con_Printf("SmoothRapidOffsetChanges\n");
-	gEngfuncs.Con_Printf("g_vrWalkedIntoWall: %f\n", (float)g_vrWalkedIntoWall);
-	gEngfuncs.Con_Printf("clienttime: %f\n", (float)gVRRenderer.m_clientTime);
-	gEngfuncs.Con_Printf("smoothTime: %f\n", (float)smoothTime);
-	gEngfuncs.Con_Printf("g_vrWalkedIntoWall: %i\n", g_vrWalkedIntoWall >= (gVRRenderer.m_clientTime - smoothTime));
-	*/
-
 	// remove all offsets older than smoothTime seconds
 	for (auto offsetThingy = offsetThingies.begin();
 		offsetThingy != offsetThingies.end() && offsetThingy->time < (gVRRenderer.m_clientTime - smoothTime);
-		offsetThingy = offsetThingies.erase(offsetThingy));
+		offsetThingy = offsetThingies.erase(offsetThingy))
+		;
 
-	std::array<double, 3> currentVelocity{ 0.0, 0.0, 0.0 };
+	std::array<double, 3> currentVelocity{0.0, 0.0, 0.0};
 	double currentTime = gVRRenderer.m_clientTime;
 
 	Vector smoothedOffset = currentOffset;
@@ -1196,7 +1100,7 @@ Vector SmoothRapidOffsetChanges(const Vector& currentOffset)
 		if (timeDiff > 0)
 		{
 			// Calculate average velocity over N:
-			std::array<double, 3> velocitiesSum{ 0.0, 0.0, 0.0 };
+			std::array<double, 3> velocitiesSum{0.0, 0.0, 0.0};
 			uint64_t velocitiesCount = 0;
 
 			// add in all the previous ones not older than N seconds ago
@@ -1349,16 +1253,16 @@ void VRHelper::SendPositionUpdateToServer()
 	auto hlTransform = ConvertSteamVRMatrixToMatrix4(positions.m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].mDeviceToAbsoluteTracking);
 	float hmdHeightInRL = hlTransform.get()[13];
 
-	char cmdHMD[MAX_COMMAND_SIZE] = { 0 };
+	char cmdHMD[MAX_COMMAND_SIZE] = {0};
 	snprintf(cmdHMD, sizeof(cmdHMD), "vrupd_hmd %i %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %i %i",
 		m_vrUpdateTimestamp,
 		hmdOffset.x, hmdOffset.y, hmdOffset.z,
 		hmdForward.x, hmdForward.y, hmdForward.z,
 		m_currentYawOffsetDelta.x, m_currentYawOffsetDelta.y,
-		m_prevYaw, m_currentYaw,  // for save/restore
+		m_prevYaw, m_currentYaw, // for save/restore
 		m_hasReceivedYawUpdate ? 1 : 0,
 		m_hasReceivedSpawnYaw ? 1 : 0);
-	m_currentYawOffsetDelta = Vector2D{};  // reset after sending
+	m_currentYawOffsetDelta = Vector2D{}; // reset after sending
 	m_hasReceivedYawUpdate = false;
 	m_hasReceivedSpawnYaw = false;
 
@@ -1376,10 +1280,10 @@ void VRHelper::SendPositionUpdateToServer()
 	leftControllerID = leftHandMode ? VRControllerID::WEAPON : VRControllerID::HAND;
 	rightControllerID = leftHandMode ? VRControllerID::HAND : VRControllerID::WEAPON;
 
-	char cmdLeftController[MAX_COMMAND_SIZE] = { 0 };
+	char cmdLeftController[MAX_COMMAND_SIZE] = {0};
 	snprintf(cmdLeftController, sizeof(cmdLeftController), "vrupdctrl %i %i %i %i %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %i %i", m_vrUpdateTimestamp, m_fLeftControllerValid ? 1 : 0, leftControllerID, 1 /*isMirrored*/, m_leftControllerOffset.x, m_leftControllerOffset.y, m_leftControllerOffset.z, m_leftControllerAngles.x, m_leftControllerAngles.y, m_leftControllerAngles.z, m_leftControllerVelocity.x, m_leftControllerVelocity.y, m_leftControllerVelocity.z, leftDragOn ? 1 : 0, leftFiring ? 1 : 0);
 
-	char cmdRightController[MAX_COMMAND_SIZE] = { 0 };
+	char cmdRightController[MAX_COMMAND_SIZE] = {0};
 	snprintf(cmdRightController, sizeof(cmdRightController), "vrupdctrl %i %i %i %i %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %i %i", m_vrUpdateTimestamp, m_fRightControllerValid ? 1 : 0, rightControllerID, 0 /*isMirrored*/, m_rightControllerOffset.x, m_rightControllerOffset.y, m_rightControllerOffset.z, m_rightControllerAngles.x, m_rightControllerAngles.y, m_rightControllerAngles.z, m_rightControllerVelocity.x, m_rightControllerVelocity.y, m_rightControllerVelocity.z, rightDragOn ? 1 : 0, rightFiring ? 1 : 0);
 
 	gEngfuncs.pfnClientCmd(cmdHMD);
@@ -1391,8 +1295,6 @@ void VRHelper::SendPositionUpdateToServer()
 
 void VRHelper::UpdateViewEnt(bool isControllerValid, const Vector& controllerPosition, const Vector& controllerAngles, const Vector& controllerVelocity, bool isMirrored)
 {
-	mIsViewEntMirrored = isMirrored;
-
 	cl_entity_t* viewent = gEngfuncs.GetViewModel();
 	if (!viewent)
 		return;
@@ -1418,62 +1320,14 @@ void VRHelper::SetPose(VRPoseType poseType, const vr::TrackedDevicePose_t& pose,
 	}
 
 	// TODO: Hand grip and tip (pointer) poses
-
-	/*
-	if (poseType == VRPoseType::FLASHLIGHT)
-	{
-		cl_entity_t* localPlayer = SaveGetLocalPlayer();
-		Matrix4 flashlightAbsoluteTrackingMatrix = GetAbsoluteTransform(pose.mDeviceToAbsoluteTracking);
-		Vector flashlightOffset = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(flashlightAbsoluteTrackingMatrix);
-		if (localPlayer)
-			flashlightOffset.z += localPlayer->curstate.mins.z;
-		Vector flashlightAngles = GetHLAnglesFromVRMatrix(flashlightAbsoluteTrackingMatrix);
-		char cmdFlashlight[MAX_COMMAND_SIZE] = { 0 };
-		sprintf_s(cmdFlashlight, "vr_flashlight 1 %.2f %.2f %.2f %.2f %.2f %.2f", flashlightOffset.x, flashlightOffset.y, flashlightOffset.z, flashlightAngles.x, flashlightAngles.y, flashlightAngles.z);
-		gEngfuncs.pfnClientCmd(cmdFlashlight);
-	}
-	else if (poseType == VRPoseType::TELEPORTER)
-	{
-		cl_entity_t* localPlayer = SaveGetLocalPlayer();
-		Matrix4 teleporterAbsoluteTrackingMatrix = GetAbsoluteTransform(pose.mDeviceToAbsoluteTracking);
-		Vector teleporterOffset = GetOffsetInHLSpaceFromAbsoluteTrackingMatrix(teleporterAbsoluteTrackingMatrix);
-		if (localPlayer)
-			teleporterOffset.z += localPlayer->curstate.mins.z;
-		Vector teleporterAngles = GetHLAnglesFromVRMatrix(teleporterAbsoluteTrackingMatrix);
-		char cmdTeleporter[MAX_COMMAND_SIZE] = { 0 };
-		sprintf_s(cmdTeleporter, "vr_teleporter 1 %.2f %.2f %.2f %.2f %.2f %.2f", teleporterOffset.x, teleporterOffset.y, teleporterOffset.z, teleporterAngles.x, teleporterAngles.y, teleporterAngles.z);
-		gEngfuncs.pfnClientCmd(cmdTeleporter);
-	}
-	else if (poseType == VRPoseType::MOVEMENT)
-	{
-		Matrix4 movementAbsoluteTrackingMatrix = GetAbsoluteTransform(pose.mDeviceToAbsoluteTracking);
-		m_movementAngles = GetHLAnglesFromVRMatrix(movementAbsoluteTrackingMatrix);
-		m_hasMovementAngles = true;
-	}
-	*/
 }
 
 void VRHelper::ClearPose(VRPoseType poseType)
 {
-	/*
-	if (poseType == VRPoseType::FLASHLIGHT)
-	{
-		gEngfuncs.pfnClientCmd("vr_flashlight 0");
-	}
-	else if (poseType == VRPoseType::TELEPORTER)
-	{
-		gEngfuncs.pfnClientCmd("vr_teleporter 0");
-	}
-	else if (poseType == VRPoseType::MOVEMENT)
-	{
-		m_hasMovementAngles = false;
-	}
-	*/
 }
 
 constexpr const int VR_MOVEMENT_ATTACHMENT_HAND = 0;
 constexpr const int VR_MOVEMENT_ATTACHMENT_WEAPON = 1;
-constexpr const int VR_MOVEMENT_ATTACHMENT_HEAD = 2;
 constexpr const int VR_MOVEMENT_ATTACHMENT_POSE = 3;
 
 Vector VRHelper::GetMovementAngles()
@@ -1594,11 +1448,6 @@ bool VRHelper::HasValidHandController()
 	}
 }
 
-vr::IVRSystem* VRHelper::GetVRSystem()
-{
-	return vrSystem;
-}
-
 // VR related functions
 #define VR_MUZZLE_ATTACHMENT 0
 Vector VRHelper::GetGunPosition()
@@ -1686,9 +1535,7 @@ Vector VRHelper::GetWeaponHUDUp()
 {
 	Vector pos1;
 	Vector pos2;
-	if (HasValidWeaponController()
-		&& gVRRenderer.GetWeaponControllerAttachment(pos1, VR_MUZZLE_ATTACHMENT + 2)
-		&& gVRRenderer.GetWeaponControllerAttachment(pos2, VR_MUZZLE_ATTACHMENT + 3))
+	if (HasValidWeaponController() && gVRRenderer.GetWeaponControllerAttachment(pos1, VR_MUZZLE_ATTACHMENT + 2) && gVRRenderer.GetWeaponControllerAttachment(pos2, VR_MUZZLE_ATTACHMENT + 3))
 	{
 		Vector dir = (pos2 - pos1).Normalize();
 		return dir;
@@ -1698,14 +1545,6 @@ Vector VRHelper::GetWeaponHUDUp()
 		Vector dummy, up;
 		GetWeaponVectors(dummy, dummy, up);
 		return up;
-	}
-}
-
-void VRHelper::GetWeaponHUDMatrix(float* matrix)
-{
-	if (HasValidWeaponController())
-	{
-		ExtractRotationMatrix((CVAR_GET_FLOAT("vr_lefthand_mode") != 0.f) ? m_leftControllerMatrix : m_rightControllerMatrix, matrix);
 	}
 }
 
@@ -1776,9 +1615,7 @@ Vector VRHelper::GetHandHUDUp()
 {
 	Vector pos1;
 	Vector pos2;
-	if (HasValidHandController()
-		&& gVRRenderer.GetHandControllerAttachment(pos1, VR_MUZZLE_ATTACHMENT + 2)
-		&& gVRRenderer.GetHandControllerAttachment(pos2, VR_MUZZLE_ATTACHMENT + 3))
+	if (HasValidHandController() && gVRRenderer.GetHandControllerAttachment(pos1, VR_MUZZLE_ATTACHMENT + 2) && gVRRenderer.GetHandControllerAttachment(pos2, VR_MUZZLE_ATTACHMENT + 3))
 	{
 		Vector dir = (pos2 - pos1).Normalize();
 		return dir;
@@ -1788,13 +1625,6 @@ Vector VRHelper::GetHandHUDUp()
 		Vector dummy, up;
 		GetHandVectors(dummy, dummy, up);
 		return up;
-	}
-}
-void VRHelper::GetHandHUDMatrix(float* matrix)
-{
-	if (HasValidHandController())
-	{
-		ExtractRotationMatrix((CVAR_GET_FLOAT("vr_lefthand_mode") != 0.f) ? m_rightControllerMatrix : m_leftControllerMatrix, matrix);
 	}
 }
 void VRHelper::GetHandVectors(Vector& forward, Vector& right, Vector& up)
@@ -1814,11 +1644,6 @@ void VRHelper::GetHandVectors(Vector& forward, Vector& right, Vector& up)
 			up = m_leftControllerUp;
 		}
 	}
-}
-
-float VRHelper::GetAnalogFire()
-{
-	return g_vrInput.analogfire;
 }
 
 Vector VRHelper::GetLocalPlayerAngles()
@@ -1841,8 +1666,6 @@ Vector VRHelper::GetLocalPlayerAngles()
 
 void VRHelper::SetSkybox(const char* name)
 {
-	//std::lock_guard<std::mutex> lockCompositor{ g_vr_compositorMutex };
-
 	if (!vrCompositor)
 		return;
 
@@ -1871,8 +1694,8 @@ bool VRHelper::CanAttack()
 	cl_entity_t* localPlayer = SaveGetLocalPlayer();
 	if (localPlayer)
 	{
-		pmtrace_t tr{ 0 };
-		gEngfuncs.pEventAPI->EV_SetTraceHull(2);  // point hull
+		pmtrace_t tr{0};
+		gEngfuncs.pEventAPI->EV_SetTraceHull(2); // point hull
 		gEngfuncs.pEventAPI->EV_PlayerTrace(localPlayer->curstate.origin, GetWeaponPosition(), PM_STUDIO_IGNORE | PM_GLASS_IGNORE, -1, &tr);
 		return tr.fraction == 1.f;
 	}
@@ -1893,13 +1716,6 @@ bool VRGlobalIsInstantAccelerateOn()
 bool VRGlobalIsInstantDecelerateOn()
 {
 	return CVAR_GET_FLOAT("vr_move_instant_decelerate") != 0.f;
-}
-
-void VRGlobalGetEntityOrigin(int ent, float* entorigin)
-{
-	Vector absmin = gEngfuncs.GetEntityByIndex(ent)->curstate.origin + gEngfuncs.GetEntityByIndex(ent)->curstate.mins;
-	Vector absmax = gEngfuncs.GetEntityByIndex(ent)->curstate.origin + gEngfuncs.GetEntityByIndex(ent)->curstate.maxs;
-	((absmin + absmax) * 0.5f).CopyToArray(entorigin);
 }
 
 bool VRGlobalGetNoclipMode()
@@ -1930,7 +1746,7 @@ bool VRGlobalIsPointInsideEnt(const float* point, int ent)
 		gEngfuncs.GetEntityByIndex(ent)->curstate.angles,
 		gEngfuncs.GetEntityByIndex(ent)->curstate.mins,
 		gEngfuncs.GetEntityByIndex(ent)->curstate.maxs,
-		Vector{ point[0], point[1], point[2] });
+		Vector{point[0], point[1], point[2]});
 }
 
 // for pm_shared.cpp, only implemented on server side
@@ -1989,17 +1805,3 @@ bool VRIsAutoDuckingEnabled(int player)
 {
 	return CVAR_GET_FLOAT("vr_autocrouch_enabled") != 0.f;
 }
-
-bool VRIsInUpwardsTriggerPush(int player)
-{
-	// TODO: Communicate this to client from server
-	return false;
-}
-
-
-# ifdef _WIN32
-void __stdcall HLVRConsoleCallback(char* msg)
-{
-	gEngfuncs.Con_DPrintf("%s\n", msg);
-}
-#endif

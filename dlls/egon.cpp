@@ -153,7 +153,7 @@ void CEgon::Attack()
 	// BSVR start
 	// UTIL_MakeVectors(m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle); - original
 	// Vector vecAiming = gpGlobals->v_forward; - original
-	Vector vecAiming = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
+	Vector vecAiming = m_pPlayer->GetAutoaimVector(); //gpGlobals->v_forward;
 	Vector vecSrc = m_pPlayer->GetGunPosition();
 	// BSVR end
 
@@ -375,7 +375,7 @@ void CEgon::Fire(const Vector& vecOrigSrc, const Vector& vecDir)
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.2f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 

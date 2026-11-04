@@ -1,45 +1,26 @@
 #include "VRSettings.h"
 
-#include <cmath>
-#include <filesystem>
-#include <iostream>
-#include <fstream>
-#include <regex>
-
-#define NOGDI
-#define VC_EXTRALEAN
-#define WIN32_LEAN_AND_MEAN
-
-#ifdef _WIN32
-#define HSPRITE WINDOWS_HSPRITE
-#include <Windows.h>
-#undef HSPRITE
-#endif
-
 #include "hud.h"
 #include "cl_util.h"
-#include "VRCommon.h"
 #include "VRClientVGUI.h"
-// #include "VRSpeechListener.h"
 
 VRSettings g_vrSettings;
 
 namespace
 {
-	void VROptionsCommand()
-	{
-		if (const char* error = VROpenOptionsDialog())
-			gEngfuncs.Con_Printf("VR Options can't open: %s\n", error);
-	}
+void VROptionsCommand()
+{
+	if (const char* error = VROpenOptionsDialog())
+		gEngfuncs.Con_Printf("VR Options can't open: %s\n", error);
+}
 }
 
-constexpr const char* VR_DEFAULT_VIEW_DIST_TO_WALLS_AS_STRING = "5";  // for cvar
+constexpr const char* VR_DEFAULT_VIEW_DIST_TO_WALLS_AS_STRING = "5"; // for cvar
 
 
 void VRSettings::Init()
 {
 	// These are separate, we don't store them and don't make them accessible through HLVRConfig's config menu
-	CVAR_CREATE("vr_debug_physics", "0", 0);
 	CVAR_CREATE("vr_debug_controllers", "0", 0);
 	CVAR_CREATE("vr_noclip", "0", 0);
 	CVAR_CREATE("vr_cheat_enable_healing_exploit", "0", 0);
@@ -56,11 +37,8 @@ void VRSettings::Init()
 	RegisterCVAR("vr_crowbar_scale", "1");
 	RegisterCVAR("vr_crowbar_vanilla_attack_enabled", "0");
 	RegisterCVAR("vr_disable_func_friction", "1");
-	//RegisterCVAR("vr_disable_triggerpush", "0");
 	RegisterCVAR("vr_egon_scale", "1");
 	RegisterCVAR("vr_enable_aim_laser", "1"); // BSVR changed to enabled
-	RegisterCVAR("vr_speech_commands_enabled", "0");
-	RegisterCVAR("vr_speech_language_id", "1400");
 	RegisterCVAR("vr_flashlight_attachment", "0");
 	RegisterCVAR("vr_flashlight_toggle", "1");
 	RegisterCVAR("vr_movement_attachment", "2"); // BSVR changed to HMD
@@ -102,26 +80,24 @@ void VRSettings::Init()
 	RegisterCVAR("vr_move_analogforward_inverted", "0");
 	RegisterCVAR("vr_move_analogsideways_inverted", "0");
 	RegisterCVAR("vr_move_analogturn_inverted", "0");
-	RegisterCVAR("vr_move_analogupdown_inverted", "0");
 	RegisterCVAR("vr_move_analog_deadzone", "0.1");
 	RegisterCVAR("vr_move_instant_accelerate", "1");
 	RegisterCVAR("vr_move_instant_decelerate", "1");
 	RegisterCVAR("vr_move_snapturn_enabled", "1");
 	RegisterCVAR("vr_move_snapturn_angle", "30");
 
-	RegisterCVAR("vr_forwardspeed", "270");		// cl_forwardspeed
-	RegisterCVAR("vr_backspeed", "270");		// cl_backspeed
-	RegisterCVAR("vr_sidespeed", "270");		// cl_sidespeed
-	RegisterCVAR("vr_upspeed", "270");			// cl_upspeed
-	RegisterCVAR("vr_yawspeed", "210");			// cl_yawspeed
-	RegisterCVAR("vr_walkspeedfactor", "0.3");	// cl_movespeedkey
+	RegisterCVAR("vr_forwardspeed", "270");	   // cl_forwardspeed
+	RegisterCVAR("vr_backspeed", "270");	   // cl_backspeed
+	RegisterCVAR("vr_sidespeed", "270");	   // cl_sidespeed
+	RegisterCVAR("vr_upspeed", "270");		   // cl_upspeed
+	RegisterCVAR("vr_yawspeed", "210");		   // cl_yawspeed
+	RegisterCVAR("vr_walkspeedfactor", "0.3"); // cl_movespeedkey
 	RegisterCVAR("vr_togglewalk", "0");
 
 	RegisterCVAR("vr_toggle_crouch", "0");
 
 	RegisterCVAR("vr_no_gauss_recoil", "1");
 	RegisterCVAR("vr_npcscale", "1");
-	//RegisterCVAR("vr_playerturn_enabled", "1");
 	RegisterCVAR("vr_rl_duck_height", "36");
 	RegisterCVAR("vr_rl_ducking_enabled", "1");
 	RegisterCVAR("vr_dont_rotate_with_trains", "1");
@@ -163,8 +139,8 @@ void VRSettings::Init()
 	RegisterCVAR("vr_display_game", "0");
 
 	RegisterCVAR("vr_menu_scale", "1");
-	RegisterCVAR("vr_menu_height", "-0.3");  // meters relative to eye level
-	RegisterCVAR("vr_menu_opacity", "1"); // BSVR changed to fully opaque
+	RegisterCVAR("vr_menu_height", "-0.3"); // meters relative to eye level
+	RegisterCVAR("vr_menu_opacity", "1");	// BSVR changed to fully opaque
 }
 
 void SyncCvars(const char* src, const char* dst)
@@ -178,12 +154,10 @@ void VRSettings::CheckCVARsForChanges()
 	gEngfuncs.pfnClientCmd("gl_vsync 0");
 	gEngfuncs.pfnClientCmd("default_fov 180");
 	gEngfuncs.pfnClientCmd("cl_mousegrab 0");
-	//gEngfuncs.pfnClientCmd("firstperson");
 
 	// reset cheats if cheats are disabled
 	if (gEngfuncs.pfnGetCvarFloat("sv_cheats") == 0.f)
 	{
-		gEngfuncs.Cvar_SetValue("vr_debug_physics", 0.f);
 		gEngfuncs.Cvar_SetValue("vr_debug_controllers", 0.f);
 		gEngfuncs.Cvar_SetValue("vr_noclip", 0.f);
 		gEngfuncs.Cvar_SetValue("vr_cheat_enable_healing_exploit", 0.f);
@@ -197,27 +171,7 @@ void VRSettings::CheckCVARsForChanges()
 	SyncCvars("vr_walkspeedfactor", "cl_movespeedkey");
 }
 
-void SetCVAR(const char* name, const char* value)
-{
-	gEngfuncs.Cvar_SetValue(const_cast<char*>(name), atof(value));
-	gEngfuncs.pfnClientCmd((std::string(name) + " " + value).data());
-}
-
-void LoadCvarsIntoSettings(const std::unordered_map<std::string, std::string>& settings, const std::unordered_map<std::string, std::string>& cvar_cache)
-{
-	for (auto [cvarname, value] : settings)
-	{
-		auto cachedcvar = cvar_cache.find(cvarname);
-		if (cachedcvar != cvar_cache.end())
-		{
-			value = cachedcvar->second;
-		}
-	}
-}
-
 void VRSettings::RegisterCVAR(const char* name, const char* value)
 {
 	CVAR_CREATE(name, value, FCVAR_ARCHIVE);
-	m_cvarCache[name] = value;
 }
-

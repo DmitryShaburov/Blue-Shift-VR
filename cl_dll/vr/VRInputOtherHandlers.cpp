@@ -1,49 +1,43 @@
 
-#include <iostream>
-#include <filesystem>
 #include <string>
-#include <functional>
 
 #include "hud.h"
-#include "cl_util.h"
 #include "openvr.h"
 #include "VRInput.h"
-#include "eiface.h"
-#include "VRRenderer.h"
 #include "VRGameFunctions.h"
 
 namespace VR
 {
-	namespace Input
+namespace Input
+{
+void Other::HandleToggleVRMenu(const vr::InputDigitalActionData_t& data, const std::string& action)
+{
+	if (data.bActive && data.bState && data.bChanged)
 	{
-		void Other::HandleToggleVRMenu(const vr::InputDigitalActionData_t& data, const std::string& action)
+		if (g_vrInput.IsInMenu())
 		{
-			if (data.bActive && data.bState && data.bChanged)
-			{
-				if (g_vrInput.IsInMenu())
-				{
-					VRGameFunctions::CloseMenu();
-				}
-				else
-				{
-					VRGameFunctions::OpenMenu();
-				}
-			}
+			VRGameFunctions::CloseMenu();
 		}
-
-		void Other::HandleClickVRMenu(const vr::InputDigitalActionData_t& data, const std::string& action)
+		else
 		{
-			bool on = data.bActive && data.bState;
-			g_vrInput.SetVRMenuClickStatus(on);
+			VRGameFunctions::OpenMenu();
 		}
+	}
+}
 
-		void Other::HandleCustomAction(const vr::InputDigitalActionData_t& data, const std::string& action)
-		{
-			if (data.bActive && data.bState && data.bChanged)
-			{
-				g_vrInput.ExecuteCustomAction(action);
-			}
-		}
+void Other::HandleClickVRMenu(const vr::InputDigitalActionData_t& data, const std::string& action)
+{
+	bool on = data.bActive && data.bState;
+	g_vrInput.SetVRMenuClickStatus(on);
+}
 
-	}  // namespace Input
-}  // namespace VR
+void Other::HandleCustomAction(const vr::InputDigitalActionData_t& data, const std::string& action)
+{
+	if (data.bActive && data.bState && data.bChanged)
+	{
+		g_vrInput.ExecuteCustomAction(action);
+	}
+}
+
+} // namespace Input
+} // namespace VR

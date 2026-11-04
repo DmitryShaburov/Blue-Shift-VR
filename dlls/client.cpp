@@ -95,19 +95,19 @@ qboolean ClientConnect(edict_t* pEntity, const char* pszName, const char* pszAdd
 	// Don't restore entities in game loaded from invalid savegame (see world.cpp RestoreGlobalState)
 	extern bool g_didRestoreSaveGameFail;
 	if (g_didRestoreSaveGameFail)
-		return false;
+		return 0;
 
 	if (!pEntity)
-		return false;
+		return 0;
 
 	if (!pEntity->pvPrivateData)
 		ClientPutInServer(pEntity);
 
 	if (FNullEnt(pEntity))
-		return false;
+		return 0;
 
 	if (!g_pGameRules)
-		return true;
+		return 1;
 	// BSVR end
 
 	return static_cast<qboolean>(g_pGameRules->ClientConnected(pEntity, pszName, pszAddress, szRejectReason));
@@ -658,7 +658,7 @@ void ClientCommand(edict_t* pEntity)
 	// BSVR start - added VR related commands
 	else if (FStrEq(pcmd, "vr_flashlight"))
 	{
-		if (atoi(CMD_ARGV(1)))
+		if (0 != atoi(CMD_ARGV(1)))
 		{
 			Vector offset(atof(CMD_ARGV(2)), atof(CMD_ARGV(3)), atof(CMD_ARGV(4)));
 			Vector angles(atof(CMD_ARGV(5)), atof(CMD_ARGV(6)), atof(CMD_ARGV(7)));
@@ -671,7 +671,7 @@ void ClientCommand(edict_t* pEntity)
 	}
 	else if (FStrEq(pcmd, "vr_teleporter"))
 	{
-		if (atoi(CMD_ARGV(1)))
+		if (0 != atoi(CMD_ARGV(1)))
 		{
 			Vector offset(atof(CMD_ARGV(2)), atof(CMD_ARGV(3)), atof(CMD_ARGV(4)));
 			Vector angles(atof(CMD_ARGV(5)), atof(CMD_ARGV(6)), atof(CMD_ARGV(7)));
@@ -682,29 +682,17 @@ void ClientCommand(edict_t* pEntity)
 			player->ClearTeleporterPose();
 		}
 	}
-	else if (FStrEq(pcmd, "vr_anlgfire"))
-	{
-		player->SetAnalogFire(atof(CMD_ARGV(1)));
-	}
-	else if (FStrEq(pcmd, "vr_lngjump"))
-	{
-		player->DoLongJump(true, false);
-	}
-	else if (FStrEq(pcmd, "vr_restartmap"))
-	{
-		player->RestartCurrentMap();
-	}
-	else if (FStrEq(pcmd, "vr_wpnanim"))  // Client side weapon animations are now sent to the server - Max Makes Mods, 2019-04-13
+	else if (FStrEq(pcmd, "vr_wpnanim")) // Client side weapon animations are now sent to the server - Max Makes Mods, 2019-04-13
 	{
 		int sequence = atoi(CMD_ARGV(1));
 		int body = atoi(CMD_ARGV(2));
 		player->PlayVRWeaponAnimation(sequence, body);
 	}
-	else if (FStrEq(pcmd, "vr_muzzleflash"))  // Client side weapon animations are now sent to the server - Max Makes Mods, 2019-04-13
+	else if (FStrEq(pcmd, "vr_muzzleflash")) // Client side weapon animations are now sent to the server - Max Makes Mods, 2019-04-13
 	{
 		player->PlayVRWeaponMuzzleflash();
 	}
-	else if (FStrEq(pcmd, "vrupd_hmd"))  // Client sends update for VR related data - Max Makes Mods, 2017-08-18
+	else if (FStrEq(pcmd, "vrupd_hmd")) // Client sends update for VR related data - Max Makes Mods, 2017-08-18
 	{
 		int size = CMD_ARGC();
 		if (size == 14)
@@ -722,12 +710,12 @@ void ClientCommand(edict_t* pEntity)
 		}
 		else
 		{
-			char errormsg[1024] = { 0 };
+			char errormsg[1024] = {0};
 			snprintf(errormsg, sizeof(errormsg), "Invalid vr update (%i): %s %s!\n", size, pcmd, CMD_ARGS()); // BSVR: sprintf_s -> snprintf for Linux
 			ClientPrint(&pEntity->v, HUD_PRINTCONSOLE, errormsg);
 		}
 	}
-	else if (FStrEq(pcmd, "vrupdctrl"))  // Client sends update for VR related data - Max Makes Mods, 2017-08-18
+	else if (FStrEq(pcmd, "vrupdctrl")) // Client sends update for VR related data - Max Makes Mods, 2017-08-18
 	{
 		int size = CMD_ARGC();
 		if (size == 16)
@@ -745,14 +733,14 @@ void ClientCommand(edict_t* pEntity)
 		}
 		else
 		{
-			char errormsg[1024] = { 0 };
+			char errormsg[1024] = {0};
 			snprintf(errormsg, sizeof(errormsg), "Invalid vr update (%i): %s %s!\n", size, pcmd, CMD_ARGS()); // BSVR: sprintf_s -> snprintf for Linux
 			ClientPrint(&pEntity->v, HUD_PRINTCONSOLE, errormsg);
 		}
 	}
 	else if (FStrEq(pcmd, "vrtele"))
 	{
-		if (atoi(CMD_ARGV(1)))
+		if (0 != atoi(CMD_ARGV(1)))
 		{
 			player->StartVRTele();
 		}
@@ -760,10 +748,6 @@ void ClientCommand(edict_t* pEntity)
 		{
 			player->StopVRTele();
 		}
-	}
-	else if (FStrEq(pcmd, "vrspeech"))
-	{
-		player->HandleSpeechCommand(VRSpeechCommand(atoi(CMD_ARGV(1))));
 	}
 	// BSVR end
 	else if (g_pGameRules->ClientCommand(player, pcmd))
@@ -1021,7 +1005,9 @@ static void LoadAllMaps()
 			mapName.resize(mapName.size() - 4);
 
 			if (std::find_if(g_MapsToLoad.begin(), g_MapsToLoad.end(), [=](const auto& candidate)
-					{ return 0 == stricmp(candidate.c_str(), mapName.c_str()); }) == g_MapsToLoad.end())
+					{
+						return 0 == stricmp(candidate.c_str(), mapName.c_str());
+					}) == g_MapsToLoad.end())
 			{
 				g_MapsToLoad.push_back(std::move(mapName));
 			}
@@ -1031,7 +1017,9 @@ static void LoadAllMaps()
 
 		// Sort in reverse order so the first map in alphabetic order is loaded first.
 		std::sort(g_MapsToLoad.begin(), g_MapsToLoad.end(), [](const auto& lhs, const auto& rhs)
-			{ return rhs < lhs; });
+			{
+				return rhs < lhs;
+			});
 	}
 
 	if (!g_MapsToLoad.empty())
@@ -1073,7 +1061,9 @@ void InitMapLoadingUtils()
 	g_engfuncs.pfnAddServerCommand("sv_load_all_maps", &LoadAllMaps);
 	// Escape hatch in case the command is executed in error.
 	g_engfuncs.pfnAddServerCommand("sv_stop_loading_all_maps", []()
-		{ g_MapsToLoad.clear(); });
+		{
+			g_MapsToLoad.clear();
+		});
 }
 
 static bool g_LastAllowBunnyHoppingState = false;
@@ -1214,7 +1204,7 @@ void ClientPrecache()
 
 	PRECACHE_SOUND("plats/train_use1.wav"); // use a train
 	// BVVR start
-	PRECACHE_SOUND("plats/train_use2.wav");  // use a train in VR
+	PRECACHE_SOUND("plats/train_use2.wav"); // use a train in VR
 	// BSVR end
 
 	PRECACHE_SOUND("buttons/spark5.wav"); // hit computer texture
@@ -1398,7 +1388,7 @@ void SpectatorThink(edict_t* pEntity)
 // BSVR start
 namespace
 {
-	unsigned char* m_pvsCache = nullptr;
+unsigned char* m_pvsCache = nullptr;
 }
 // BSVR end
 
@@ -2295,28 +2285,19 @@ GetHullBounds
 */
 
 // BSVR start
-float* g_pEngineHullMins[4]{ nullptr };
-float* g_pEngineHullMaxs[4]{ nullptr };
-
-int InternalGetHullBounds(int hullnumber, float* mins, float* maxs, bool calledFromPMInit)
+int InternalGetHullBounds(int hullnumber, float* mins, float* maxs)
 {
-	if (!calledFromPMInit)
-	{
-		g_pEngineHullMins[hullnumber] = mins;
-		g_pEngineHullMaxs[hullnumber] = maxs;
-	}
-
 	switch (hullnumber)
 	{
-	case 0:  // Normal player
+	case 0: // Normal player
 		VEC_HULL_MIN.CopyToArray(mins);
 		VEC_HULL_MAX.CopyToArray(maxs);
 		return 1;
-	case 1:  // Crouched player
+	case 1: // Crouched player
 		VEC_DUCK_HULL_MIN.CopyToArray(mins);
 		VEC_DUCK_HULL_MAX.CopyToArray(maxs);
 		return 1;
-	case 2:  // Point based hull
+	case 2: // Point based hull
 		Vector{}.CopyToArray(mins);
 		Vector{}.CopyToArray(maxs);
 		return 1;
@@ -2330,7 +2311,7 @@ int GetHullBounds(int hullnumber, float* mins, float* maxs)
 {
 	// BSVR start
 	// return static_cast<int>(PM_GetHullBounds(hullnumber, mins, maxs)); - original
-	return InternalGetHullBounds(hullnumber, mins, maxs, false);
+	return InternalGetHullBounds(hullnumber, mins, maxs);
 	// BSVR end
 }
 

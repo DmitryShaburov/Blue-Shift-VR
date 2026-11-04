@@ -125,7 +125,7 @@ float EV_HLDM_PlayTextureSound(int idx, pmtrace_t* ptr, float* vecSrc, float* ve
 		// Now the server will replicate that state via an eflag.
 		cl_entity = gEngfuncs.GetEntityByIndex(entity);
 
-		if (cl_entity && !!(cl_entity->curstate.eflags & EFLAG_FLESH_SOUND))
+		if (cl_entity && (cl_entity->curstate.eflags & EFLAG_FLESH_SOUND) != 0)
 			chTextureType = CHAR_TEX_FLESH;
 	}
 

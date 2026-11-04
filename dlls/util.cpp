@@ -1074,7 +1074,7 @@ bool UTIL_IsPointInEntity(CBaseEntity* pEntity, const Vector& p)
 		return false;
 
 	// No model or model is studio model
-	if (!pEntity->pev->model || STRING(pEntity->pev->model)[0] == 0 || STRING(pEntity->pev->model)[0] != '*')
+	if (0 == pEntity->pev->model || STRING(pEntity->pev->model)[0] == 0 || STRING(pEntity->pev->model)[0] != '*')
 	{
 		// TODO: Do proper hitbox check
 		return UTIL_PointInsideBBox(p, pEntity->pev->origin + pEntity->pev->mins, pEntity->pev->origin + pEntity->pev->maxs);
@@ -1278,11 +1278,11 @@ bool GetIntersection(float fDst1, float fDst2, const Vector& vec1, const Vector&
 
 bool InBox(const Vector& v, const Vector& absmin, const Vector& absmax, int axis)
 {
-	if (axis == 1 && v.z > absmin.z&& v.z < absmax.z && v.y > absmin.y&& v.y < absmax.y)
+	if (axis == 1 && v.z > absmin.z && v.z < absmax.z && v.y > absmin.y && v.y < absmax.y)
 		return true;
-	if (axis == 2 && v.z > absmin.z&& v.z < absmax.z && v.x > absmin.x&& v.x < absmax.x)
+	if (axis == 2 && v.z > absmin.z && v.z < absmax.z && v.x > absmin.x && v.x < absmax.x)
 		return true;
-	if (axis == 3 && v.x > absmin.x&& v.x < absmax.x && v.y > absmin.y&& v.y < absmax.y)
+	if (axis == 3 && v.x > absmin.x && v.x < absmax.x && v.y > absmin.y && v.y < absmax.y)
 		return true;
 	return false;
 }
@@ -1291,19 +1291,19 @@ bool UTIL_GetLineIntersectionWithBBox(const Vector& vec1, const Vector& vec2, co
 {
 	if (vec2.x < absmin.x && vec1.x < absmin.x)
 		return false;
-	if (vec2.x > absmax.x&& vec1.x > absmax.x)
+	if (vec2.x > absmax.x && vec1.x > absmax.x)
 		return false;
 	if (vec2.y < absmin.y && vec1.y < absmin.y)
 		return false;
-	if (vec2.y > absmax.y&& vec1.y > absmax.y)
+	if (vec2.y > absmax.y && vec1.y > absmax.y)
 		return false;
 	if (vec2.z < absmin.z && vec1.z < absmin.z)
 		return false;
-	if (vec2.z > absmax.z&& vec1.z > absmax.z)
+	if (vec2.z > absmax.z && vec1.z > absmax.z)
 		return false;
-	if (vec1.x > absmin.x&& vec1.x < absmax.x &&
-		vec1.y > absmin.y&& vec1.y < absmax.y &&
-		vec1.z > absmin.z&& vec1.z < absmax.z)
+	if (vec1.x > absmin.x && vec1.x < absmax.x &&
+		vec1.y > absmin.y && vec1.y < absmax.y &&
+		vec1.z > absmin.z && vec1.z < absmax.z)
 	{
 		result = vec1;
 		return true;
@@ -1362,7 +1362,7 @@ int UTIL_PointContents(const Vector& vec, bool detectSolidEntities, edict_t** pP
 		{
 			for (int i = 1; i < gpGlobals->maxEntities; i++, pEnt++)
 			{
-				if (pEnt->free)
+				if (0 != pEnt->free)
 				{
 					continue;
 				}
@@ -1375,7 +1375,7 @@ int UTIL_PointContents(const Vector& vec, bool detectSolidEntities, edict_t** pP
 				{
 					continue;
 				}
-				if (pEnt->v.solid == SOLID_BSP && UTIL_PointInsideBSPModel(vec, pEnt->v.absmin, pEnt->v.absmax))  // Trace actual brush model to see if point really is inside the entity!
+				if (pEnt->v.solid == SOLID_BSP && UTIL_PointInsideBSPModel(vec, pEnt->v.absmin, pEnt->v.absmax)) // Trace actual brush model to see if point really is inside the entity!
 				{
 					if (pPent)
 						*pPent = pEnt;
@@ -1416,55 +1416,6 @@ bool UTIL_PointInsideRotatedBBox(const Vector& bboxCenter, const Vector& bboxAng
 // {
 // 	return POINT_CONTENTS(vec);
 // }
-
-
-// Method that returns the exact angles for a complete set of vectors
-void UTIL_GetAnglesFromVectors(const Vector& forward, const Vector& right, const Vector& up, Vector& angles)
-{
-	float sr, sp, sy, cr, cp, cy;
-
-	sp = -forward[2];
-
-	float cp_x_cy = forward[0];
-	float cp_x_sy = forward[1];
-	float cp_x_sr = -right[2];
-	float cp_x_cr = up[2];
-
-	float yaw = atan2(cp_x_sy, cp_x_cy);
-	float roll = atan2(cp_x_sr, cp_x_cr);
-
-	cy = cos(yaw);
-	sy = sin(yaw);
-	cr = cos(roll);
-	sr = sin(roll);
-
-	if (abs(cy) > EPSILON)
-	{
-		cp = cp_x_cy / cy;
-	}
-	else if (abs(sy) > EPSILON)
-	{
-		cp = cp_x_sy / sy;
-	}
-	else if (abs(sr) > EPSILON)
-	{
-		cp = cp_x_sr / sr;
-	}
-	else if (abs(cr) > EPSILON)
-	{
-		cp = cp_x_cr / cr;
-	}
-	else
-	{
-		cp = cos(asin(sp));
-	}
-
-	float pitch = atan2(sp, cp);
-
-	angles[0] = pitch / (M_PI * 2.f / 360.f);
-	angles[1] = yaw / (M_PI * 2.f / 360.f);
-	angles[2] = roll / (M_PI * 2.f / 360.f);
-}
 // BSVR end
 
 void UTIL_BloodStream(const Vector& origin, const Vector& direction, int color, int amount)
@@ -2030,7 +1981,7 @@ bool UTIL_IsFacing(const Vector& viewPos, const Vector& viewAngles, const Vector
 	Vector referenceDir = (reference - viewPos);
 	Vector viewDir;
 	UTIL_MakeVectorsPrivate(viewAngles, viewDir, nullptr, nullptr);
-	if (DotProduct(viewDir, referenceDir) > 0.96f)  // +/- 15 degrees or so
+	if (DotProduct(viewDir, referenceDir) > 0.96f) // +/- 15 degrees or so
 	{
 		return true;
 	}
@@ -2247,17 +2198,17 @@ void CSaveRestoreBuffer::BufferRewind(int size)
 extern "C" {
 unsigned _rotr(unsigned val, int shift)
 {
-	unsigned lobit;	 /* non-zero means lo bit set */
+	unsigned lobit;		/* non-zero means lo bit set */
 	unsigned num = val; /* number to rotate */
 
 	shift &= 0x1f; /* modulo 32 -- this will also make
 										   negative shifts work */
 
-	while (shift--)
+	while (0 != shift--)
 	{
 		lobit = num & 1; /* get high bit */
 		num >>= 1;		 /* shift right one bit */
-		if (lobit)
+		if (0 != lobit)
 			num |= 0x80000000; /* set hi bit if lo bit was set */
 	}
 
@@ -3039,9 +2990,9 @@ bool CRestore::BufferCheckZString(const char* string)
 // - Max Makes Mods, 2020-03-16
 namespace
 {
-	static std::unordered_map<std::string, float> cvarfloatcache;
-	static std::unordered_map<std::string, std::unique_ptr<std::string>> cvarstringcache;
-	static std::unordered_map<std::string, std::vector<unsigned char>> modelpointercache;
+static std::unordered_map<std::string, float> cvarfloatcache;
+static std::unordered_map<std::string, std::unique_ptr<std::string>> cvarstringcache;
+static std::unordered_map<std::string, std::vector<unsigned char>> modelpointercache;
 }
 
 void VRClearCvarCache()
@@ -3098,9 +3049,7 @@ void* GET_MODEL_PTR(edict_t* pent)
 	else
 	{
 		void* model = nullptr;
-		if (modelName.size() > 4
-			&& modelName[0] != '*'
-			&& modelName.find(".mdl") == modelName.size() - 4)
+		if (modelName.size() > 4 && modelName[0] != '*' && modelName.find(".mdl") == modelName.size() - 4)
 		{
 			model = (*g_engfuncs.pfnGetModelPtr)(pent);
 		}

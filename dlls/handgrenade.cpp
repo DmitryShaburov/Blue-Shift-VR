@@ -128,13 +128,13 @@ void CHandGrenade::WeaponIdle()
 
 	if (0 != m_flStartThrow)
 	{
-		// BSVR start - moved into VR flag if / else
-		#ifndef CLIENT_DLL
+// BSVR start - moved into VR flag if / else
+#ifndef CLIENT_DLL
 		Vector grenadeVelocity;
 		if (CVAR_GET_FLOAT("vr_weapon_grenade_mode") != 0.f)
 		{
 			// Vector angThrow = m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle; - original
-			Vector angThrow = m_pPlayer->GetAimAngles();  // m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
+			Vector angThrow = m_pPlayer->GetAimAngles(); // m_pPlayer->pev->v_angle + m_pPlayer->pev->punchangle;
 
 			if (angThrow.x < 0)
 				angThrow.x = -10 + angThrow.x * ((90 - 10) / 90.0);
@@ -165,8 +165,8 @@ void CHandGrenade::WeaponIdle()
 		// BSVR start
 		// CGrenade::ShootTimed(m_pPlayer->pev, vecSrc, vecThrow, time); - original
 		CGrenade* pGrenade = CGrenade::ShootTimed(m_pPlayer->pev, m_pPlayer->GetGunPosition(), grenadeVelocity, time);
-		pGrenade->pev->dmg = this->pev->dmg;  // Original HL ignored skill setting for grenades...
-		#endif
+		pGrenade->pev->dmg = this->pev->dmg; // Original HL ignored skill setting for grenades...
+#endif
 
 		// commented out original
 		// if (flVel < 500)

@@ -98,7 +98,7 @@ void CHANGE_LEVEL(char* s1, char* s2);
 // BSVR start
 namespace
 {
-	bool _isBogusMessage = false;
+bool _isBogusMessage = false;
 }
 
 inline void MESSAGE_BEGIN_IMPL(const char* msg_args, int msg_dest, int msg_type, const float* pOrigin = nullptr, edict_t* ed = nullptr)
@@ -229,17 +229,6 @@ inline void WRITE_COORDS(const float* v)
 	WRITE_COORD(v[0]);
 	WRITE_COORD(v[1]);
 	WRITE_COORD(v[2]);
-}
-inline void WRITE_ANGLES(const float* v)
-{
-	if (_isBogusMessage)
-	{
-		g_engfuncs.pfnAlertMessage(at_error, "Bogus message angles: %f %f %f\n", v[0], v[1], v[2]);
-		return;
-	}
-	WRITE_ANGLE(v[0]);
-	WRITE_ANGLE(v[1]);
-	WRITE_ANGLE(v[2]);
 }
 inline void WRITE_FLOAT(float f)
 {

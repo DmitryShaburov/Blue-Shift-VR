@@ -13,7 +13,7 @@ extern void VectorAngles(const float* forward, float* angles);
 class Positions
 {
 public:
-	std::array<vr::TrackedDevicePose_t, vr::k_unMaxTrackedDeviceCount> m_rTrackedDevicePose = {{ 0 }};
+	std::array<vr::TrackedDevicePose_t, vr::k_unMaxTrackedDeviceCount> m_rTrackedDevicePose = {{0}};
 
 	Matrix4 m_mat4LeftProjection;
 	Matrix4 m_mat4RightProjection;
@@ -34,8 +34,7 @@ public:
 	enum class VRSceneMode
 	{
 		LeftEye,
-		RightEye,
-		Engine
+		RightEye
 	};
 
 	void PollEvents(bool isInGame, bool isInMenu);
@@ -53,7 +52,6 @@ public:
 	int GetHLMenuTextureHeight() { return m_vrGLHLMenuTextureHeight; }
 
 	void GetViewAngles(vr::EVREye eEye, float* angles);
-	void GetViewMatrix(vr::EVREye eEye, float* matrix);
 	void GetViewOrg(float* origin);
 	void GetViewVectors(Vector& forward, Vector& right, Vector& up);
 
@@ -62,7 +60,7 @@ public:
 	void SetPose(VRPoseType poseType, const vr::TrackedDevicePose_t& pose, vr::ETrackedControllerRole role);
 	void ClearPose(VRPoseType poseType);
 
-	bool m_hasMovementAngles{ false };
+	bool m_hasMovementAngles{false};
 	Vector m_movementAngles;
 	Vector GetMovementAngles();
 
@@ -110,8 +108,6 @@ private:
 
 	Positions positions;
 
-	bool isVRRoomScale = true;
-
 	float m_worldScale = 1.f;
 	float m_worldZStretch = 1.f;
 
@@ -146,11 +142,10 @@ private:
 	float m_instantRotateYawValue = 0.f;
 	Vector2D m_currentYawOffsetDelta;
 
-	bool m_hasGroundEntityYaw{ false };
-	float m_groundEntityYaw{ 0.f };
-	struct cl_entity_s* m_groundEntity{ nullptr };
+	bool m_hasGroundEntityYaw{false};
+	float m_groundEntityYaw{0.f};
+	struct cl_entity_s* m_groundEntity{nullptr};
 
-	float lastUpdatedVectorsFrametime = 0.f;
 	Vector3 vrToHL;
 	Vector3 hlToVR;
 	void UpdateVRHLConversionVectors();
@@ -176,13 +171,11 @@ private:
 	Vector m_rightControllerUp;
 	Vector m_rightControllerVelocity;
 
-	bool mIsViewEntMirrored{ false };
-
 	// BSVR start
-	bool m_hasViewEntOverride{ false }; // true while a trigger_camera (or other view entity) controls the view
+	bool m_hasViewEntOverride{false}; // true while a trigger_camera (or other view entity) controls the view
 	// BSVR end
 
-	float m_hmdHeightOffset{ 0.f };
+	float m_hmdHeightOffset{0.f};
 
 	int vr_scenePushCount = 0;
 
@@ -194,12 +187,10 @@ public:
 	bool HasValidLeftController() { return m_fLeftControllerValid; }
 	Vector GetLeftControllerPosition() { return m_leftControllerPosition; }
 	Vector GetLeftControllerAngles() { return m_leftControllerAngles; }
-	Vector GetLeftControllerForward() { return m_leftControllerForward; }
 
 	bool HasValidRightController() { return m_fRightControllerValid; }
 	Vector GetRightControllerPosition() { return m_rightControllerPosition; }
 	Vector GetRightControllerAngles() { return m_rightControllerAngles; }
-	Vector GetRightControllerForward() { return m_rightControllerForward; }
 
 	bool HasValidWeaponController();
 	Vector GetWeaponPosition();
@@ -207,7 +198,6 @@ public:
 	Vector GetWeaponHUDPosition();
 	Vector GetWeaponHUDUp();
 	void GetWeaponVectors(Vector& forward, Vector& right, Vector& up);
-	void GetWeaponHUDMatrix(float* matrix);
 
 	bool HasValidHandController();
 	Vector GetHandPosition();
@@ -215,19 +205,14 @@ public:
 	Vector GetHandHUDPosition();
 	Vector GetHandHUDUp();
 	void GetHandVectors(Vector& forward, Vector& right, Vector& up);
-	void GetHandHUDMatrix(float* matrix);
 
-	vr::IVRSystem* GetVRSystem();
 
 	void InstantRotateYaw(float value);
 
 	Vector GetGunPosition();
 	Vector GetAutoaimVector();
 	void GetGunAim(Vector& forward, Vector& right, Vector& up, Vector& angles);
-	float GetAnalogFire();
 	Vector GetLocalPlayerAngles();
-
-	bool IsViewEntMirrored() { return mIsViewEntMirrored; }
 
 	// BSVR start
 	bool HasViewEntOverride() { return m_hasViewEntOverride; }

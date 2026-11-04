@@ -646,7 +646,10 @@ Schedule_t* CISlave::GetSchedule()
 
 		if (pSound && (pSound->m_iType & bits_SOUND_DANGER) != 0)
 			return GetScheduleOfType(SCHED_TAKE_COVER_FROM_BEST_SOUND);
-		if ((pSound->m_iType & bits_SOUND_COMBAT) != 0)
+		// BSVR start
+		// if ((pSound->m_iType & bits_SOUND_COMBAT) != 0)
+		if (pSound && (pSound->m_iType & bits_SOUND_COMBAT) != 0)
+			// BSVR end
 			m_afMemory |= bits_MEMORY_PROVOKED;
 	}
 

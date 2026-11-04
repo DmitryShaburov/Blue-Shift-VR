@@ -32,6 +32,6 @@ typedef struct usercmd_s
 
 	// Experimental player impact stuff.
 	// int impact_index;
-	unsigned int buttons_ex = 0;  // renamed to "buttons_ex" and used now for adding more buttons in VR mode
+	unsigned int buttons_ex = 0; // renamed to "buttons_ex" and used now for adding more buttons in VR mode
 	Vector impact_position;
 } usercmd_t;

@@ -12,56 +12,50 @@
 #include "UserMessages.h" // BSVR: gmsgVR* are declared here instead of via local externs
 #include "VRControllerModel.h"
 #include "VRController.h"
-#include "VRPhysicsHelper.h"
 #include "VRModelHelper.h"
-
-#ifdef RENDER_DEBUG_BBOXES
-#include "VRDebugBBoxDrawer.h"
-static VRDebugBBoxDrawer g_VRDebugBBoxDrawer;
-#endif
 
 namespace
 {
-	enum HandModelSequences
-	{
-		IDLE = 0,
-		POINT_START,
-		POINT_END,
-		WAIT_START,
-		WAIT_END,
-		HALFGRAB_START,
-		HALFGRAB_END,
-		FULLGRAB_START,
-		FULLGRAB_END
-	};
+enum HandModelSequences
+{
+	IDLE = 0,
+	POINT_START,
+	POINT_END,
+	WAIT_START,
+	WAIT_END,
+	HALFGRAB_START,
+	HALFGRAB_END,
+	FULLGRAB_START,
+	FULLGRAB_END
+};
 
-	std::unordered_map<std::string, const char*> g_animatedWeaponModelNameMap = {
-		{"models/v_357.mdl", "models/animov/v_357.mdl"},
-		{"models/v_9mmar.mdl", "models/animov/v_9mmar.mdl"},
-		{"models/v_9mmhandgun.mdl", "models/animov/v_9mmhandgun.mdl"},
-		{"models/v_crossbow.mdl", "models/animov/v_crossbow.mdl"},
-		{"models/v_crowbar.mdl", "models/animov/v_crowbar.mdl"},
-		{"models/v_egon.mdl", "models/animov/v_egon.mdl"},
-		{"models/v_gauss.mdl", "models/animov/v_gauss.mdl"},
-		{"models/v_grenade.mdl", "models/animov/v_grenade.mdl"},
-		{"models/v_hgun.mdl", "models/animov/v_hgun.mdl"},
-		{"models/v_rpg.mdl", "models/animov/v_rpg.mdl"},
-		{"models/v_satchel.mdl", "models/animov/v_satchel.mdl"},
-		{"models/v_satchel_radio.mdl", "models/animov/v_satchel_radio.mdl"},
-		{"models/v_shotgun.mdl", "models/animov/v_shotgun.mdl"},
-		{"models/v_squeak.mdl", "models/animov/v_squeak.mdl"},
-		{"models/v_tripmine.mdl", "models/animov/v_tripmine.mdl"},
-	};
+std::unordered_map<std::string, const char*> g_animatedWeaponModelNameMap = {
+	{"models/v_357.mdl", "models/animov/v_357.mdl"},
+	{"models/v_9mmar.mdl", "models/animov/v_9mmar.mdl"},
+	{"models/v_9mmhandgun.mdl", "models/animov/v_9mmhandgun.mdl"},
+	{"models/v_crossbow.mdl", "models/animov/v_crossbow.mdl"},
+	{"models/v_crowbar.mdl", "models/animov/v_crowbar.mdl"},
+	{"models/v_egon.mdl", "models/animov/v_egon.mdl"},
+	{"models/v_gauss.mdl", "models/animov/v_gauss.mdl"},
+	{"models/v_grenade.mdl", "models/animov/v_grenade.mdl"},
+	{"models/v_hgun.mdl", "models/animov/v_hgun.mdl"},
+	{"models/v_rpg.mdl", "models/animov/v_rpg.mdl"},
+	{"models/v_satchel.mdl", "models/animov/v_satchel.mdl"},
+	{"models/v_satchel_radio.mdl", "models/animov/v_satchel_radio.mdl"},
+	{"models/v_shotgun.mdl", "models/animov/v_shotgun.mdl"},
+	{"models/v_squeak.mdl", "models/animov/v_squeak.mdl"},
+	{"models/v_tripmine.mdl", "models/animov/v_tripmine.mdl"},
+};
 
-	string_t GetAnimatedWeaponModelName(string_t modelName)
-	{
-		auto it = g_animatedWeaponModelNameMap.find(STRING(modelName));
-		if (it != g_animatedWeaponModelNameMap.end())
-			return MAKE_STRING(it->second);
-		else
-			return modelName;
-	}
-}  // namespace
+string_t GetAnimatedWeaponModelName(string_t modelName)
+{
+	auto it = g_animatedWeaponModelNameMap.find(STRING(modelName));
+	if (it != g_animatedWeaponModelNameMap.end())
+		return MAKE_STRING(it->second);
+	else
+		return modelName;
+}
+} // namespace
 
 const char* GetAnimatedWeaponModelName(const char* modelName)
 {
@@ -118,26 +112,9 @@ void VRController::Update(CBasePlayer* pPlayer, const int timestamp, const bool 
 		m_dragStartTime = 0.f;
 	}
 
-	m_isBlocked = !UTIL_CheckClearSight(pPlayer->EyePosition(), m_position, ignore_monsters, dont_ignore_glass, pPlayer->edict()) || VRPhysicsHelper::Instance().CheckIfLineIsBlocked(pPlayer->EyePosition(), m_position);
-
 	UpdateModel(pPlayer);
 
 	ClearOutDeadEntities();
-
-#ifdef RENDER_DEBUG_BBOXES
-	if (m_isValid)
-	{
-		if (m_isMirrored) g_VRDebugBBoxDrawer.SetColor(255, 0, 0);
-		else g_VRDebugBBoxDrawer.SetColor(0, 255, 0);
-
-		g_VRDebugBBoxDrawer.ClearAllBut(GetModel());
-		g_VRDebugBBoxDrawer.DrawBBoxes(GetModel(), IsMirrored());
-	}
-	else
-	{
-		g_VRDebugBBoxDrawer.ClearAll();
-	}
-#endif
 }
 
 float GetVibrateIntensity(VRController::TouchType touch)
@@ -192,12 +169,16 @@ void VRController::AddTouch(TouchType touch, float duration)
 void VRController::ClearOutDeadEntities()
 {
 	for (auto it = m_touchedEntities.begin(); it != m_touchedEntities.end();)
-		if (!it->Get()) it = m_touchedEntities.erase(it);
-		else it++;
+		if (!it->Get())
+			it = m_touchedEntities.erase(it);
+		else
+			it++;
 
 	for (auto it = m_hitEntities.begin(); it != m_hitEntities.end();)
-		if (!it->Get()) it = m_hitEntities.erase(it);
-		else it++;
+		if (!it->Get())
+			it = m_hitEntities.erase(it);
+		else
+			it++;
 
 	if (!m_draggedEntity)
 	{
@@ -267,8 +248,8 @@ void VRController::UpdateModel(CBasePlayer* pPlayer)
 	if (m_isValid)
 	{
 		pModel->TurnOn();
-		pModel->pev->mins = Vector{ -m_radius, -m_radius, -m_radius };
-		pModel->pev->maxs = Vector{ m_radius, m_radius, m_radius };
+		pModel->pev->mins = Vector{-m_radius, -m_radius, -m_radius};
+		pModel->pev->maxs = Vector{m_radius, m_radius, m_radius};
 		pModel->pev->size = pModel->pev->maxs - pModel->pev->mins;
 		pModel->pev->absmin = pModel->pev->origin + pModel->pev->mins;
 		pModel->pev->absmax = pModel->pev->origin + pModel->pev->maxs;
@@ -301,9 +282,6 @@ void VRController::SendEntityDataToClient(CBasePlayer* pPlayer, VRControllerID i
 		WRITE_BYTE(1);
 
 		WRITE_ENTITY(ENTINDEX(m_draggedEntity->edict()));
-
-		WRITE_PRECISE_VECTOR(m_draggedEntity->m_vrDragOriginOffset);
-		WRITE_PRECISE_VECTOR(m_draggedEntity->m_vrDragAnglesOffset);
 
 		WRITE_BYTE(m_draggedEntity->pev->body);
 		WRITE_BYTE(m_draggedEntity->pev->skin);
@@ -367,7 +345,7 @@ void VRController::UpdateHitBoxes()
 	studiohitboxes.resize(numhitboxes);
 	std::vector<StudioAttachment> studioattachments;
 	studioattachments.resize(numattachments);
-	if (GetHitboxesAndAttachments(pModel->pev, pmodel, pModel->pev->sequence, pModel->pev->frame, studiohitboxes.data(), studioattachments.data(), IsMirrored()))
+	if (0 != GetHitboxesAndAttachments(pModel->pev, pmodel, pModel->pev->sequence, pModel->pev->frame, studiohitboxes.data(), studioattachments.data(), IsMirrored()))
 	{
 		for (const auto& studiohitbox : studiohitboxes)
 		{
@@ -399,7 +377,7 @@ CVRControllerModel* VRController::GetModel() const
 {
 	if (!m_hModel)
 	{
-		CVRControllerModel* pModel = CVRControllerModel::Create(m_modelName ? STRING(m_modelName) : "models/v_hand.mdl", GetPosition());
+		CVRControllerModel* pModel = CVRControllerModel::Create(0 != m_modelName ? STRING(m_modelName) : "models/v_hand.mdl", GetPosition());
 		if (IsValid())
 		{
 			pModel->TurnOn();
@@ -418,7 +396,6 @@ void VRController::PlayWeaponAnimation(int iAnim, int body)
 	auto& modelInfo = VRModelHelper::GetInstance().GetModelInfo(pModel);
 	if (modelInfo.m_isValid && iAnim < modelInfo.m_numSequences)
 	{
-		//ALERT(at_console, "VRController::PlayWeaponAnimation: Playing sequence %i of %i with framerate %.0f for %s\n", iAnim, modelInfo.m_numSequences, modelInfo.m_sequences[iAnim].framerate, STRING(m_modelName));
 		pModel->SetSequence(iAnim);
 	}
 	else
@@ -464,7 +441,7 @@ bool VRController::SetDraggedEntity(EHANDLE hEntity) const
 		return true;
 
 	m_draggedEntity = hEntity;
-	m_draggedEntityPositions.reset(new DraggedEntityPositions{ GetOffset(), GetPosition(), hEntity->pev->origin, m_hPlayer->pev->origin, GetOffset(), GetPosition(), hEntity->pev->origin, m_hPlayer->pev->origin });
+	m_draggedEntityPositions.reset(new DraggedEntityPositions{GetOffset(), GetPosition(), hEntity->pev->origin, m_hPlayer->pev->origin, GetOffset(), GetPosition(), hEntity->pev->origin, m_hPlayer->pev->origin});
 
 	return true;
 }
@@ -492,7 +469,7 @@ bool VRController::IsDraggedEntity(EHANDLE hEntity) const
 
 bool VRController::HasDraggedEntity() const
 {
-	return m_draggedEntity;
+	return nullptr != m_draggedEntity;
 }
 
 bool VRController::GetDraggedEntityPositions(EHANDLE hEntity,
@@ -518,7 +495,7 @@ bool VRController::GetDraggedEntityPositions(EHANDLE hEntity,
 		m_draggedEntityPositions->controllerLastOffset = GetOffset();
 		m_draggedEntityPositions->controllerLastPos = GetPosition();
 		m_draggedEntityPositions->entityLastOrigin = hEntity->pev->origin;
-		m_draggedEntityPositions->playerLastOrigin = EHANDLE{ m_hPlayer }->pev->origin;
+		m_draggedEntityPositions->playerLastOrigin = EHANDLE{m_hPlayer}->pev->origin;
 		return true;
 	}
 	return false;
@@ -556,19 +533,6 @@ const Vector VRController::GetGunPosition() const
 	}
 }
 
-const Vector VRController::GetAim() const
-{
-	Vector pos1;
-	Vector pos2;
-	bool result1 = GetAttachment(VR_MUZZLE_ATTACHMENT, pos1);
-	bool result2 = GetAttachment(VR_MUZZLE_ATTACHMENT + 1, pos2);
-	if (result1 && result2 && pos2 != pos1)
-	{
-		return (pos2 - pos1).Normalize();
-	}
-	UTIL_MakeAimVectors(GetAngles());
-	return gpGlobals->v_forward;
-}
 
 bool VRController::GetAttachment(size_t index, Vector& attachment) const
 {
@@ -596,7 +560,7 @@ bool VRController::IsFiring() const
 
 bool VRController::HasAnyEntites() const
 {
-	return m_draggedEntity || !m_touchedEntities.empty() || !m_hitEntities.empty();
+	return nullptr != m_draggedEntity || !m_touchedEntities.empty() || !m_hitEntities.empty();
 }
 
 void VRController::VRJustTeleported(CBasePlayer* pPlayer, const Vector& fromOrigin, const Vector& fromAngles)

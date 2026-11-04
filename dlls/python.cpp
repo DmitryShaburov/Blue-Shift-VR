@@ -201,7 +201,7 @@ void CPython::PrimaryAttack()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.4f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 

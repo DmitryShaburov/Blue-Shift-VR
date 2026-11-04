@@ -399,9 +399,6 @@
     <ClCompile Include="..\..\cl_dll\vr\VRModExtraDataCacheHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\cl_dll\vr\VRDebugPhysicsRenderer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRSettingsPages.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

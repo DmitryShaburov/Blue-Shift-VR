@@ -258,6 +258,12 @@ void CBaseMonster::Listen()
 			m_iAudibleList = iSound;
 		}
 
+		// BSVR start
+		// Guard against a null sound and a self-linked list entry (infinite loop)
+		if (!pCurrentSound || iSound == pCurrentSound->m_iNext)
+			break;
+		// BSVR end
+
 		//		iSound = g_pSoundEnt->m_SoundPool[ iSound ].m_iNext;
 		iSound = pCurrentSound->m_iNext;
 	}
@@ -335,7 +341,10 @@ void CBaseMonster::Look(int iDistance)
 
 							pClient = pSightEnt->MyMonsterPointer();
 							// don't link this client in the list if the monster is wait till seen and the player isn't facing the monster
-							if (pSightEnt && !pClient->FInViewCone(this))
+							// BSVR start
+							// if (pSightEnt && !pClient->FInViewCone(this))
+							if (pClient && !pClient->FInViewCone(this))
+							// BSVR end
 							{
 								// we're not in the player's view cone.
 								continue;
@@ -439,6 +448,12 @@ CSound* CBaseMonster::PBestSound()
 				flBestDist = flDist;
 			}
 		}
+
+		// BSVR start
+		// Guard against a null sound and a self-linked list entry (infinite loop)
+		if (!pSound || iThisSound == pSound->m_iNextAudible)
+			break;
+		// BSVR end
 
 		iThisSound = pSound->m_iNextAudible;
 	}
@@ -1051,6 +1066,15 @@ bool CBaseMonster::FCanCheckAttacks()
 //=========================================================
 bool CBaseMonster::CheckEnemy(CBaseEntity* pEnemy)
 {
+	// BSVR start
+	if (!pEnemy)
+	{
+		SetConditions(bits_COND_ENEMY_DEAD);
+		ClearConditions(bits_COND_SEE_ENEMY | bits_COND_ENEMY_OCCLUDED);
+		return false;
+	}
+	// BSVR end
+
 	float flDistToEnemy;
 	bool iUpdatedLKP; // set this to true if you update the EnemyLKP in this function.
 

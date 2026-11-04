@@ -23,7 +23,6 @@
 #define GL_COLOR_ATTACHMENT0        0x8CE0
 #define GL_DEPTH24_STENCIL8         0x88F0
 #define GL_DEPTH_STENCIL_ATTACHMENT 0x821A
-#define GL_ACTIVE_TEXTURE           0x84E0
 #define GL_TEXTURE0                 0x84C0
 #define GL_TEXTURE_MAX_LEVEL        0x813D
 
@@ -52,14 +51,6 @@ extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 #endif
 extern PFNGLGENERATEMIPMAPPROC glGenerateMipmap;
 
-#ifdef _WIN32
-extern void __stdcall HLVRConsoleCallback(char* msg);
-extern void __stdcall HLVRGenTexturesCallback(GLsizei, GLuint*);
-extern void __stdcall HLVRDeleteTexturesCallback(GLsizei, const GLuint*);
-extern void __stdcall HLVRGLBeginCallback(GLenum);
-extern void __stdcall HLVRGLEndCallback();
-#endif
-
 bool CreateGLTexture(unsigned int* texture, int width, int height);
 bool CreateGLFrameBuffer(unsigned int* framebuffer, unsigned int texture, int width, int height);
 
@@ -77,8 +68,7 @@ bool CopyTextureWithBlackTransparent(GLuint source, GLuint targetFramebuffer, in
 class OGLErrorException : public std::exception
 {
 public:
-	OGLErrorException(const std::string& errormsg) :
-		m_errormsg{ errormsg }
+	OGLErrorException(const std::string& errormsg) : m_errormsg{errormsg}
 	{
 	}
 
@@ -91,7 +81,7 @@ private:
 	std::string m_errormsg;
 };
 
-template<class T>
+template <class T>
 auto ArgToString(T&& t)
 {
 	std::stringstream s;
@@ -99,10 +89,10 @@ auto ArgToString(T&& t)
 	return s.str();
 }
 
-template<class... T>
+template <class... T>
 auto VarArgsToString(T&&... args)
 {
-	std::vector<std::string> x{ ArgToString(std::forward<T>(args))... };
+	std::vector<std::string> x{ArgToString(std::forward<T>(args))...};
 	std::stringstream s;
 	std::copy(x.begin(), x.end(), std::ostream_iterator<std::string>(s, ", "));
 	return s.str();

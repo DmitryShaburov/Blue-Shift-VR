@@ -2,9 +2,7 @@
 #include "extdll.h"
 #include "util.h"
 #include "cbase.h"
-#include "player.h"
 #include "pm_defs.h"
-#include "pm_shared.h"
 #include "com_model.h"
 
 #include "VRMovementHandler.h"
@@ -14,8 +12,7 @@ constexpr const byte VR_MOVEMENT_FAKE_FRAMETIME = 10;
 class RAIIImpl
 {
 public:
-	RAIIImpl(std::function<void()> callback) :
-		m_callback{ callback }
+	RAIIImpl(std::function<void()> callback) : m_callback{callback}
 	{
 	}
 
@@ -25,7 +22,6 @@ public:
 	}
 
 private:
-
 	std::function<void()> m_callback;
 };
 
@@ -44,7 +40,7 @@ Vector VRMovementHandler::DoMovement(const Vector& from, const Vector& to, CBase
 		return from;
 
 	// we can't move if we are dead
-	if (pmove->dead)
+	if (0 != pmove->dead)
 		return from;
 
 	// unlikely, but not impossible
@@ -56,7 +52,10 @@ Vector VRMovementHandler::DoMovement(const Vector& from, const Vector& to, CBase
 		return to;
 
 	int backupUsehull = pmove->usehull;
-	RAIIImpl restoreHull{ [backupUsehull]() { pmove->usehull = backupUsehull; } };
+	RAIIImpl restoreHull{[backupUsehull]()
+		{
+			pmove->usehull = backupUsehull;
+		}};
 	pmove->usehull = 0;
 
 	// if "to" is free, we can move there
@@ -111,15 +110,15 @@ Vector VRMovementHandler::DoMovement(const Vector& from, const Vector& to, CBase
 	pmove->iuser1 = 0;
 
 	// set movement input
-	pmove->cmd.buttons &= IN_DUCK;                                                 // keep IN_DUCK, if set
-	pmove->cmd.buttons |= IN_FORWARD;                                              // set IN_FORWARD
-	pmove->cmd.buttons_ex &= (X_IN_VRDUCK | X_IN_LETLADDERGO);                     // keep X_IN_VRDUCK and X_IN_LETLADDERGO, if set
-	pmove->cmd.forwardmove = moveDist * (1000 / (int)VR_MOVEMENT_FAKE_FRAMETIME);  // set velocity to match frametime and moveDist (so movement code calculates the exact moveDist)
+	pmove->cmd.buttons &= IN_DUCK;												  // keep IN_DUCK, if set
+	pmove->cmd.buttons |= IN_FORWARD;											  // set IN_FORWARD
+	pmove->cmd.buttons_ex &= X_IN_VRDUCK;										  // keep X_IN_VRDUCK, if set
+	pmove->cmd.forwardmove = moveDist * (1000 / (int)VR_MOVEMENT_FAKE_FRAMETIME); // set velocity to match frametime and moveDist (so movement code calculates the exact moveDist)
 	pmove->cmd.sidemove = 0.f;
 	pmove->cmd.upmove = 0.f;
 
 	// call movement code
-	PM_PlayerMove(true);
+	PM_PlayerMove(1);
 
 	// get new position calculated by movement code
 	Vector result = pmove->origin;

@@ -1,8 +1,6 @@
 
-#include <iostream>
 #include <filesystem>
 #include <string>
-#include <functional>
 #include <fstream>
 #include <cctype>
 #include <regex>
@@ -10,33 +8,34 @@
 
 namespace
 {
-	// For some reason the compiler finds a wrong isspace when we use std::isspace directly as predicate in std::find,
-	// so we wrap it here
-	// in addition, std::isspace asserts in debug if a character is out of range, so we catch this here
-	bool IsSpace(const int c)
+// For some reason the compiler finds a wrong isspace when we use std::isspace directly as predicate in std::find,
+// so we wrap it here
+// in addition, std::isspace asserts in debug if a character is out of range, so we catch this here
+bool IsSpace(const int c)
+{
+	try
 	{
-		try
+		if (c >= -1 && c <= 255)
 		{
-			if (c >= -1 && c <= 255)
-			{
-				return std::isspace(c);
-			}
+			return 0 != std::isspace(c);
 		}
-		catch (...) {}
-		return false;
 	}
-
-	static inline void TrimString(std::string& s)
+	catch (...)
 	{
-		s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), IsSpace));
-		s.erase(std::find_if_not(s.rbegin(), s.rend(), IsSpace).base(), s.end());
 	}
+	return false;
+}
+
+static inline void TrimString(std::string& s)
+{
+	s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), IsSpace));
+	s.erase(std::find_if_not(s.rbegin(), s.rend(), IsSpace).base(), s.end());
+}
 }
 
 #include "hud.h"
 #include "cl_util.h"
 #include "VRInput.h"
-#include "eiface.h"
 #include "pm_defs.h"
 
 #include "VRCommon.h"
@@ -206,11 +205,11 @@ void VRInput::RegisterActionSets()
 bool VRInput::RegisterActionSet(const std::string& actionSet, bool handleWhenNotInGame)
 {
 	std::string actionSetName = "/actions/" + actionSet;
-	vr::VRActionSetHandle_t handle{ 0 };
+	vr::VRActionSetHandle_t handle{0};
 	vr::EVRInputError result = vr::VRInput()->GetActionSetHandle(actionSetName.data(), &handle);
 	if (result != vr::VRInputError_None)
 	{
-		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet, result);
+		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet.c_str(), result);
 		return false;
 	}
 	else
@@ -224,28 +223,28 @@ bool VRInput::RegisterActionSet(const std::string& actionSet, bool handleWhenNot
 bool VRInput::RegisterAction(const std::string& actionSet, const std::string& action, VRInputAction::DigitalActionHandler handler, bool handleWhenNotInGame, bool handAgnostic)
 {
 	std::string actionName = "/actions/" + actionSet + "/in/" + action;
-	vr::VRActionHandle_t handle{ 0 };
+	vr::VRActionHandle_t handle{0};
 	vr::EVRInputError result = vr::VRInput()->GetActionHandle(actionName.data(), &handle);
 	if (result != vr::VRInputError_None)
 	{
-		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet, result);
+		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet.c_str(), result);
 		return false;
 	}
 	else if (handle == vr::k_ulInvalidActionHandle)
 	{
 		if (actionSet == "custom")
 		{
-			gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. The action doesn't exist! (Did you define a custom action in customactions.cfg, but forgot to add it to actions.manifest?)\n", actionSet, result);
+			gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. The action doesn't exist! (Did you define a custom action in customactions.cfg, but forgot to add it to actions.manifest?)\n", actionSet.c_str(), result);
 		}
 		else
 		{
-			gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. The action doesn't exist!\n", actionSet, result);
+			gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. The action doesn't exist!\n", actionSet.c_str(), result);
 		}
 		return false;
 	}
 	else
 	{
-		m_actionSets[actionSet].actions[action] = VRInputAction{ action, handle, handler, handleWhenNotInGame, handAgnostic };
+		m_actionSets[actionSet].actions[action] = VRInputAction{action, handle, handler, handleWhenNotInGame, handAgnostic};
 		return true;
 	}
 }
@@ -253,16 +252,16 @@ bool VRInput::RegisterAction(const std::string& actionSet, const std::string& ac
 bool VRInput::RegisterAction(const std::string& actionSet, const std::string& action, VRInputAction::AnalogActionHandler handler, bool handleWhenNotInGame, bool handAgnostic)
 {
 	std::string actionName = "/actions/" + actionSet + "/in/" + action;
-	vr::VRActionHandle_t handle{ 0 };
+	vr::VRActionHandle_t handle{0};
 	vr::EVRInputError result = vr::VRInput()->GetActionHandle(actionName.data(), &handle);
 	if (result != vr::VRInputError_None)
 	{
-		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet, result);
+		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet.c_str(), result);
 		return false;
 	}
 	else
 	{
-		m_actionSets[actionSet].actions[action] = VRInputAction{ action, handle, handler, handleWhenNotInGame, handAgnostic };
+		m_actionSets[actionSet].actions[action] = VRInputAction{action, handle, handler, handleWhenNotInGame, handAgnostic};
 		return true;
 	}
 }
@@ -270,16 +269,16 @@ bool VRInput::RegisterAction(const std::string& actionSet, const std::string& ac
 bool VRInput::RegisterAction(const std::string& actionSet, const std::string& action, VRInputAction::PoseActionHandler handler, bool handleWhenNotInGame, bool handAgnostic)
 {
 	std::string actionName = "/actions/" + actionSet + "/in/" + action;
-	vr::VRActionHandle_t handle{ 0 };
+	vr::VRActionHandle_t handle{0};
 	vr::EVRInputError result = vr::VRInput()->GetActionHandle(actionName.data(), &handle);
 	if (result != vr::VRInputError_None)
 	{
-		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet, result);
+		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet.c_str(), result);
 		return false;
 	}
 	else
 	{
-		m_actionSets[actionSet].actions[action] = VRInputAction{ action, handle, handler, handleWhenNotInGame, handAgnostic };
+		m_actionSets[actionSet].actions[action] = VRInputAction{action, handle, handler, handleWhenNotInGame, handAgnostic};
 		return true;
 	}
 }
@@ -287,16 +286,16 @@ bool VRInput::RegisterAction(const std::string& actionSet, const std::string& ac
 bool VRInput::RegisterAction(const std::string& actionSet, const std::string& action, VRInputAction::SkeletalActionHandler handler, bool handleWhenNotInGame, bool handAgnostic)
 {
 	std::string actionName = "/actions/" + actionSet + "/in/" + action;
-	vr::VRActionHandle_t handle{ 0 };
+	vr::VRActionHandle_t handle{0};
 	vr::EVRInputError result = vr::VRInput()->GetActionHandle(actionName.data(), &handle);
 	if (result != vr::VRInputError_None)
 	{
-		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet, result);
+		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet.c_str(), result);
 		return false;
 	}
 	else
 	{
-		m_actionSets[actionSet].actions[action] = VRInputAction{ action, handle, handler, handleWhenNotInGame, handAgnostic };
+		m_actionSets[actionSet].actions[action] = VRInputAction{action, handle, handler, handleWhenNotInGame, handAgnostic};
 		return true;
 	}
 }
@@ -304,11 +303,11 @@ bool VRInput::RegisterAction(const std::string& actionSet, const std::string& ac
 bool VRInput::RegisterFeedback(const std::string& actionSet, const std::string& action)
 {
 	std::string actionName = "/actions/" + actionSet + "/out/" + action;
-	vr::VRActionHandle_t handle{ 0 };
+	vr::VRActionHandle_t handle{0};
 	vr::EVRInputError result = vr::VRInput()->GetActionHandle(actionName.data(), &handle);
 	if (result != vr::VRInputError_None)
 	{
-		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet, result);
+		gEngfuncs.Con_DPrintf("Error while trying to register input action set /actions/%s. (Error code: %i)\n", actionSet.c_str(), result);
 		return false;
 	}
 	else
@@ -387,7 +386,7 @@ void VRInput::FireFeedback(FeedbackType feedback, int damageType, float duration
 	vr::VRInput()->GetInputSourceHandle("/user/hand/left", &leftHandHandle);
 	vr::VRInput()->GetInputSourceHandle("/user/hand/right", &rightHandHandle);
 
-	vr::VRActionHandle_t handle{ 0 };
+	vr::VRActionHandle_t handle{0};
 	vr::VRInputValueHandle_t device = vr::k_ulInvalidInputValueHandle;
 
 	switch (feedback)
@@ -421,79 +420,79 @@ void VRInput::FireFeedback(FeedbackType feedback, int damageType, float duration
 		}
 		else
 		{
-			if (damageType & DMG_CRUSH)
+			if ((damageType & DMG_CRUSH) != 0)
 			{
 				FireDamageFeedback("Crush", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_BULLET)
+			if ((damageType & DMG_BULLET) != 0)
 			{
 				FireDamageFeedback("Bullet", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_SLASH)
+			if ((damageType & DMG_SLASH) != 0)
 			{
 				FireDamageFeedback("Slash", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_BURN)
+			if ((damageType & DMG_BURN) != 0)
 			{
 				FireDamageFeedback("Burn", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_FREEZE)
+			if ((damageType & DMG_FREEZE) != 0)
 			{
 				FireDamageFeedback("Freeze", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_FALL)
+			if ((damageType & DMG_FALL) != 0)
 			{
 				FireDamageFeedback("Fall", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_BLAST)
+			if ((damageType & DMG_BLAST) != 0)
 			{
 				FireDamageFeedback("Blast", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_CLUB)
+			if ((damageType & DMG_CLUB) != 0)
 			{
 				FireDamageFeedback("Club", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_SHOCK)
+			if ((damageType & DMG_SHOCK) != 0)
 			{
 				FireDamageFeedback("Shock", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_SONIC)
+			if ((damageType & DMG_SONIC) != 0)
 			{
 				FireDamageFeedback("Sonic", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_ENERGYBEAM)
+			if ((damageType & DMG_ENERGYBEAM) != 0)
 			{
 				FireDamageFeedback("EnergyBeam", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_DROWN)
+			if ((damageType & DMG_DROWN) != 0)
 			{
 				FireDamageFeedback("Drown", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_NERVEGAS)
+			if ((damageType & DMG_NERVEGAS) != 0)
 			{
 				FireDamageFeedback("Nervegas", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_POISON)
+			if ((damageType & DMG_POISON) != 0)
 			{
 				FireDamageFeedback("Poison", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_RADIATION)
+			if ((damageType & DMG_RADIATION) != 0)
 			{
 				FireDamageFeedback("Radiation", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_ACID)
+			if ((damageType & DMG_ACID) != 0)
 			{
 				FireDamageFeedback("Acid", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_SLOWBURN)
+			if ((damageType & DMG_SLOWBURN) != 0)
 			{
 				FireDamageFeedback("SlowBurn", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_SLOWFREEZE)
+			if ((damageType & DMG_SLOWFREEZE) != 0)
 			{
 				FireDamageFeedback("SlowFreeze", durationInSeconds, frequency, amplitude);
 			}
-			if (damageType & DMG_MORTAR)
+			if ((damageType & DMG_MORTAR) != 0)
 			{
 				FireDamageFeedback("Mortar", durationInSeconds, frequency, amplitude);
 			}
@@ -526,7 +525,8 @@ void VRInput::HandleInput(bool isInGame, bool isInMenu)
 	m_isInGame = isInGame;
 	m_isInMenu = isInMenu;
 
-	// The weapon actions aren't polled here, so the wheel would miss its release event
+	// Close the wheel outside the game, where the weapon actions aren't polled and it would miss its release event,
+	// and when the menu opens
 	if (!isInGame || isInMenu)
 		VR::WeaponWheel::Close();
 
@@ -540,7 +540,7 @@ void VRInput::HandleInput(bool isInGame, bool isInMenu)
 	{
 		if (isInGame || actionSet.handleWhenNotInGame)
 		{
-			activeActionSets.push_back(vr::VRActiveActionSet_t{ actionSet.handle, vr::k_ulInvalidInputValueHandle, vr::k_ulInvalidActionSetHandle, 0, 0 });
+			activeActionSets.push_back(vr::VRActiveActionSet_t{actionSet.handle, vr::k_ulInvalidInputValueHandle, vr::k_ulInvalidActionSetHandle, 0, 0});
 			actionSets.push_back(&actionSet);
 		}
 	}
@@ -595,18 +595,7 @@ void VRInput::ExecuteCustomAction(const std::string& action)
 }
 
 
-// Used by weapon code (extern)
-float CalculateWeaponTimeOffset(float offset)
-{
-	float analogfire = fabs(g_vrInput.analogfire);
-	if (analogfire > EPSILON&& analogfire < 1.f)
-	{
-		return offset * 1.f / analogfire;
-	}
-	return offset;
-}
-
-void VRInput::SetFingerSkeletalData(vr::ETrackedControllerRole controllerRole, const float fingerCurl[vr::VRFinger_Count], const float fingerSplay[vr::VRFingerSplay_Count], const vr::VRBoneTransform_t* bones, bool hasFingers, bool hasBones)
+void VRInput::SetFingerSkeletalData(vr::ETrackedControllerRole controllerRole, const float fingerCurl[vr::VRFinger_Count], const vr::VRBoneTransform_t* bones, bool hasFingers, bool hasBones)
 {
 	std::shared_ptr<FingerSkeletalData> data = std::make_shared<FingerSkeletalData>();
 	data->hasFingers = hasFingers;
@@ -616,10 +605,6 @@ void VRInput::SetFingerSkeletalData(vr::ETrackedControllerRole controllerRole, c
 		for (int i = 0; i < vr::VRFinger_Count; i++)
 		{
 			data->fingerCurl[i] = fingerCurl[i];
-		}
-		for (int i = 0; i < vr::VRFingerSplay_Count; i++)
-		{
-			data->fingerSplay[i] = fingerSplay[i];
 		}
 	}
 	if (hasBones)
@@ -675,15 +660,13 @@ bool VRInput::HasSkeletalDataForHand(vr::ETrackedControllerRole controllerRole, 
 				boneQuaternionInVRSpace.x * vrToHL.x,
 				-boneQuaternionInVRSpace.z * vrToHL.z,
 				boneQuaternionInVRSpace.y * vrToHL.y,
-				boneQuaternionInVRSpace.w
-			};
+				boneQuaternionInVRSpace.w};
 
 			Vector bonePositionInVRSpace = it->second->bones[i].position.v;
 			bone_positions[i] = Vector{
 				bonePositionInVRSpace.x * vrToHL.x,
 				-bonePositionInVRSpace.z * vrToHL.z,
-				bonePositionInVRSpace.y * vrToHL.y
-			};
+				bonePositionInVRSpace.y * vrToHL.y};
 		}
 		return true;
 	}
@@ -692,7 +675,7 @@ bool VRInput::HasSkeletalDataForHand(vr::ETrackedControllerRole controllerRole, 
 
 vr::ETrackedControllerRole VRInput::GetRole(vr::VRInputValueHandle_t origin)
 {
-	vr::InputOriginInfo_t originInfo{ 0 };
+	vr::InputOriginInfo_t originInfo{0};
 	vr::ETrackedControllerRole role = vr::TrackedControllerRole_Invalid;
 	if (vr::VRInputError_None == vr::VRInput()->GetOriginTrackedDeviceInfo(origin, &originInfo, sizeof(vr::InputOriginInfo_t)))
 	{
@@ -707,15 +690,12 @@ bool VRInput::IsWeapon(vr::ETrackedControllerRole role)
 
 	if (leftHandMode && role == vr::TrackedControllerRole_LeftHand)
 	{
-		return !gVRRenderer.IsHandModel(gHUD.m_leftControllerModelData.controller.modelname)
-			&& !gVRRenderer.IsHandSkeletalModel(gHUD.m_leftControllerModelData.controller.modelname);
+		return !gVRRenderer.IsHandModel(gHUD.m_leftControllerModelData.controller.modelname) && !gVRRenderer.IsHandSkeletalModel(gHUD.m_leftControllerModelData.controller.modelname);
 	}
 	else if (!leftHandMode && role == vr::TrackedControllerRole_RightHand)
 	{
-		return !gVRRenderer.IsHandModel(gHUD.m_rightControllerModelData.controller.modelname)
-			&& !gVRRenderer.IsHandSkeletalModel(gHUD.m_rightControllerModelData.controller.modelname);
+		return !gVRRenderer.IsHandModel(gHUD.m_rightControllerModelData.controller.modelname) && !gVRRenderer.IsHandSkeletalModel(gHUD.m_rightControllerModelData.controller.modelname);
 	}
 
 	return false;
 }
-

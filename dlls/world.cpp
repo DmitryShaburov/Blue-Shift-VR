@@ -379,9 +379,9 @@ public:
 HLVRSaveVersionMarker g_hlvrSaveVersionMarker; // not const: CSave::WriteFields takes void* in the Blue Shift SDK
 
 TYPEDESCRIPTION g_hlvrSaveVersionMarkerSaveData[] =
-{
-	DEFINE_FIELD(HLVRSaveVersionMarker, magic, FIELD_INTEGER),
-	DEFINE_FIELD(HLVRSaveVersionMarker, version, FIELD_INTEGER),
+	{
+		DEFINE_FIELD(HLVRSaveVersionMarker, magic, FIELD_INTEGER),
+		DEFINE_FIELD(HLVRSaveVersionMarker, version, FIELD_INTEGER),
 };
 // BSVR end
 bool CGlobalState::Save(CSave& save)
@@ -416,7 +416,7 @@ bool CGlobalState::Restore(CRestore& restore)
 
 	// BSVR start
 	HLVRSaveVersionMarker hlvrSaveVersionMarker;
-	int status = restore.ReadFields("HLVRSaveVersionMarker", &hlvrSaveVersionMarker, g_hlvrSaveVersionMarkerSaveData, (int)std::size(g_hlvrSaveVersionMarkerSaveData));
+	bool status = restore.ReadFields("HLVRSaveVersionMarker", &hlvrSaveVersionMarker, g_hlvrSaveVersionMarkerSaveData, (int)std::size(g_hlvrSaveVersionMarkerSaveData));
 	if (!status || hlvrSaveVersionMarker.magic != g_hlvrSaveVersionMarker.magic || hlvrSaveVersionMarker.version != g_hlvrSaveVersionMarker.version)
 	{
 		return false;
@@ -474,7 +474,7 @@ void SaveGlobalState(SAVERESTOREDATA* pSaveData)
 }
 
 // BSVR start
-bool g_didRestoreSaveGameFail = false;	// Initially false
+bool g_didRestoreSaveGameFail = false; // Initially false
 bool g_didRestoreSaveGameFail_MapChangedToSafety = false;
 // BSVR end
 

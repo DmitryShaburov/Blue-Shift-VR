@@ -1108,7 +1108,7 @@ void CFuncTrackTrain::StopSound()
 	if (m_soundPlaying && !FStringNull(pev->noise))
 	{
 		unsigned short us_encode;
-		unsigned short us_sound = ((unsigned short)(m_sounds)&0x0007) << 12;
+		unsigned short us_sound = ((unsigned short)(m_sounds) & 0x0007) << 12;
 
 		us_encode = us_sound;
 
@@ -1156,7 +1156,7 @@ void CFuncTrackTrain::UpdateSound()
 		// 15 bits total
 
 		unsigned short us_encode;
-		unsigned short us_sound = ((unsigned short)(m_sounds)&0x0007) << 12;
+		unsigned short us_sound = ((unsigned short)(m_sounds) & 0x0007) << 12;
 		unsigned short us_pitch = ((unsigned short)(flpitch / 10.0) & 0x003f) << 6;
 		unsigned short us_volume = ((unsigned short)(m_flVolume * 40.0) & 0x003f);
 
@@ -1585,7 +1585,7 @@ Vector2D CFuncTrackTrain::GetVRControlsOffset()
 	//  - something else?
 	if (m_vrControlsOffset.LengthSquared() == 0.f)
 	{
-		m_vrControlsOffset = Vector2D{ -48.f, 20.f };
+		m_vrControlsOffset = Vector2D{-48.f, 20.f};
 	}
 	return m_vrControlsOffset;
 }

@@ -8,16 +8,13 @@ class CBasePlayer;
 class VRGroundEntityHandler
 {
 public:
-	VRGroundEntityHandler::VRGroundEntityHandler(CBasePlayer* pPlayer) :
-		m_pPlayer{ pPlayer }
+	VRGroundEntityHandler(CBasePlayer* pPlayer) : m_pPlayer{pPlayer}
 	{
 	}
 
 	void HandleMovingWithSolidGroundEntities();
 
 private:
-	static constexpr const int VR_MIN_VALID_LIFT_OR_TRAIN_WIDTH = 64;  // Special handling of entities that are less than 64x64 in horizontal size
-
 	void DetectAndSetGroundEntity();
 	bool CheckIfPotentialGroundEntityForPlayer(edict_t* pent);
 	bool IsExcludedAsGroundEntity(edict_t* pent);

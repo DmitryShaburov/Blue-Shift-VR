@@ -45,3 +45,12 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 TabWidth: 4
 UseTab: true
+
+# BSVR: options for clang-format 20+ (tested with 21.1) that keep the output of the
+# clang-format 12 the SDK was formatted with, without its bugs.
+ReflowComments: Never
+SpacesInLineCommentPrefix:
+  Minimum: 0
+  Maximum: -1
+SkipMacroDefinitionBody: true
+AllowShortLambdasOnASingleLine: None

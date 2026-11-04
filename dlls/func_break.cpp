@@ -905,7 +905,7 @@ void CBreakable::VRSpawnTempEnts(
 	int count,
 	char flags)
 {
-	if (!modelIndex)
+	if (0 == modelIndex)
 		return;
 
 	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, pos);
@@ -932,11 +932,11 @@ int CBreakable::VRGetGibCount(int totalcount)
 
 	switch (m_killMethod)
 	{
-	case KillMethod::MELEE: return totalcount;				// melee'd by player, spawn as many gibs as possible
-	case KillMethod::PROJECTILE: return totalcount / 2;		// shot or exploded by player, spawn 50% gibs
-	case KillMethod::TOUCH: return totalcount / 3;			// player fell on this, spawn 30% gibs
-	case KillMethod::TRIGGER: return totalcount / 5;		// killed by player trigger, spawn 20% gibs
-	default: return totalcount / 10;						// default 10% gibs
+	case KillMethod::MELEE: return totalcount;			// melee'd by player, spawn as many gibs as possible
+	case KillMethod::PROJECTILE: return totalcount / 2; // shot or exploded by player, spawn 50% gibs
+	case KillMethod::TOUCH: return totalcount / 3;		// player fell on this, spawn 30% gibs
+	case KillMethod::TRIGGER: return totalcount / 5;	// killed by player trigger, spawn 20% gibs
+	default: return totalcount / 10;					// default 10% gibs
 	}
 }
 
@@ -1000,7 +1000,7 @@ int CBreakable::VRSpawnGibs(const char* model,
 			else if (numBodies > 0)
 				pGib->pev->body = g_engfuncs.pfnRandomLong(0, numBodies - 1);
 
-			if ((type == BREAK_GLASS) || (flags & BREAK_TRANS))
+			if ((type == BREAK_GLASS) || (flags & BREAK_TRANS) != 0)
 			{
 				pGib->pev->rendermode = kRenderTransTexture;
 				pGib->pev->renderamt = 128;
@@ -1033,7 +1033,7 @@ int CBreakable::VRSpawnGibs(const char* model,
 				pGib->pev->angles.z = g_engfuncs.pfnRandomFloat(-256, 255);
 			}
 
-			if ((flags & BREAK_SMOKE) && (g_engfuncs.pfnRandomLong(0, 255) < 100))
+			if ((flags & BREAK_SMOKE) != 0 && (g_engfuncs.pfnRandomLong(0, 255) < 100))
 			{
 				// smoke trail
 				MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY);
@@ -1042,7 +1042,10 @@ int CBreakable::VRSpawnGibs(const char* model,
 				WRITE_SHORT(m_iSmokeTrail);
 				WRITE_BYTE(static_cast<int>(life * 10 * 0.5f));
 				WRITE_BYTE(1);
-				WRITE_BYTE(224); WRITE_BYTE(224); WRITE_BYTE(255); WRITE_BYTE(255);	// rgba
+				WRITE_BYTE(224);
+				WRITE_BYTE(224);
+				WRITE_BYTE(255);
+				WRITE_BYTE(255); // rgba
 				MESSAGE_END();
 			}
 
@@ -1270,7 +1273,7 @@ void CPushable::Move(CBaseEntity* pOther, bool push)
 		// from comment which seems wrong.
 		// Fixed to just check for USE being not set for PUSH.
 		// Should have the right effect.
-		if (push && !!(pevToucher->button & IN_USE)) // Don't push unless the player is not useing (pull)
+		if (push && (pevToucher->button & IN_USE) != 0) // Don't push unless the player is not useing (pull)
 			return;
 		playerTouch = true;
 	}

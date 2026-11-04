@@ -145,18 +145,18 @@ Schedule_t slBarneyEnemyDraw[] =
 // BSVR start
 // Disarm barney if gun was drawn due to player pointing gun
 Task_t tlBarneyDisarm[] =
-{
-	{TASK_STOP_MOVING, 0},
-	{TASK_PLAY_SEQUENCE, (float)ACT_DISARM},
+	{
+		{TASK_STOP_MOVING, 0},
+		{TASK_PLAY_SEQUENCE, (float)ACT_DISARM},
 };
 
 Schedule_t slBarneyDisarm[] =
-{
-	{tlBarneyDisarm,
-	 (int)std::size(tlBarneyDisarm),
-	 0,
-	 0,
-	 "Barney Disarm"} };
+	{
+		{tlBarneyDisarm,
+			(int)std::size(tlBarneyDisarm),
+			0,
+			0,
+			"Barney Disarm"}};
 // BSVR end
 
 Task_t tlBaFaceTarget[] =
@@ -523,7 +523,10 @@ bool CBarney::TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float 
 		if (m_hEnemy == NULL)
 		{
 			// If the player was facing directly at me, or I'm already suspicious, get mad
-			if ((m_afMemory & bits_MEMORY_SUSPICIOUS) != 0 || IsFacing(pevAttacker, pev->origin))
+			// BSVR start
+			// if ((m_afMemory & bits_MEMORY_SUSPICIOUS) != 0 || IsFacing(pevAttacker, pev->origin))
+			if ((m_afMemory & bits_MEMORY_SUSPICIOUS) != 0 || UTIL_IsFacing(pevAttacker->origin, pevAttacker->v_angle, pev->origin))
+			// BSVR end
 			{
 				// Alright, now I'm pissed!
 				PlaySentence("BA_MAD", 4, VOL_NORM, ATTN_NORM);

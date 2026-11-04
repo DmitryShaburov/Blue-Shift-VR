@@ -28,12 +28,12 @@ public:
 	inline bool RotateLeft() const
 	{
 		extern kbutton_t in_left;
-		return m_rotateLeft || (in_left.state & 3);
+		return (in_left.state & 3) != 0;
 	}
 	inline bool RotateRight() const
 	{
 		extern kbutton_t in_right;
-		return m_rotateRight || (in_right.state & 3);
+		return (in_right.state & 3) != 0;
 	}
 	inline bool IsDragOn(vr::ETrackedControllerRole controllerRole) const
 	{
@@ -54,14 +54,6 @@ public:
 	inline void SetVRDucking(bool isVRDucking)
 	{
 		m_isVRDucking = isVRDucking;
-	}
-	inline bool ShouldLetGoOffLadder()
-	{
-		return m_letGoOffLadder;
-	}
-	inline void SetLetGoOffLadder(bool letGoOffLadder)
-	{
-		m_letGoOffLadder = letGoOffLadder;
 	}
 	inline void SetVRMenuClickStatus(bool vrMenuClickStatus)
 	{
@@ -114,7 +106,7 @@ public:
 		DAMAGE
 	};
 
-	void SetFingerSkeletalData(vr::ETrackedControllerRole controllerRole, const float fingerCurl[vr::VRFinger_Count], const float fingerSplay[vr::VRFingerSplay_Count], const vr::VRBoneTransform_t* bones, bool hasFingers, bool hasBones);
+	void SetFingerSkeletalData(vr::ETrackedControllerRole controllerRole, const float fingerCurl[vr::VRFinger_Count], const vr::VRBoneTransform_t* bones, bool hasFingers, bool hasBones);
 	bool HasFingerDataForHand(vr::ETrackedControllerRole controllerRole, float fingerCurl[5]) const;
 	bool HasSkeletalDataForHand(vr::ETrackedControllerRole controllerRole, VRQuaternion* bone_quaternions, Vector* bone_positions) const;
 
@@ -123,16 +115,11 @@ public:
 	vr::ETrackedControllerRole GetRole(vr::VRInputValueHandle_t origin);
 	bool IsWeapon(vr::ETrackedControllerRole role);
 
-	bool m_crouchState{ false };
+	bool m_crouchState{false};
 
-	bool m_rotateLeft{ false };
-	bool m_rotateRight{ false };
-
-	float analogforward{ 0.f };
-	float analogsidemove{ 0.f };
-	float analogupmove{ 0.f };
-	float analogturn{ 0.f };
-	float analogfire{ 0.f };
+	float analogforward{0.f};
+	float analogsidemove{0.f};
+	float analogturn{0.f};
 
 	void ShowHLMenu();
 	void HideHLMenu();
@@ -154,19 +141,18 @@ private:
 	{
 	public:
 		float fingerCurl[vr::VRFinger_Count];
-		float fingerSplay[vr::VRFingerSplay_Count];
 		vr::VRBoneTransform_t bones[31];
-		bool hasFingers{ false };
-		bool hasBones{ false };
+		bool hasFingers{false};
+		bool hasBones{false};
 	};
 
 	struct ActionSet
 	{
 	public:
-		vr::VRActionSetHandle_t handle{ vr::k_ulInvalidActionSetHandle };
+		vr::VRActionSetHandle_t handle{vr::k_ulInvalidActionSetHandle};
 		std::unordered_map<std::string, VRInputAction> actions;
 		std::unordered_map<std::string, vr::VRActionHandle_t> feedbackActions;
-		bool handleWhenNotInGame{ false };
+		bool handleWhenNotInGame{false};
 	};
 
 	struct CustomAction
@@ -174,7 +160,7 @@ private:
 	public:
 		std::string name;
 		std::vector<std::string> commands;
-		size_t currentCommand{ 0 };
+		size_t currentCommand{0};
 	};
 
 	void LoadCustomActions();
@@ -186,13 +172,13 @@ private:
 	bool RegisterAction(const std::string& actionSet, const std::string& action, VRInputAction::SkeletalActionHandler handler, bool handleWhenNotInGame = false, bool handAgnostic = false);
 	bool RegisterFeedback(const std::string& actionSet, const std::string& action);
 
-	vr::VROverlayHandle_t m_hlMenu{ vr::k_ulOverlayHandleInvalid };
-	bool m_isHLMenuShown{ false };
+	vr::VROverlayHandle_t m_hlMenu{vr::k_ulOverlayHandleInvalid};
+	bool m_isHLMenuShown{false};
 	void CreateHLMenu();
 	void HandleHLMenuInput();
 
 	void SendMousePosToHLWindow(float x, float y);
-	void SendMouseButtonClickToHLWindow(float x, float y);  // presses the left button, release with SendMouseButtonUpToHLWindow
+	void SendMouseButtonClickToHLWindow(float x, float y); // presses the left button, release with SendMouseButtonUpToHLWindow
 	void SendMouseButtonUpToHLWindow(float x, float y);
 
 	void FireFeedbacks();
@@ -201,10 +187,8 @@ private:
 
 	bool UpdateActionStates(std::vector<vr::VRActiveActionSet_t>& actionSets);
 
-	bool m_isDucking{ false };
-	bool m_isVRDucking{ false };
-	bool m_letGoOffLadder{ false };
-	bool m_vrMenuClickStatus{ false };
+	bool m_isVRDucking{false};
+	bool m_vrMenuClickStatus{false};
 	vr::HmdMatrix34_t m_pointerPose[2]{};
 	bool m_hasPointerPose[2]{};
 
@@ -216,8 +200,8 @@ private:
 
 	std::unordered_map<vr::ETrackedControllerRole, std::shared_ptr<FingerSkeletalData>> m_fingerSkeletalData;
 
-	bool m_isInGame{ false };
-	bool m_isInMenu{ true };
+	bool m_isInGame{false};
+	bool m_isInMenu{true};
 
 public:
 	std::unordered_map<vr::ETrackedControllerRole, std::array<float, vr::VRFinger_Count>> m_fallbackFingerCurlData;

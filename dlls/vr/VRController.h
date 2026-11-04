@@ -1,8 +1,6 @@
 #pragma once
 
 class CBasePlayer;
-class CBaseAnimating;
-class CLaserSpot;
 class CVRControllerModel;
 
 #include "weapons.h"
@@ -40,7 +38,6 @@ public:
 	inline bool IsValid() const { return m_isValid && m_id != VRControllerID::INVALID; }
 	inline int GetWeaponId() const { return m_weaponId; }
 	inline bool IsMirrored() const { return m_isMirrored; }
-	inline bool IsBlocked() const { return m_isBlocked; }
 	inline const std::vector<StudioHitBox>& GetHitBoxes() const { return m_hitboxes; }
 	inline float GetDragStartTime() const { return m_dragStartTime; }
 
@@ -51,7 +48,6 @@ public:
 	bool GetAttachment(size_t index, Vector& attachment) const;
 
 	const Vector GetGunPosition() const;
-	const Vector GetAim() const;
 
 	bool AddTouchedEntity(EHANDLE hEntity) const;
 	bool RemoveTouchedEntity(EHANDLE hEntity) const;
@@ -104,30 +100,27 @@ private:
 	void SendEntityDataToClient(CBasePlayer* pPlayer, VRControllerID id);
 
 	EHandleT<CBasePlayer> m_hPlayer;
-	VRControllerID m_id{ VRControllerID::INVALID };
+	VRControllerID m_id{VRControllerID::INVALID};
 	Vector m_offset;
 	Vector m_previousOffset;
 	Vector m_position;
 	Vector m_angles;
 	Vector m_previousAngles;
 	Vector m_velocity;
-	int m_weaponId{ WEAPON_BAREHAND };
-	int m_lastUpdateClienttime{ 0 };
-	float m_lastUpdateServertime{ 0.f };
-	bool m_isValid{ false };
-	bool m_isDragging{ false };
-	bool m_isFiring{ false };
-	bool m_isMirrored{ false };
-	bool m_isBlocked{ true };
-	bool m_hasFlashlight{ false };
-	string_t m_modelName{ 0 };
-	string_t m_bboxModelName{ 0 };
-	int m_bboxModelSequence{ 0 };
-	float m_dragStartTime{ 0.f };
-	float m_radius{ 0.f };
+	int m_weaponId{WEAPON_BAREHAND};
+	int m_lastUpdateClienttime{0};
+	float m_lastUpdateServertime{0.f};
+	bool m_isValid{false};
+	bool m_isDragging{false};
+	bool m_isFiring{false};
+	bool m_isMirrored{false};
+	bool m_hasFlashlight{false};
+	string_t m_modelName{0};
+	float m_dragStartTime{0.f};
+	float m_radius{0.f};
 
-	bool m_isHittingWorld{ false };
-	float m_lastTimeHitWorld{ 0.f };
+	bool m_isHittingWorld{false};
+	float m_lastTimeHitWorld{0.f};
 
 	mutable EHandleT<CVRControllerModel> m_hModel;
 

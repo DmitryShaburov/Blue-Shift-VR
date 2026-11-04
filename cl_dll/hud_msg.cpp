@@ -189,9 +189,6 @@ bool CHud::MsgFunc_VRCtrlEnt(const char* pszName, int iSize, void* pbuf)
 	{
 		data.draggedEntIndex = READ_SHORT();
 
-		data.draggedEntOriginOffset = Vector{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
-		data.draggedEntAnglesOffset = Vector{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
-
 		data.draggedEnt.body = READ_BYTE();
 		data.draggedEnt.skin = READ_BYTE();
 		data.draggedEnt.scale = READ_FLOAT();

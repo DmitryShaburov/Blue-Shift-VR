@@ -25,8 +25,8 @@ typedef struct
 // Client events for VR controller weapon models - Max Makes Mods, 2019-04-13
 typedef struct
 {
-	bool isSet{ false };
-	int event{ 0 };
+	bool isSet{false};
+	int event{0};
 	const char* options;
 } ClientAnimEvent_t;
 // BSVR end

@@ -3,31 +3,10 @@
 #include <regex>
 #include <unordered_set>
 
-#include "Matrices.h"
-
 #include "hud.h"
 #include "cl_util.h"
-#include "cvardef.h"
-#include "usercmd.h"
 #include "const.h"
 
-#include "entity_state.h"
-#include "cl_entity.h"
-#include "ref_params.h"
-#include "in_defs.h"  // PITCH YAW ROLL
-#include "pm_movevars.h"
-#include "pm_shared.h"
-#include "pm_defs.h"
-#include "event_api.h"
-#include "pmtrace.h"
-#include "screenfade.h"
-#include "shake.h"
-#include "hltv.h"
-#include "keydefs.h"
-
-#include "event_api.h"
-#include "triangleapi.h"
-#include "r_efx.h"
 #include "r_studioint.h"
 
 #include "VRRenderer.h"
@@ -52,40 +31,40 @@ enum class HUDRenderMode
 
 namespace
 {
-	constexpr const float VR_HUD_ACTUALHUD_SPRITE_SCALE = 0.02f;
+constexpr const float VR_HUD_ACTUALHUD_SPRITE_SCALE = 0.02f;
 
-	constexpr const float VR_HUD_CONTROLLER_SPRITE_SCALE = 0.05f;
+constexpr const float VR_HUD_CONTROLLER_SPRITE_SCALE = 0.05f;
 
-	constexpr const float VR_HUD_TRAINCONTROLS_SPRITE_SCALE = 0.25f;
+constexpr const float VR_HUD_TRAINCONTROLS_SPRITE_SCALE = 0.25f;
 
-	constexpr const int VR_HUD_SPRITE_OFFSET_STEPSIZE = 40;
+constexpr const int VR_HUD_SPRITE_OFFSET_STEPSIZE = 40;
 
-	std::unordered_set<std::string> g_hudMissingSpriteTextures;
+std::unordered_set<std::string> g_hudMissingSpriteTextures;
 
-	struct HUDSpriteSize
-	{
-		int width = 0;
-		int height = 0;
-	};
-	std::unordered_map<std::string, HUDSpriteSize> g_hudSpriteResolutions = {
-		{std::string{"sprites/640hud1.spr"}, HUDSpriteSize{256, 256}},
-		{std::string{"sprites/640hud2.spr"}, HUDSpriteSize{256, 256}},
-		{std::string{"sprites/640hud3.spr"}, HUDSpriteSize{256, 256}},
-		{std::string{"sprites/640hud4.spr"}, HUDSpriteSize{256, 256}},
-		{std::string{"sprites/640hud5.spr"}, HUDSpriteSize{256, 256}},
-		{std::string{"sprites/640hud6.spr"}, HUDSpriteSize{256, 256}},
-		{std::string{"sprites/640hud7.spr"}, HUDSpriteSize{256, 128}},
-		{std::string{"sprites/640hud8.spr"}, HUDSpriteSize{256, 64}},
-		{std::string{"sprites/640hud9.spr"}, HUDSpriteSize{256, 64}},
-		{std::string{"sprites/640_train.spr"}, HUDSpriteSize{96, 96}},
+struct HUDSpriteSize
+{
+	int width = 0;
+	int height = 0;
+};
+std::unordered_map<std::string, HUDSpriteSize> g_hudSpriteResolutions = {
+	{std::string{"sprites/640hud1.spr"}, HUDSpriteSize{256, 256}},
+	{std::string{"sprites/640hud2.spr"}, HUDSpriteSize{256, 256}},
+	{std::string{"sprites/640hud3.spr"}, HUDSpriteSize{256, 256}},
+	{std::string{"sprites/640hud4.spr"}, HUDSpriteSize{256, 256}},
+	{std::string{"sprites/640hud5.spr"}, HUDSpriteSize{256, 256}},
+	{std::string{"sprites/640hud6.spr"}, HUDSpriteSize{256, 256}},
+	{std::string{"sprites/640hud7.spr"}, HUDSpriteSize{256, 128}},
+	{std::string{"sprites/640hud8.spr"}, HUDSpriteSize{256, 64}},
+	{std::string{"sprites/640hud9.spr"}, HUDSpriteSize{256, 64}},
+	{std::string{"sprites/640_train.spr"}, HUDSpriteSize{96, 96}},
 
-		{std::string{"sprites/320hud1.spr"}, HUDSpriteSize{256, 256}},
-		{std::string{"sprites/320hud2.spr"}, HUDSpriteSize{128, 128}},
-		{std::string{"sprites/320hud3.spr"}, HUDSpriteSize{256, 64}},
-		{std::string{"sprites/320hud4.spr"}, HUDSpriteSize{256, 32}},
-		{std::string{"sprites/320_train.spr"}, HUDSpriteSize{48, 48}},
-	};
-}  // namespace
+	{std::string{"sprites/320hud1.spr"}, HUDSpriteSize{256, 256}},
+	{std::string{"sprites/320hud2.spr"}, HUDSpriteSize{128, 128}},
+	{std::string{"sprites/320hud3.spr"}, HUDSpriteSize{256, 64}},
+	{std::string{"sprites/320hud4.spr"}, HUDSpriteSize{256, 32}},
+	{std::string{"sprites/320_train.spr"}, HUDSpriteSize{48, 48}},
+};
+} // namespace
 
 void VRRenderer::RotateVectorX(Vector& vecToRotate, const float angle)
 {
@@ -151,22 +130,6 @@ void VRRenderer::RotateVector(Vector& vecToRotate, const Vector& vecAngles, cons
 	}
 }
 
-void VRRenderer::HLAnglesToGLMatrix(const Vector& angles, float matrix[16])
-{
-	Vector modifiedAngles = -angles;
-	Vector forward{ 1.f, 0.f, 0.f };
-	Vector right{ 0.f, 1.f, 0.f };
-	Vector up{ 0.f, 0.f, 1.f };
-	RotateVector(forward, modifiedAngles, true);
-	RotateVector(right, modifiedAngles, true);
-	RotateVector(up, modifiedAngles, true);
-	forward.CopyToArray(matrix);
-	right.CopyToArray(matrix + 4);
-	up.CopyToArray(matrix + 8);
-	matrix[3] = matrix[7] = matrix[11] = matrix[12] = matrix[13] = matrix[14] = 0.f;
-	matrix[15] = 1.f;
-}
-
 HUDRenderMode GetHUDRenderMode()
 {
 	switch (HUDRenderMode(int(CVAR_GET_FLOAT("vr_hud_mode"))))
@@ -200,8 +163,6 @@ bool ShouldRenderHUD(const VRHUDRenderType hudRenderType)
 		return CVAR_GET_FLOAT("vr_hud_flashlight") != 0.f;
 	case VRHUDRenderType::DAMAGEDECALS:
 		return CVAR_GET_FLOAT("vr_hud_damage_indicator") != 0.f;
-	case VRHUDRenderType::TRAINCONTROLS:
-		return true;
 	default:
 		return false;
 	}
@@ -258,7 +219,7 @@ Vector GetLocalActualHUDOffset(const std::string& name)
 {
 	float x = CVAR_GET_FLOAT(("vr_hud_" + name + "_offset_x").data());
 	float y = CVAR_GET_FLOAT(("vr_hud_" + name + "_offset_y").data());
-	return Vector{ 8.f, x, y };
+	return Vector{8.f, x, y};
 }
 
 Vector GetActualHUDOffset(const Vector& offset, const Vector& forward, const Vector& right, const Vector& up)
@@ -407,10 +368,10 @@ void VRRenderer::InterceptSPR_DrawAdditive(int frame, int x, int y, const Rect* 
 	int texture = 0;
 
 	// "sprites/640hud7.spr" -> "hud/640hud7.png"
-	std::string hudTextureName = std::regex_replace(pSpriteModel->name, std::regex{ "^sprites/([a-z0-9_]+)\\.spr$" }, "/hud/$1.png");
+	std::string hudTextureName = std::regex_replace(pSpriteModel->name, std::regex{"^sprites/([a-z0-9_]+)\\.spr$"}, "/hud/$1.png");
 	if (hudTextureName.find("320_train") != std::string::npos)
 	{
-		hudTextureName = std::regex_replace(hudTextureName, std::regex{ "^(.+)320_train(.+)$" }, "$1640_train$2");
+		hudTextureName = std::regex_replace(hudTextureName, std::regex{"^(.+)320_train(.+)$"}, "$1640_train$2");
 	}
 	if (frame == 0 && hudTextureName.find("640_train") == std::string::npos)
 	{
@@ -419,7 +380,7 @@ void VRRenderer::InterceptSPR_DrawAdditive(int frame, int x, int y, const Rect* 
 	if (texture == 0 || frame > 0)
 	{
 		// "hud/640_train.png" -> "hud/640_train_frame_xxx.png"
-		hudTextureName = std::regex_replace(hudTextureName, std::regex{ "^(.+)\\.png$" }, "$1_frame_" + std::to_string(frame) + ".png");
+		hudTextureName = std::regex_replace(hudTextureName, std::regex{"^(.+)\\.png$"}, "$1_frame_" + std::to_string(frame) + ".png");
 		texture = VRTextureHelper::Instance().GetTexture(hudTextureName);
 	}
 
@@ -440,8 +401,8 @@ void VRRenderer::InterceptSPR_DrawAdditive(int frame, int x, int y, const Rect* 
 
 	// Half-Life thinks HUD textures are fixed size sprites and gives us absolute coordinates for that size.
 	// We get the size here independent of the actual texture resolution, and then further below we calculate proper texture coordinates from 0 to 1.
-	float w = g_hudSpriteResolutions[std::string{ pSpriteModel->name }].width;
-	float h = g_hudSpriteResolutions[std::string{ pSpriteModel->name }].height;
+	float w = g_hudSpriteResolutions[std::string{pSpriteModel->name}].width;
+	float h = g_hudSpriteResolutions[std::string{pSpriteModel->name}].height;
 
 	float textureLeft, textureRight, textureTop, textureBottom;
 	float spriteWidth, spriteHeight;
@@ -457,8 +418,8 @@ void VRRenderer::InterceptSPR_DrawAdditive(int frame, int x, int y, const Rect* 
 		textureTop = (static_cast<float>(prc->top) + 0.5f) / static_cast<float>(h);
 		textureBottom = (static_cast<float>(prc->bottom) - 0.5f) / static_cast<float>(h);
 
-		spriteWidth = static_cast<float>(prc->right - prc->left)* GetVRHudSpriteScale(m_hudRenderType);
-		spriteHeight = static_cast<float>(prc->bottom - prc->top)* GetVRHudSpriteScale(m_hudRenderType);
+		spriteWidth = static_cast<float>(prc->right - prc->left) * GetVRHudSpriteScale(m_hudRenderType);
+		spriteHeight = static_cast<float>(prc->bottom - prc->top) * GetVRHudSpriteScale(m_hudRenderType);
 	}
 	else
 	{
@@ -528,7 +489,7 @@ void VRRenderer::RenderHUDSprites()
 	}
 
 	// Call default HL HUD redraw code, we intercept SPR_Set and SPR_DrawAdditive to render the sprites on the controllers
-	gHUD.Redraw(m_hudRedrawTime, m_hudRedrawIntermission);
+	gHUD.Redraw(m_hudRedrawTime, 0 != m_hudRedrawIntermission);
 
 	glPopAttrib();
 }
@@ -560,6 +521,7 @@ void VRRenderer::GetStartingPosForHUDRenderType(const VRHUDRenderType hudRenderT
 	case VRHUDRenderType::FLASHLIGHT:
 		hudStartPositionUpOffset = VR_HUD_SPRITE_OFFSET_STEPSIZE * 2;
 		hudStartPositionRightOffset = 0;
+		break;
 	case VRHUDRenderType::TRAINCONTROLS:
 		hudStartPositionUpOffset = 0;
 		hudStartPositionRightOffset = 48;
@@ -567,64 +529,13 @@ void VRRenderer::GetStartingPosForHUDRenderType(const VRHUDRenderType hudRenderT
 	}
 }
 
-bool VRRenderer::HasValidHandController()
-{
-	return vrHelper->HasValidHandController();
-}
-Vector VRRenderer::GetHandPosition()
-{
-	return vrHelper->GetHandPosition();
-}
-Vector VRRenderer::GetHandAngles()
-{
-	return vrHelper->GetHandAngles();
-}
-
-bool VRRenderer::HasValidWeaponController()
-{
-	return vrHelper->HasValidWeaponController();
-}
-Vector VRRenderer::GetWeaponPosition()
-{
-	return vrHelper->GetWeaponPosition();
-}
-Vector VRRenderer::GetWeaponAngles()
-{
-	return vrHelper->GetWeaponAngles();
-}
-
 bool VRRenderer::HasValidLeftController()
 {
 	return vrHelper->HasValidLeftController();
 }
-Vector VRRenderer::GetLeftControllerPosition()
-{
-	return vrHelper->GetLeftControllerPosition();
-}
-Vector VRRenderer::GetLeftControllerAngles()
-{
-	return vrHelper->GetLeftControllerAngles();
-}
-Vector VRRenderer::GetLeftControllerForward()
-{
-	return vrHelper->GetLeftControllerForward();
-}
-
 bool VRRenderer::HasValidRightController()
 {
 	return vrHelper->HasValidRightController();
-}
-Vector VRRenderer::GetRightControllerPosition()
-{
-	return vrHelper->GetRightControllerPosition();
-}
-Vector VRRenderer::GetRightControllerAngles()
-{
-	return vrHelper->GetRightControllerAngles();
-}
-Vector VRRenderer::GetRightControllerForward()
-{
-	return vrHelper->GetRightControllerForward();
 }
 
 // For extern declarations in cl_util.h

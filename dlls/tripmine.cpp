@@ -105,7 +105,7 @@ void CTripmineGrenade::Spawn()
 	{
 		TraceResult tr;
 		UTIL_TraceLine(pev->origin, pev->origin - m_vecDir * 64.f, dont_ignore_monsters, edict(), &tr);
-		if (!tr.fAllSolid && tr.flFraction > 0.f && !tr.fStartSolid && FNullEnt(tr.pHit))
+		if (0 == tr.fAllSolid && tr.flFraction > 0.f && 0 == tr.fStartSolid && FNullEnt(tr.pHit))
 		{
 			pev->origin = tr.vecEndPos;
 		}
@@ -526,7 +526,7 @@ void CTripmine::PrimaryAttack()
 
 #ifndef CLIENT_DLL
 	Vector vecSrc = m_pPlayer->GetGunPosition();
-	Vector vecAiming = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
+	Vector vecAiming = m_pPlayer->GetAutoaimVector(); //gpGlobals->v_forward;
 
 	TraceResult tr;
 
@@ -580,7 +580,7 @@ void CTripmine::PrimaryAttack()
 	}
 // BSVR start
 #endif
-// BSVR end
+	// BSVR end
 
 	m_flNextPrimaryAttack = GetNextAttackDelay(0.3);
 	m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + UTIL_SharedRandomFloat(m_pPlayer->random_seed, 10, 15);
@@ -589,7 +589,7 @@ void CTripmine::PrimaryAttack()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.1f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 // BSVR start
@@ -627,7 +627,7 @@ void CTripmine::UpdateGhost()
 	if (tr.flFraction < 1.0)
 	{
 		CBaseEntity* pEntity = CBaseEntity::SafeInstance<CBaseEntity>(tr.pHit);
-		if (pEntity && !(pEntity->pev->flags & FL_CONVEYOR))
+		if (pEntity && (pEntity->pev->flags & FL_CONVEYOR) == 0)
 		{
 			Vector origin = tr.vecEndPos;
 			if (!m_hGhost)

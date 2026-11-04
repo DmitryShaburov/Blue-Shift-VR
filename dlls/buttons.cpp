@@ -957,7 +957,6 @@ public:
 	virtual void StartVRDragRotation() override;
 	virtual bool SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta) override;
 	virtual void StopVRDragRotation() override;
-	virtual float GetVRDragRotationMoveDistance() override { return m_flMoveDistance; }
 
 	virtual CBaseEntity* MyEntityPointer() override { return this; }
 	virtual VRRotatableEnt* MyRotatableEntPtr() override { return this; }
@@ -1139,11 +1138,14 @@ public:
 	void EXPORT Off();
 	void EXPORT Return();
 	// BSVR start
-	void VRUpdateSelf(const Vector& angles, float value);  // For direct rotation with  VR controller
+	void VRUpdateSelf(const Vector& angles, float value); // For direct rotation with  VR controller
 	// BSVR end
 	void UpdateSelf(float value);
 	void UpdateSelfReturn(float value);
-	void UpdateAllButtons(float value, bool start);
+	// BSVR start
+	// void UpdateAllButtons(float value, bool start);
+	void UpdateAllButtons(float value, int start); // 0 = return, 1 = use, 2 = VR drag
+	// BSVR end
 
 	void PlaySound();
 	void UpdateTarget(float value);
@@ -1167,7 +1169,6 @@ public:
 	virtual void StartVRDragRotation() override;
 	virtual bool SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta) override;
 	virtual void StopVRDragRotation() override;
-	virtual float GetVRDragRotationMoveDistance() override { return m_flMoveDistance; }
 
 	virtual CBaseEntity* MyEntityPointer() override { return this; }
 	virtual VRRotatableEnt* MyRotatableEntPtr() override { return this; }
@@ -1258,7 +1259,7 @@ void CMomentaryRotButton::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE
 
 	pev->ideal_yaw = CBaseToggle::AxisDelta(pev->spawnflags, pev->angles, m_start) / m_flMoveDistance;
 
-	UpdateAllButtons(pev->ideal_yaw, true);
+	UpdateAllButtons(pev->ideal_yaw, 1); // BSVR: start is a mode now (0 = return, 1 = use, 2 = VR drag), was true
 
 	// BSVR start - commented out upstream
 	// // Calculate destination angle and use it to predict value, this prevents sending target in wrong direction on retriggering
@@ -1302,7 +1303,10 @@ void CMomentaryRotButton::StopVRDragRotation()
 }
 // BSVR end
 
-void CMomentaryRotButton::UpdateAllButtons(float value, bool start)
+// BSVR start
+// void CMomentaryRotButton::UpdateAllButtons(float value, bool start)
+void CMomentaryRotButton::UpdateAllButtons(float value, int start)
+// BSVR end
 {
 	// Update all rot buttons attached to the same target
 	edict_t* pentTarget = NULL;
@@ -1322,8 +1326,8 @@ void CMomentaryRotButton::UpdateAllButtons(float value, bool start)
 				if (start == 2)
 					pEntity->VRUpdateSelf(pev->angles, value);
 				else if (start == 1)
-				// if (start)
-				// BSVR end
+					// if (start)
+					// BSVR end
 					pEntity->UpdateSelf(value);
 				else
 					pEntity->UpdateSelfReturn(value);
@@ -1339,7 +1343,7 @@ void CMomentaryRotButton::VRUpdateSelf(const Vector& angles, float value)
 	if (!m_lastUsed)
 	{
 		playsound = true;
-		m_lastUsed = 1;
+		m_lastUsed = true;
 	}
 
 	if (value >= 1.f)
@@ -1445,7 +1449,7 @@ void CMomentaryRotButton::Return()
 {
 	float value = CBaseToggle::AxisDelta(pev->spawnflags, pev->angles, m_start) / m_flMoveDistance;
 
-	UpdateAllButtons(value, false); // This will end up calling UpdateSelfReturn() n times, but it still works right
+	UpdateAllButtons(value, 0); // BSVR: 0 = return, was false. This will end up calling UpdateSelfReturn() n times, but it still works right
 	if (value > 0)
 		UpdateTarget(value);
 }

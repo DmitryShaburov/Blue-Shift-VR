@@ -33,8 +33,5 @@
 #define IN_SCORE (1 << 15) // Used by client.dll for when scoreboard is held down
 
 // BSVR start - extended button commands for VR movement - Max Makes Mods, 2019-04-07
-#define X_IN_UP          (1 << 0)  // Extended button command for VR movement - upmove in ladders or in water
-#define X_IN_DOWN        (1 << 1)  // Extended button command for VR movement - downmove in ladders or in water
 #define X_IN_VRDUCK      (1 << 2)  // Extended button command for VR movement - ducking using VR input
-#define X_IN_LETLADDERGO (1 << 3)  // Extended button command for VR movement - let go off ladder
 // BSVR end

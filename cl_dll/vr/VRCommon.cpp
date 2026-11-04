@@ -1,8 +1,6 @@
 
 #include <filesystem>
 
-#include "vr/VRShared.h"
-
 #include "cl_dll.h"
 
 #include "VRCommon.h"

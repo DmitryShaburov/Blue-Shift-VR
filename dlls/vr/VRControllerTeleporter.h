@@ -10,7 +10,6 @@ constexpr const int VR_TELEPORT_PARABOLA_LENGTH = 80;
 constexpr const int VR_TELEPORT_XEN_MOUND_PARABOLA_LENGTH = 1024;
 constexpr const int VR_TELEPORT_PARABOLA_BEAM_SEGMENT_COUNT = 11; // Always keep this an uneven number
 
-class VRController;
 class CSprite;
 class CBeam;
 
@@ -43,15 +42,12 @@ private:
 	{
 		std::vector<ParabolaSegment> segments;
 		Vector endPoint;
-		int lastSegment{ 0 };
+		int lastSegment{0};
 	};
 
 	TeleportResult TeleportParabola(CBasePlayer* pPlayer, const Vector& telePos, const Vector& teleDir, float length, Vector& teleportDestination, bool& needsToDuck);
 
-	float GetCurrentTeleLength(CBasePlayer* pPlayer);
-
-	void TouchTriggersInTeleportPath(CBasePlayer* pPlayer);  // Touches all entities with SOLID_TRIGGER when a player teleports through them
-	bool TryTeleportInUpwardsTriggerPush(CBasePlayer* pPlayer, const Vector& beamStartPos, Vector& beamEndPos, Vector& teleportDestination);
+	void TouchTriggersInTeleportPath(CBasePlayer* pPlayer); // Touches all entities with SOLID_TRIGGER when a player teleports through them
 	void EnableXenMoundParabolaAndUpdateTeleDestination(CBasePlayer* pPlayer, const Vector& beamStartPos, const Vector& beamEndPos, Vector& teleportDestination, bool& needsToDuck);
 
 	void ExtendTeleportParabola(CBasePlayer* pPlayer, const Vector& parabolaStartPos, const Vector& parabolaDir, float length);

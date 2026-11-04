@@ -145,20 +145,17 @@ COMMON_OBJS = \
 
 VR_OBJS = \
 	$(VR_OBJ_DIR)/hlmv_mathlib.o \
-	$(VR_OBJ_DIR)/StudioModel.o \
-	$(VR_OBJ_DIR)/studio_render.o \
-	$(VR_OBJ_DIR)/studio_utils.o \
 	$(VR_OBJ_DIR)/VRCommons.o \
 	$(VR_OBJ_DIR)/VRController.o \
 	$(VR_OBJ_DIR)/VRControllerInteractionManager.o \
 	$(VR_OBJ_DIR)/VRControllerModel.o \
 	$(VR_OBJ_DIR)/VRControllerTeleporter.o \
 	$(VR_OBJ_DIR)/VRCrushEntityHandler.o \
-	$(VR_OBJ_DIR)/VRDebugBBoxDrawer.o \
 	$(VR_OBJ_DIR)/VRGroundEntityHandler.o \
 	$(VR_OBJ_DIR)/VRModelHelper.o \
 	$(VR_OBJ_DIR)/VRMovementHandler.o \
 	$(VR_OBJ_DIR)/VRPhysicsHelper.o \
+	$(VR_OBJ_DIR)/VRPlayer.o \
 	$(VR_OBJ_DIR)/VRRotatableEnt.o \
 	$(VR_OBJ_DIR)/VRAnimatedModelHelper.o
 

@@ -15,7 +15,6 @@ protected:
 	virtual void StartVRDragRotation() = 0;
 	virtual bool SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta) = 0;
 	virtual void StopVRDragRotation() = 0;
-	virtual float GetVRDragRotationMoveDistance() = 0;
 	virtual CBaseEntity* MyEntityPointer() = 0;
 
 private:
@@ -24,9 +23,9 @@ private:
 	Vector GetUpdatedAngles(float wishDeltaAngle);
 	void UpdateAngles(CBaseEntity* pPlayer, const Vector& wishAngles, const Vector& angleStart, const Vector& angleEnd);
 
-	Vector m_vrRotateStartPos{ 0.f, 0.f, 0.f };
-	Vector m_vrRotateStartAngles{ 0.f, 0.f, 0.f };
-	float m_vrLastWishAngleTime{ 0.f };
-	float m_vrWishAngleDelta{ 0.f };
-	bool m_draggingCancelled{ false };
+	Vector m_vrRotateStartPos{0.f, 0.f, 0.f};
+	Vector m_vrRotateStartAngles{0.f, 0.f, 0.f};
+	float m_vrLastWishAngleTime{0.f};
+	float m_vrWishAngleDelta{0.f};
+	bool m_draggingCancelled{false};
 };

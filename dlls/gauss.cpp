@@ -306,8 +306,8 @@ void CGauss::StartFire()
 	// Vector vecAiming = gpGlobals->v_forward; - original
 	// Vector vecSrc = m_pPlayer->GetGunPosition(); // + gpGlobals->v_up * -8 + gpGlobals->v_right * 8; - original
 	UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
-	Vector vecAiming = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
-	Vector vecSrc = m_pPlayer->GetGunPosition();    // + gpGlobals->v_up * -8 + gpGlobals->v_right * 8;
+	Vector vecAiming = m_pPlayer->GetAutoaimVector(); //gpGlobals->v_forward;
+	Vector vecSrc = m_pPlayer->GetGunPosition();	  // + gpGlobals->v_up * -8 + gpGlobals->v_right * 8;
 	// BSVR end
 
 	if (gpGlobals->time - m_pPlayer->m_flStartCharge > GetFullChargeTime())
@@ -335,7 +335,7 @@ void CGauss::StartFire()
 
 #ifndef CLIENT_DLL
 		// BSVR start - wrap into flag
-		if (CVAR_GET_FLOAT("vr_no_gauss_recoil") != 0.f)  // Allow disabling of gauss recoil in VR to avoid nausea - Max Makes Mods, 2019-04-8
+		if (CVAR_GET_FLOAT("vr_no_gauss_recoil") != 0.f) // Allow disabling of gauss recoil in VR to avoid nausea - Max Makes Mods, 2019-04-8
 		{
 			float flZVel = m_pPlayer->pev->velocity.z;
 
@@ -540,7 +540,7 @@ void CGauss::Fire(Vector vecOrigSrc, Vector vecDir, float flDamage)
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(flDamage / 200.f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 
@@ -617,7 +617,14 @@ void CGauss::SendStopEvent(bool sendToHost)
 		flags |= FEV_NOTHOST;
 	}
 
-	PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usGaussFire, 0.01, m_pPlayer->pev->origin, m_pPlayer->pev->angles, 0.0, 0.0, 0, 0, 0, 1);
+	// BSVR start
+	// PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usGaussFire, 0.01, m_pPlayer->pev->origin, m_pPlayer->pev->angles, 0.0, 0.0, 0, 0, 0, 1);
+	// Stop events from firing come from the weapon (VR hand), holster/charge-cancel ones from the player
+	if (sendToHost)
+		PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usGaussFire, 0.01, m_pPlayer->pev->origin, m_pPlayer->pev->angles, 0.0, 0.0, 0, 0, 0, 1);
+	else
+		PLAYBACK_EVENT_FULL(flags, m_pPlayer->edict(), m_usGaussFire, 0.01, m_pPlayer->GetGunPosition(), pev->angles, 0.0, 0.0, 0, 0, 0, 1);
+	// BSVR end
 }
 
 

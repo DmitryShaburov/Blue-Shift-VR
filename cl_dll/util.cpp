@@ -54,8 +54,8 @@ HSPRITE LoadSprite(const char* pszName)
 // - Max Makes Mods, 2020-03-16
 namespace
 {
-	static std::unordered_map<std::string, float> cvarfloatcache;
-	static std::unordered_map<std::string, std::unique_ptr<std::string>> cvarstringcache;
+static std::unordered_map<std::string, float> cvarfloatcache;
+static std::unordered_map<std::string, std::unique_ptr<std::string>> cvarstringcache;
 }
 void VRClearCvarCache()
 {

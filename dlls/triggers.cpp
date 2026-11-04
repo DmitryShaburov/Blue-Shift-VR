@@ -551,7 +551,7 @@ public:
 	int ObjectCaps() override { return CBaseToggle::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
 
 	// BSVR start
-	bool m_isXenJumpTrigger{ false };
+	bool m_isXenJumpTrigger{false};
 	// BSVR end
 };
 
@@ -1852,11 +1852,11 @@ public:
 	virtual bool CheckIsSpecialVREntity();
 	// BSVR end
 
-//BSVR start
+	//BSVR start
 private:
 	bool IsXenJumpPad();
 	Vector m_spawnAngles;
-// BSVR end
+	// BSVR end
 };
 LINK_ENTITY_TO_CLASS(trigger_push, CTriggerPush);
 
@@ -1979,24 +1979,6 @@ void CTriggerPush::Touch(CBaseEntity* pOther)
 		return;
 	}
 
-#if 0 // Removed, causes too many issues.
-	// Allow disabling trigger_pushs to avoid nausea in VR - Max Makes Mods, 2019-04-13
-	if (pOther->IsPlayer() && CVAR_GET_FLOAT("vr_disable_triggerpush") != 0.f)
-	{
-		// Dont' fall down if this is an upward push
-		// (but also don't get pushed up, instead players can use the teleporter here like under water)
-		extern cvar_t* g_psv_gravity;
-		if (pev->movedir.z > 0.f && pev->speed > (g_psv_gravity->value * pOther->pev->gravity))
-		{
-			// this is broken, upwards push still works the usual way for now - Max Makes Mods, 2022-10-05
-			//dynamic_cast<CBasePlayer*>(pOther)->SetCurrentUpwardsTriggerPush(this);
-		}
-		else
-		{
-			return;
-		}
-	}
-#endif
 	// BSVR end
 
 
@@ -2097,7 +2079,8 @@ void CBaseTrigger::TeleportTouch(CBaseEntity* pOther)
 	{
 		// BSVR start
 		// tmp.z -= pOther->pev->mins.z; // make origin adjustments in case the teleportee is a player. (origin in center, not at feet) - original
-		newOrigin.z -= pOther->pev->mins.z;  // make origin adjustments in case the teleportee is a player. (origin in center, not at feet)
+		newOrigin.z -= pOther->pev->mins.z; // make origin adjustments in case the teleportee is a player. (origin in center, not at feet)
+
 		// BSVR end
 	}
 

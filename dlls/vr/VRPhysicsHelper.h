@@ -7,31 +7,29 @@
 
 namespace reactphysics3d
 {
-	class CollisionWorld;
-	class DynamicsWorld;
-	class BoxShape;
-	class CapsuleShape;
-	class CollisionBody;
-	class RigidBody;
-	class TriangleVertexArray;
-	class TriangleMesh;
-	class ConcaveMeshShape;
-	class ConvexMeshShape;
-	class ProxyShape;
-	class PolygonVertexArray;
-	class PolyhedronMesh;
-	class SphereShape;
-	struct Vector3;
-};  // namespace reactphysics3d
+class CollisionWorld;
+class DynamicsWorld;
+class BoxShape;
+class CapsuleShape;
+class CollisionBody;
+class RigidBody;
+class TriangleVertexArray;
+class TriangleMesh;
+class ConcaveMeshShape;
+class ProxyShape;
+class PolygonVertexArray;
+class PolyhedronMesh;
+class SphereShape;
+struct Vector3;
+}; // namespace reactphysics3d
 
-class CWorld;
 class CBaseEntity;
 
 struct VRPhysicsHelperModelBBoxIntersectResult
 {
 	Vector hitpoint;
-	int hitgroup{ 0 };
-	bool hasresult{ false };
+	int hitgroup{0};
+	bool hasresult{false};
 };
 
 class VRException : public std::exception
@@ -40,24 +38,14 @@ private:
 	std::string m_message;
 
 public:
-	VRException(const std::string& message) :
-		std::exception{},
-		m_message{ message }
+	VRException(const std::string& message) : std::exception{},
+											  m_message{message}
 	{
 	}
 
 	virtual char const* what() const noexcept override
 	{
 		return m_message.data();
-	}
-};
-
-class VRAllocatorException : public VRException
-{
-public:
-	VRAllocatorException(const std::string& message) :
-		VRException{ message }
-	{
 	}
 };
 
@@ -83,7 +71,6 @@ public:
 	void RotateVectorZ(Vector& vecToRotate, const float angle);
 	void RotateVector(Vector& vecToRotate, const Vector& vecAngles, const Vector& vecOffset = Vector(), const bool reverse = false);
 	Vector RotateVectorInline(const Vector& vecToRotate, const Vector& vecAngles, const Vector& vecOffset = Vector(), const bool reverse = false);
-	Vector AngularVelocityToLinearVelocity(const Vector& avelocity, const Vector& pos);
 
 	void TraceLine(const Vector& vecStart, const Vector& vecEnd, edict_t* pentIgnore, TraceResult* ptr);
 
@@ -96,7 +83,6 @@ public:
 	bool BBoxIntersectsLine(const Vector& bboxCenter, const Vector& bboxMins, const Vector& bboxMaxs, const Vector& bboxAngles, const Vector& lineA, const Vector& lineB, VRPhysicsHelperModelBBoxIntersectResult* result);
 
 private:
-
 	bool Internal_CheckIfLineIsBlocked(const Vector& hlPos1, const Vector& hlPos2, Vector& result);
 
 	void Internal_TraceLine(const Vector& vecStart, const Vector& vecEnd, edict_t* pentIgnore, TraceResult* ptr);
@@ -120,17 +106,15 @@ private:
 		void UpdateTransform(const Vector& origin, const Vector& angles);
 		bool HasData() { return m_hasData; }
 
-		Vector m_mins;
-		Vector m_maxs;
 		Vector m_center;
 
-		reactphysics3d::BoxShape* m_bboxShape{ nullptr };
-		reactphysics3d::ProxyShape* m_proxyShape{ nullptr };
-		reactphysics3d::CollisionBody* m_collisionBody{ nullptr };
+		reactphysics3d::BoxShape* m_bboxShape{nullptr};
+		reactphysics3d::ProxyShape* m_proxyShape{nullptr};
+		reactphysics3d::CollisionBody* m_collisionBody{nullptr};
 
-		reactphysics3d::CollisionWorld* m_collisionWorld{ nullptr };
+		reactphysics3d::CollisionWorld* m_collisionWorld{nullptr};
 
-		bool m_hasData{ false };
+		bool m_hasData{false};
 	};
 
 	class BSPModelData
@@ -145,15 +129,15 @@ private:
 		std::vector<struct reactphysics3d::Vector3> m_vertices;
 		std::vector<int32_t> m_indices;
 
-		reactphysics3d::TriangleVertexArray* m_triangleVertexArray{ nullptr };
-		reactphysics3d::TriangleMesh* m_triangleMesh{ nullptr };
-		reactphysics3d::ConcaveMeshShape* m_concaveMeshShape{ nullptr };
-		reactphysics3d::ProxyShape* m_proxyShape{ nullptr };
-		reactphysics3d::CollisionBody* m_collisionBody{ nullptr };
+		reactphysics3d::TriangleVertexArray* m_triangleVertexArray{nullptr};
+		reactphysics3d::TriangleMesh* m_triangleMesh{nullptr};
+		reactphysics3d::ConcaveMeshShape* m_concaveMeshShape{nullptr};
+		reactphysics3d::ProxyShape* m_proxyShape{nullptr};
+		reactphysics3d::CollisionBody* m_collisionBody{nullptr};
 
-		reactphysics3d::CollisionWorld* m_collisionWorld{ nullptr };
+		reactphysics3d::CollisionWorld* m_collisionWorld{nullptr};
 
-		bool m_hasData{ false };
+		bool m_hasData{false};
 	};
 
 	class DynamicBSPModelData
@@ -169,15 +153,15 @@ private:
 		std::vector<struct reactphysics3d::Vector3> m_normals;
 		std::vector<int32_t> m_indices;
 
-		reactphysics3d::TriangleVertexArray* m_triangleVertexArray{ nullptr };
-		reactphysics3d::TriangleMesh* m_triangleMesh{ nullptr };
-		reactphysics3d::ConcaveMeshShape* m_concaveMeshShape{ nullptr };
-		reactphysics3d::ProxyShape* m_proxyShape{ nullptr };
-		reactphysics3d::RigidBody* m_rigidBody{ nullptr };
+		reactphysics3d::TriangleVertexArray* m_triangleVertexArray{nullptr};
+		reactphysics3d::TriangleMesh* m_triangleMesh{nullptr};
+		reactphysics3d::ConcaveMeshShape* m_concaveMeshShape{nullptr};
+		reactphysics3d::ProxyShape* m_proxyShape{nullptr};
+		reactphysics3d::RigidBody* m_rigidBody{nullptr};
 
-		reactphysics3d::DynamicsWorld* m_dynamicsWorld{ nullptr };
+		reactphysics3d::DynamicsWorld* m_dynamicsWorld{nullptr};
 
-		bool m_hasData{ false };
+		bool m_hasData{false};
 	};
 
 	struct HitBox
@@ -190,12 +174,7 @@ private:
 			std::size_t operator()(const HitBox& hitbox) const
 			{
 				std::hash<float> floatHasher;
-				return floatHasher(hitbox.mins.x)
-					^ floatHasher(hitbox.mins.y)
-					^ floatHasher(hitbox.mins.z)
-					^ floatHasher(hitbox.maxs.x)
-					^ floatHasher(hitbox.maxs.y)
-					^ floatHasher(hitbox.maxs.z);
+				return floatHasher(hitbox.mins.x) ^ floatHasher(hitbox.mins.y) ^ floatHasher(hitbox.mins.z) ^ floatHasher(hitbox.maxs.x) ^ floatHasher(hitbox.maxs.y) ^ floatHasher(hitbox.maxs.z);
 			}
 		};
 		class Equal
@@ -226,25 +205,23 @@ private:
 
 	std::vector<std::unordered_map<HitBox, std::shared_ptr<HitBoxModelData>, HitBox::Hash, HitBox::Equal>> m_hitboxCaches;
 
-	const struct model_s* m_hlWorldModel{ nullptr };
-	reactphysics3d::CollisionWorld* m_collisionWorld{ nullptr };
-	reactphysics3d::DynamicsWorld* m_dynamicsWorld{ nullptr };
+	const struct model_s* m_hlWorldModel{nullptr};
+	reactphysics3d::CollisionWorld* m_collisionWorld{nullptr};
+	reactphysics3d::DynamicsWorld* m_dynamicsWorld{nullptr};
 
-	reactphysics3d::CollisionBody* m_capsuleBody{ nullptr };
-	reactphysics3d::CapsuleShape* m_capsuleShape{ nullptr };
-	reactphysics3d::ProxyShape* m_capsuleProxyShape{ nullptr };
+	reactphysics3d::CollisionBody* m_capsuleBody{nullptr};
+	reactphysics3d::CapsuleShape* m_capsuleShape{nullptr};
+	reactphysics3d::ProxyShape* m_capsuleProxyShape{nullptr};
 
 	// can't forward declare inner type so we use void*
-	void* m_worldsSmallestCupPolygonFaces{ nullptr };
-	reactphysics3d::PolygonVertexArray* m_worldsSmallestCupPolygonVertexArray{ nullptr };
-	reactphysics3d::PolyhedronMesh* m_worldsSmallestCupPolyhedronMesh{ nullptr };
-	reactphysics3d::RigidBody* m_worldsSmallestCupBody{ nullptr };
-	reactphysics3d::SphereShape* m_worldsSmallestCupTopSphereShape{ nullptr };
-	reactphysics3d::SphereShape* m_worldsSmallestCupBottomSphereShape{ nullptr };
-	reactphysics3d::ProxyShape* m_worldsSmallestCupTopProxyShape{ nullptr };
-	reactphysics3d::ProxyShape* m_worldsSmallestCupBottomProxyShape{ nullptr };
-	float vertices[24] = { 0 };
-	int indices[24] = { 0 };
+	void* m_worldsSmallestCupPolygonFaces{nullptr};
+	reactphysics3d::PolygonVertexArray* m_worldsSmallestCupPolygonVertexArray{nullptr};
+	reactphysics3d::PolyhedronMesh* m_worldsSmallestCupPolyhedronMesh{nullptr};
+	reactphysics3d::RigidBody* m_worldsSmallestCupBody{nullptr};
+	reactphysics3d::SphereShape* m_worldsSmallestCupTopSphereShape{nullptr};
+	reactphysics3d::SphereShape* m_worldsSmallestCupBottomSphereShape{nullptr};
+	reactphysics3d::ProxyShape* m_worldsSmallestCupTopProxyShape{nullptr};
+	reactphysics3d::ProxyShape* m_worldsSmallestCupBottomProxyShape{nullptr};
 
 	static VRPhysicsHelper* m_instance;
 };

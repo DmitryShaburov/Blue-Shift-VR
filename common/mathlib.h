@@ -48,7 +48,6 @@ extern int nanmask;
 // BSVR start - guard matches upstream: skip macros when vector.h already included its inline functions
 #ifndef VECTOR_H
 #define DotProduct(x, y)   ((x)[0] * (y)[0] + (x)[1] * (y)[1] + (x)[2] * (y)[2])
-#define DotProduct2D(x, y) ((x)[0] * (y)[0] + (x)[1] * (y)[1])
 #endif
 // BSVR end
 

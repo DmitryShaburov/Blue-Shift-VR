@@ -49,7 +49,7 @@ void VRControllerTeleporter::StopTele(CBasePlayer* pPlayer)
 			{
 				pmove->usehull = 1;
 				pmove->flags |= FL_DUCKING;
-				pmove->bInDuck = true;
+				pmove->bInDuck = 1;
 				pmove->oldbuttons |= IN_DUCK;
 				pmove->cmd.buttons |= IN_DUCK;
 			}
@@ -167,14 +167,13 @@ void VRControllerTeleporter::UpdateTele(CBasePlayer* pPlayer, const Vector& tele
 	}
 	vr_hTeleSprite->pev->effects &= ~EF_NODRAW;
 
-	vr_vecTeleDestination = teleportDestination + Vector{ 0.f, 0.f, 1.f };
+	vr_vecTeleDestination = teleportDestination + Vector{0.f, 0.f, 1.f};
 	UTIL_SetOrigin(vr_hTeleSprite->pev, teleportDestination);
 
 	if (vr_teleportResult != TeleportResult::INVALID)
 	{
 		bool isTeleporterBlocked =
-			GetDownwardsParabolaLength() > VR_TELEPORT_MAX_DOWNWARDS_TELE_LENGTH
-			|| !UTIL_CheckClearSight(pPlayer->EyePosition(), telePos, ignore_monsters, dont_ignore_glass, pPlayer->edict()) || VRPhysicsHelper::Instance().CheckIfLineIsBlocked(pPlayer->EyePosition(), telePos);
+			GetDownwardsParabolaLength() > VR_TELEPORT_MAX_DOWNWARDS_TELE_LENGTH || !UTIL_CheckClearSight(pPlayer->EyePosition(), telePos, ignore_monsters, dont_ignore_glass, pPlayer->edict()) || VRPhysicsHelper::Instance().CheckIfLineIsBlocked(pPlayer->EyePosition(), telePos);
 
 		if (isTeleporterBlocked)
 		{
@@ -280,7 +279,7 @@ void VRControllerTeleporter::TouchTriggersInTeleportPath(CBasePlayer* pPlayer)
 					// that wrap around an island) have boxes much larger than their brushes, so check the real brush.
 					TraceResult trModel;
 					UTIL_TraceModel(segment.startPoint, segment.endPoint, 0, hEntity->edict(), &trModel);
-					if (trModel.flFraction >= 1.f && !trModel.fStartSolid)
+					if (trModel.flFraction >= 1.f && 0 == trModel.fStartSolid)
 						continue;
 
 					if (FClassnameIs(hEntity->pev, "trigger_changelevel"))
@@ -295,18 +294,6 @@ void VRControllerTeleporter::TouchTriggersInTeleportPath(CBasePlayer* pPlayer)
 	}
 }
 
-float VRControllerTeleporter::GetCurrentTeleLength(CBasePlayer* pPlayer)
-{
-	if (pPlayer->pev->waterlevel > 1)
-	{
-		return 100;
-	}
-	else
-	{
-		return 250;
-	}
-}
-
 constexpr const int VR_MIN_LADDER_TOUCH_DEPTH = -16;
 constexpr const int VR_MAX_LADDER_TOUCH_DEPTH = 4;
 
@@ -315,7 +302,7 @@ VRControllerTeleporter::TeleportResult VRControllerTeleporter::CanTeleportHere(C
 	if (vr_hTriggerTeleport)
 		return TeleportResult::TRIGGER_TELEPORT;
 
-	if (!tr.fAllSolid)
+	if (0 == tr.fAllSolid)
 	{
 		// Detect water
 		if (UTIL_PointContents(tr.vecEndPos) == CONTENTS_WATER)
@@ -416,46 +403,12 @@ VRControllerTeleporter::TeleportResult VRControllerTeleporter::CanTeleportHere(C
 			else if (DotProduct(Vector(0, 0, 1), tr.vecPlaneNormal) > 0.2f)
 			{
 				teleportDestination = beamEndPos;
-				return TeleportResult::VALID;  // !UTIL_BBoxIntersectsBSPModel(teleportDestination + Vector(0, 0, -VEC_DUCK_HULL_MIN.z), VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX);
+				return TeleportResult::VALID; // !UTIL_BBoxIntersectsBSPModel(teleportDestination + Vector(0, 0, -VEC_DUCK_HULL_MIN.z), VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX);
 			}
 			// else wall, ceiling or other surface we can't teleport on
 		}
-		// else beam ended in air, check if we are in an upwards trigger_push
-		else if (TryTeleportInUpwardsTriggerPush(pPlayer, beamStartPos, beamEndPos, teleportDestination))
-		{
-			return TeleportResult::VALID;
-		}
 	}
 	return TeleportResult::INVALID;
-}
-
-bool VRControllerTeleporter::TryTeleportInUpwardsTriggerPush(CBasePlayer* pPlayer, const Vector& beamStartPos, Vector& beamEndPos, Vector& teleportDestination)
-{
-	// Don't teleport downwards in upwards trigger_push
-	if (beamEndPos.z <= beamStartPos.z)
-		return false;
-
-	CBaseEntity* pTriggerPush = pPlayer->GetCurrentUpwardsTriggerPush();
-
-	if (pTriggerPush)
-	{
-		if (UTIL_PointInsideBBox(beamEndPos, pTriggerPush->pev->absmin, pTriggerPush->pev->absmax))
-		{
-			teleportDestination = beamEndPos;
-			return true;
-		}
-		else
-		{
-			Vector result;
-			if (UTIL_GetLineIntersectionWithBBox(beamEndPos, beamStartPos, pTriggerPush->pev->absmin, pTriggerPush->pev->absmax, result))
-			{
-				teleportDestination = beamEndPos = result;
-				return true;
-			}
-		}
-	}
-
-	return false;
 }
 
 void VRControllerTeleporter::ClearTeleportParabola()
@@ -622,7 +575,7 @@ Vector CalculateXenMoundParabolaDir(const Vector& beamDir)
 {
 	// Get direction of parabola at beam end pos
 	Vector parabolaDir = beamDir;
-	parabolaDir.z = -parabolaDir.z * 4;  // Invert and make steeper
+	parabolaDir.z = -parabolaDir.z * 4; // Invert and make steeper
 	parabolaDir = parabolaDir.Normalize();
 	return parabolaDir;
 }

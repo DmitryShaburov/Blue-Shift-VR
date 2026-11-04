@@ -227,7 +227,9 @@ void MousePos_ThreadFunction()
 					lock,
 					std::chrono::milliseconds{(int)m_mousethread_sleep->value},
 					[]()
-					{ return s_MouseThread.QuittingTime; }))
+					{
+						return s_MouseThread.QuittingTime;
+					}))
 			{
 				break;
 			}
@@ -769,7 +771,7 @@ void IN_StartupJoystick()
 		s_pJoystick = NULL;
 		if (joy_avail)
 		{
-			joy_avail = 0;
+			joy_avail = false;
 			gEngfuncs.Con_DPrintf("joystick not found -- driver not present\n\n");
 		}
 	}

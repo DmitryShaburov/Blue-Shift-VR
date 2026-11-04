@@ -64,19 +64,17 @@ bool pmoveIgnoreLadders = false;
 // and again we are in include hell and use an extern declaration to escape :S
 extern bool VRGlobalIsInstantAccelerateOn();
 extern bool VRGlobalIsInstantDecelerateOn();
-extern void VRGlobalGetEntityOrigin(int ent, float* entorigin);
 extern bool VRGlobalGetNoclipMode();
 extern bool VRNotifyStuckEnt(int player, int ent);
 extern bool VRGlobalIsPointInsideEnt(const float* point, int ent);
 extern void VRGetMaxClimbSpeed(float& updown, float& sideways);
 extern void VRGetCVARSpeeds(float& forwardSpeed, float& backSpeed, float& sideSpeed, float& upSpeed);
 extern int VRGetLadderMode();
-extern int VRGetGrabbedLadder(int player);  // For client or server to use to identify (index into edicts or cl_entities)
+extern int VRGetGrabbedLadder(int player); // For client or server to use to identify (index into edicts or cl_entities)
 inline bool VRIsGrabbingLadder() { return VRGetGrabbedLadder(pmove->player_index) > 0; }
 extern bool VRIsPullingOnLedge(int player);
 extern bool VRIsAutoDuckingEnabled(int player);
 extern float VRGetSmoothStepsSetting();
-extern bool VRIsInUpwardsTriggerPush(int player);
 
 
 // Forward declare methods, so we can move them around without the compiler going all "omg" - Max Makes Mods, 2018-04-01
@@ -841,7 +839,7 @@ bool g_vrTeleportInWater = false;
 bool IsInWaterAndIsGravityDisabled()
 {
 	// If player uses vanilla game movements, reset g_vrTeleportInWater to false.
-	if (pmove->cmd.forwardmove || pmove->cmd.sidemove || pmove->cmd.upmove || (pmove->cmd.buttons & (IN_JUMP | IN_DUCK)))
+	if (0 != pmove->cmd.forwardmove || 0 != pmove->cmd.sidemove || 0 != pmove->cmd.upmove || (pmove->cmd.buttons & (IN_JUMP | IN_DUCK)) != 0)
 	{
 		g_vrTeleportInWater = false;
 	}
@@ -908,7 +906,7 @@ void PM_VR_MoveAwayFromStuckEntityIfPossible(Vector end, pmtrace_t& trace)
 {
 	// TODO!
 	trace.fraction = 1;
-	trace.allsolid = false;
+	trace.allsolid = 0;
 	VectorCopy(end, trace.endpos);
 }
 // BSVR end
@@ -1039,7 +1037,7 @@ int PM_FlyMove()
 		// BSVR start
 		// if (numplanes == 1 && pmove->movetype == MOVETYPE_WALK && ((pmove->onground == -1) || (pmove->friction != 1))) - original
 		if ((pmove->movetype == MOVETYPE_WALK || pmove->movetype == MOVETYPE_NOCLIP) &&
-			((pmove->onground != -1) || (pmove->friction != 1)))  // relfect player velocity
+			((pmove->onground != -1) || (pmove->friction != 1))) // relfect player velocity
 		// BSVR end
 		{
 			for (i = 0; i < numplanes; i++)
@@ -1359,7 +1357,7 @@ void PM_Friction()
 	// BSVR start
 	// If player has enabled instant stop in VR,
 	// we simply set the velocity to 0 and are done here.
-	if (VRGlobalIsInstantDecelerateOn() || VRIsInUpwardsTriggerPush(pmove->player_index))
+	if (VRGlobalIsInstantDecelerateOn())
 	{
 		VectorClear(pmove->velocity);
 		return;
@@ -1456,7 +1454,7 @@ void PM_AirAccelerate(Vector wishdir, float wishspeed, float accel)
 
 	// BSVR start
 	// Upstream code moved to else
-	if (VRGlobalIsInstantAccelerateOn() || VRIsInUpwardsTriggerPush(pmove->player_index))
+	if (VRGlobalIsInstantAccelerateOn())
 	{
 		accelspeed = addspeed;
 	}
@@ -1506,7 +1504,7 @@ void PM_WaterMove()
 	// 	wishvel[2] -= 60; // drift towards bottom - original
 	// else				  // Go straight up by upmove amount. - original
 	// 	wishvel[2] += pmove->cmd.upmove; - original
-	if (!pmove->cmd.forwardmove && !pmove->cmd.sidemove && !pmove->cmd.upmove && !(pmove->oldbuttons & (IN_JUMP | IN_DUCK)))
+	if (0 == pmove->cmd.forwardmove && 0 == pmove->cmd.sidemove && 0 == pmove->cmd.upmove && (pmove->oldbuttons & (IN_JUMP | IN_DUCK)) == 0)
 	{
 		if (IsInWaterAndIsGravityDisabled())
 		{
@@ -1514,18 +1512,18 @@ void PM_WaterMove()
 		}
 		else
 		{
-			wishvel[2] -= 60;  // drift towards bottom
+			wishvel[2] -= 60; // drift towards bottom
 		}
 	}
 	else
 	{
 		// Go straight up by upmove amount.
 		wishvel[2] += pmove->cmd.upmove;
-		if (pmove->oldbuttons & IN_JUMP)
+		if ((pmove->oldbuttons & IN_JUMP) != 0)
 		{
 			wishvel[2] += 320.f;
 		}
-		if (pmove->oldbuttons & IN_DUCK)
+		if ((pmove->oldbuttons & IN_DUCK) != 0)
 		{
 			wishvel[2] -= 320.f;
 		}
@@ -1759,7 +1757,7 @@ void PM_CatagorizePosition()
 		pmove->onground = -1;
 	}
 	// BSVR start
-	else if ((g_onladder || pmove->movetype == MOVETYPE_FLY) && pmove->velocity[2] > 0.f)  // Moving up on ladder, not on ground
+	else if ((g_onladder || pmove->movetype == MOVETYPE_FLY) && pmove->velocity[2] > 0.f) // Moving up on ladder, not on ground
 	{
 		pmove->onground = -1;
 	}
@@ -1879,7 +1877,7 @@ bool PM_CheckStuck()
 
 	// If position is okay, exit
 	hitent = pmove->PM_TestPlayerPosition(pmove->origin, &traceresult);
-	if (hitent != 0)  // Only get stuck on world, not on entities - Max Makes Mods, 2018-02-11 - BSVR - was == -1
+	if (hitent != 0) // Only get stuck on world, not on entities - Max Makes Mods, 2018-02-11 - BSVR - was == -1
 	{
 		PM_ResetStuckOffsets(pmove->player_index, pmove->server);
 		return false;
@@ -2279,7 +2277,7 @@ void PM_Duck()
 			// BSVR start changed body
 			if (0 != pmove->bInDuck && ((float)pmove->flDuckTime / 1000.0 <= (1.0 - TIME_TO_DUCK)) || (pmove->onground == -1) || ((pmove->cmd.buttons_ex & X_IN_VRDUCK) != 0 && (pmove->flags & FL_DUCKING) == 0)) // BSVR: VR crouch ducks immediately (as in Half-Life-VR)
 			{
-				pmove->bInDuck = false;
+				pmove->bInDuck = 0;
 				switchToDuck = true;
 			}
 			// BSVR end
@@ -2332,7 +2330,7 @@ void PM_Duck()
 	}
 
 	// BSVR start
-	if (pmove->flags & FL_DUCKING)
+	if ((pmove->flags & FL_DUCKING) != 0)
 	{
 		pmove->cmd.forwardmove *= 0.333;
 		pmove->cmd.sidemove *= 0.333;
@@ -2363,32 +2361,32 @@ void PM_LadderMove(physent_t* pLadder)
 	pmove->gravity = 0;
 	pmove->movetype = MOVETYPE_FLY;
 
-	Vector modelmins{ 0.f, 0.f, 0.f };
-	Vector modelmaxs{ 0.f, 0.f, 0.f };
+	Vector modelmins{0.f, 0.f, 0.f};
+	Vector modelmaxs{0.f, 0.f, 0.f};
 	pmove->PM_GetModelBounds(pLadder->model, modelmins, modelmaxs);
 
-	Vector ladderCenter{ 0.f, 0.f, 0.f };
+	Vector ladderCenter{0.f, 0.f, 0.f};
 	VectorAdd(modelmins, modelmaxs, ladderCenter);
 	VectorScale(ladderCenter, 0.5, ladderCenter);
 	VectorAdd(ladderCenter, pLadder->origin, ladderCenter);
 
-	bool onFloor = pmove->flags & FL_ONGROUND || pmove->onground >= 0;
+	bool onFloor = ((pmove->flags & FL_ONGROUND) != 0) || pmove->onground >= 0;
 
 	if (!onFloor)
 	{
-		Vector floor{ 0.f, 0.f, 0.f };
+		Vector floor{0.f, 0.f, 0.f};
 		VectorCopy(pmove->origin, floor);
 		floor[2] += pmove->player_mins[pmove->usehull][2] - 1;
 		onFloor = pmove->PM_PointContents(floor, nullptr) == CONTENTS_SOLID;
 	}
 
-	trace_t trace{ 0 };
+	trace_t trace{0};
 	float result = pmove->PM_TraceModel(pLadder, pmove->origin, ladderCenter, &trace);
 	if (result >= 0.f && result < 1.f && trace.fraction >= 0.f && trace.fraction < 1.f && !IS_NAN(trace.plane.normal[0]) && !IS_NAN(trace.plane.normal[1]) && !IS_NAN(trace.plane.normal[2]))
 	{
-		if ((pmove->cmd.buttons & IN_JUMP) && ladderMode == VR_LADDER_MODE_LEGACY_ONLY)
+		if ((pmove->cmd.buttons & IN_JUMP) != 0 && ladderMode == VR_LADDER_MODE_LEGACY_ONLY)
 		{
-			pmove->movetype = MOVETYPE_NOCLIP;  // pmove->movetype = MOVETYPE_WALK; Restore to MOVETYPE_NOCLIP in VR
+			pmove->movetype = MOVETYPE_NOCLIP; // pmove->movetype = MOVETYPE_WALK; Restore to MOVETYPE_NOCLIP in VR
 			VectorScale(trace.plane.normal, 270, pmove->velocity);
 		}
 		else
@@ -2401,12 +2399,18 @@ void PM_LadderMove(physent_t* pLadder)
 			float maxSidewaysSpeed = DEFAULT_MAX_SIDEWAYS_SPEED;
 			VRGetCVARSpeeds(forwardSpeed, backSpeed, sideSpeed, upSpeed);
 			VRGetMaxClimbSpeed(maxClimbSpeed, maxSidewaysSpeed);
-			if (forwardSpeed <= 1.f) forwardSpeed = DEFAULT_MOVEMENT_SPEED;
-			if (backSpeed <= 1.f) backSpeed = DEFAULT_MOVEMENT_SPEED;
-			if (sideSpeed <= 1.f) sideSpeed = DEFAULT_MOVEMENT_SPEED;
-			if (upSpeed <= 1.f) upSpeed = DEFAULT_MOVEMENT_SPEED;
-			if (maxClimbSpeed <= 1.f) maxClimbSpeed = DEFAULT_MAX_CLIMB_SPEED;
-			if (maxSidewaysSpeed <= 1.f) maxSidewaysSpeed = DEFAULT_MAX_SIDEWAYS_SPEED;
+			if (forwardSpeed <= 1.f)
+				forwardSpeed = DEFAULT_MOVEMENT_SPEED;
+			if (backSpeed <= 1.f)
+				backSpeed = DEFAULT_MOVEMENT_SPEED;
+			if (sideSpeed <= 1.f)
+				sideSpeed = DEFAULT_MOVEMENT_SPEED;
+			if (upSpeed <= 1.f)
+				upSpeed = DEFAULT_MOVEMENT_SPEED;
+			if (maxClimbSpeed <= 1.f)
+				maxClimbSpeed = DEFAULT_MAX_CLIMB_SPEED;
+			if (maxSidewaysSpeed <= 1.f)
+				maxSidewaysSpeed = DEFAULT_MAX_SIDEWAYS_SPEED;
 
 			float up;
 			if (pmove->cmd.forwardmove > 0.f)
@@ -2427,8 +2431,8 @@ void PM_LadderMove(physent_t* pLadder)
 				VectorSubtract(pLadder->maxs, pLadder->mins, ladderSize);
 
 				// get direction vectors for climbing on this ladder
-				Vector v_up{ 0.f, 0.f, 0.f };
-				Vector v_right{ 0.f, 0.f, 0.f };
+				Vector v_up{0.f, 0.f, 0.f};
+				Vector v_right{0.f, 0.f, 0.f};
 
 				// ladder is horizontal
 				if (fabs(trace.plane.normal[2]) > 0.995f)
@@ -2448,7 +2452,7 @@ void PM_LadderMove(physent_t* pLadder)
 				else
 				{
 					// calculate vectors in vertical ladder plane
-					CrossProduct(Vector{ 0.f, 0.f, 1.f }, trace.plane.normal, v_right);
+					CrossProduct(Vector{0.f, 0.f, 1.f}, trace.plane.normal, v_right);
 					CrossProduct(trace.plane.normal, v_right, v_up);
 				}
 
@@ -2600,7 +2604,6 @@ void PM_LadderMove(physent_t* pLadder)
 
 // BSVR start
 physent_t* g_pLastLadder = nullptr;
-bool g_didPressLetGoOffLadder = false;
 
 physent_t* PM_Ladder2(void)
 {
@@ -2640,10 +2643,10 @@ physent_t* PM_Ladder2(void)
 						// so here we will do an additional check if the player is "close enough" to stay on the ladder.
 
 						// Get ladder center in world space
-						Vector modelmins{ 0.f, 0.f, 0.f };
-						Vector modelmaxs{ 0.f, 0.f, 0.f };
+						Vector modelmins{0.f, 0.f, 0.f};
+						Vector modelmaxs{0.f, 0.f, 0.f};
 						pmove->PM_GetModelBounds(pe->model, modelmins, modelmaxs);
-						Vector ladderCenter{ 0.f, 0.f, 0.f };
+						Vector ladderCenter{0.f, 0.f, 0.f};
 						VectorAdd(modelmins, modelmaxs, ladderCenter);
 						VectorScale(ladderCenter, 0.5, ladderCenter);
 						VectorAdd(ladderCenter, pe->origin, ladderCenter);
@@ -2665,7 +2668,7 @@ physent_t* PM_Ladder2(void)
 						// Subtract dir from the test point and check again
 						// BSVR start
 						// VectorAdd(test, dir, test2); - orignal
-						VectorSubtract(test, dir, test2)
+						VectorSubtract(test, dir, test2);
 						// BSVR end
 						if (pmove->PM_HullPointContents(hull, hull->firstclipnode, test2) != CONTENTS_EMPTY)
 						{
@@ -2691,19 +2694,7 @@ physent_t* PM_Ladder2(void)
 physent_t* PM_Ladder()
 {
 	// BSVR start
-	physent_t* lastladder = g_pLastLadder;
-	physent_t* ladder = PM_Ladder2();
-
-	if (ladder == nullptr)
-	{
-		g_didPressLetGoOffLadder = false;
-		return nullptr;
-	}
-
-	if (ladder == lastladder && g_didPressLetGoOffLadder)
-		return nullptr;
-
-	return ladder;
+	return PM_Ladder2();
 	// int i;
 	// physent_t* pe;
 	// hull_t* hull;
@@ -2840,7 +2831,7 @@ void PM_Physics_Toss()
 	if (pmove->movetype != MOVETYPE_FLY &&
 		pmove->movetype != MOVETYPE_BOUNCEMISSILE &&
 		pmove->movetype != MOVETYPE_FLYMISSILE &&
-		!(pmove->flags & FL_BARNACLED))
+		(pmove->flags & FL_BARNACLED) == 0)
 		PM_AddGravity();
 
 	// move origin
@@ -2967,7 +2958,7 @@ bool PM_TryUnstuck()
 	constexpr const float VR_UNSTUCK_DISTANCE = 32.f;
 
 	// Don't unstuck dead players
-	if (pmove->dead || pmove->deadflag != DEAD_NO)
+	if (0 != pmove->dead || pmove->deadflag != DEAD_NO)
 		return false;
 
 	// we aren't stuck (possible retry ducking)
@@ -3027,7 +3018,7 @@ bool PM_TryUnstuck()
 	}
 
 	// still stuck and already ducking, can't unstuck :(
-	if ((pmove->flags & FL_DUCKING) || pmove->usehull == 1)
+	if ((pmove->flags & FL_DUCKING) != 0 || pmove->usehull == 1)
 		return false;
 
 	// try ducking
@@ -3052,18 +3043,18 @@ Moved from PM_Move() switch statement for MOVETYPE_WALK - Max Makes Mods, 2018-0
 void PM_YesClip(physent_t* pLadder)
 {
 	// No gravity in water - Max Makes Mods, 2018-02-11
-	if (IsInWaterAndIsGravityDisabled() || (pmove->flags & FL_BARNACLED) || VRIsInUpwardsTriggerPush(pmove->player_index))
+	if (IsInWaterAndIsGravityDisabled() || (pmove->flags & FL_BARNACLED) != 0)
 	{
 		pmove->velocity[2] = std::fmax(0.f, pmove->velocity[2]);
 	}
 
-	if (!PM_InWater() && !(pmove->flags & FL_BARNACLED) && !VRIsInUpwardsTriggerPush(pmove->player_index))
+	if (!PM_InWater() && (pmove->flags & FL_BARNACLED) == 0)
 	{
 		PM_AddCorrectGravity();
 	}
 
 	// If we are leaping out of the water, just update the counters.
-	if (pmove->waterjumptime)
+	if (0 != pmove->waterjumptime)
 	{
 		PM_WaterJump();
 		PM_FlyMove();
@@ -3083,7 +3074,7 @@ void PM_YesClip(physent_t* pLadder)
 		}
 
 		// If we are falling again, then we must not trying to jump out of water any more.
-		if (pmove->velocity[2] < 0 && pmove->waterjumptime)
+		if (pmove->velocity[2] < 0 && 0 != pmove->waterjumptime)
 		{
 			pmove->waterjumptime = 0;
 		}
@@ -3098,10 +3089,10 @@ void PM_YesClip(physent_t* pLadder)
 	}
 	else
 
-		// Not underwater
+	// Not underwater
 	{
 		// Was jump button pressed?
-		if (pmove->cmd.buttons & IN_JUMP)
+		if ((pmove->cmd.buttons & IN_JUMP) != 0)
 		{
 			if (!pLadder)
 			{
@@ -3115,7 +3106,7 @@ void PM_YesClip(physent_t* pLadder)
 
 		// Fricion is handled before we add in any base velocity. That way, if we are on a conveyor,
 		//  we don't slow when standing still, relative to the conveyor.
-		if (pmove->onground != -1 && !VRIsInUpwardsTriggerPush(pmove->player_index)) // BSVR: on ground (upstream IsOnGround()) and not in an upwards trigger_push
+		if (pmove->onground != -1) // BSVR: on ground (upstream IsOnGround())
 		{
 			pmove->velocity[2] = 0.0;
 			PM_Friction();
@@ -3125,13 +3116,13 @@ void PM_YesClip(physent_t* pLadder)
 		PM_CheckVelocity();
 
 		// Are we on ground now
-		if (pmove->onground != -1 && !VRIsInUpwardsTriggerPush(pmove->player_index)) // BSVR: on ground (upstream IsOnGround()) and not in an upwards trigger_push
+		if (pmove->onground != -1) // BSVR: on ground (upstream IsOnGround())
 		{
 			PM_WalkMove();
 		}
 		else
 		{
-			PM_AirMove();  // Take into account movement when in air.
+			PM_AirMove(); // Take into account movement when in air.
 		}
 
 		// Set final flags.
@@ -3146,26 +3137,23 @@ void PM_YesClip(physent_t* pLadder)
 		PM_CheckVelocity();
 
 		// Add any remaining gravitational component.
-		if (!PM_InWater() && !VRIsInUpwardsTriggerPush(pmove->player_index))
+		if (!PM_InWater())
 		{
 			PM_FixupGravityVelocity();
 		}
 
 		// If we are on ground, no downward velocity.
-		if (pmove->onground != -1 && !VRIsInUpwardsTriggerPush(pmove->player_index)) // BSVR: on ground (upstream IsOnGround()) and not in an upwards trigger_push
+		if (pmove->onground != -1) // BSVR: on ground (upstream IsOnGround())
 		{
 			pmove->velocity[2] = 0;
 		}
 
 		// See if we landed on the ground with enough force to play
 		//  a landing sound.
-		if (!VRIsInUpwardsTriggerPush(pmove->player_index))
-		{
-			PM_CheckFalling();
-		}
+		PM_CheckFalling();
 	}
 
-	if (IsInWaterAndIsGravityDisabled() || (pmove->flags & FL_BARNACLED) || VRIsInUpwardsTriggerPush(pmove->player_index))
+	if (IsInWaterAndIsGravityDisabled() || (pmove->flags & FL_BARNACLED) != 0)
 	{
 		pmove->velocity[2] = std::fmax(0.f, pmove->velocity[2]);
 	}
@@ -3252,7 +3240,7 @@ void PM_Jump()
 	}
 
 	// If we are in the water most of the way...
-	if (pmove->waterlevel >= 2 || VRIsInUpwardsTriggerPush(pmove->player_index)) // BSVR added condition
+	if (pmove->waterlevel >= 2)
 	{ // swimming, not jumping
 		pmove->onground = -1;
 
@@ -3264,7 +3252,7 @@ void PM_Jump()
 			pmove->velocity[2] = 50;
 
 		// play swiming sound
-		if (pmove->flSwimTime <= 0 && !VRIsInUpwardsTriggerPush(pmove->player_index)) // BSVR added condition
+		if (pmove->flSwimTime <= 0)
 		{
 			// Don't play sound again for 1 second
 			pmove->flSwimTime = 1000;
@@ -3337,7 +3325,7 @@ void PM_Jump()
 			// BSVR start
 			// Length(pmove->velocity) > 50) - original
 			pmove->velocity.Length2D() > 50)
-			// BSVR end
+		// BSVR end
 		{
 			pmove->punchangle[0] = -5;
 
@@ -3619,7 +3607,7 @@ void PM_CheckParamters()
 	//
 	// JoshA: Moved this to CheckParamters rather than working on the velocity,
 	// as otherwise it affects every integration step incorrectly.
-	if ((pmove->onground != -1) && (pmove->cmd.buttons & IN_USE))
+	if ((pmove->onground != -1) && ((pmove->cmd.buttons & IN_USE) != 0))
 	{
 		pmove->maxspeed *= 1.0f / 3.0f;
 	}
@@ -3634,7 +3622,7 @@ void PM_CheckParamters()
 	}
 
 	if ((pmove->flags & FL_FROZEN) != 0 ||
-		(pmove->flags & FL_STUCK_ONTRAIN) != 0 ||  // BSVR: Renamed from FL_ONTRAIN
+		(pmove->flags & FL_STUCK_ONTRAIN) != 0 || // BSVR: Renamed from FL_ONTRAIN
 		0 != pmove->dead)
 	{
 		pmove->cmd.forwardmove = 0;
@@ -3730,7 +3718,7 @@ void PM_HandleMovement(physent_t* pLadder)
 		// Was jump button pressed?
 		// If so, set velocity to 270 away from ladder.  This is currently wrong.
 		// Also, set MOVE_TYPE to walk, too.
-		if (pmove->cmd.buttons & IN_JUMP)
+		if ((pmove->cmd.buttons & IN_JUMP) != 0)
 		{
 			if (!pLadder)
 			{
@@ -3748,7 +3736,7 @@ void PM_HandleMovement(physent_t* pLadder)
 		VectorSubtract(pmove->velocity, pmove->basevelocity, pmove->velocity);
 		break;
 
-	case MOVETYPE_NOCLIP:  // In VR player movetype is always NOCLIP so doors, elevators etc don't crush us
+	case MOVETYPE_NOCLIP: // In VR player movetype is always NOCLIP so doors, elevators etc don't crush us
 	case MOVETYPE_WALK:
 		if (VRGlobalGetNoclipMode())
 		{
@@ -3756,7 +3744,7 @@ void PM_HandleMovement(physent_t* pLadder)
 		}
 		else
 		{
-			PM_YesClip(pLadder);  // Moved all the walking code in this switch-statement to its own method
+			PM_YesClip(pLadder); // Moved all the walking code in this switch-statement to its own method
 		}
 		break;
 	}
@@ -3833,7 +3821,7 @@ void PM_PlayerMove(qboolean server)
 		{
 			// When we're stuck, move away if our move direction is going away from whatever we're stuck on
 			// (Only unstuck us on server, to not interfere with dontUnstuck, which is only set by server)
-			if ((server || pmove->server) && !dontUnstuck)
+			if ((0 != server || 0 != pmove->server) && !dontUnstuck)
 			{
 				if (!PM_TryUnstuck())
 				{
@@ -3859,11 +3847,6 @@ void PM_PlayerMove(qboolean server)
 	{
 		pmove->flFallVelocity = -pmove->velocity[2];
 	}
-
-	// BSVR start
-	// if set, PM_Ladder will ignore the ladder we currently touch (will be reset when no ladder is touched)
-	g_didPressLetGoOffLadder = g_didPressLetGoOffLadder || (pmove->cmd.buttons_ex & X_IN_LETLADDERGO);
-	// BSVR end
 
 	g_onladder = false;
 	// Don't run ladder code if dead or on a train
@@ -3905,25 +3888,21 @@ void PM_PlayerMove(qboolean server)
 		}
 		else
 		{
-			// BSVR: Just left a ladder: drop ladder velocity so the player isn't flung off
-			if (pmove->movetype == MOVETYPE_FLY)
-			{
-				VectorClear(pmove->velocity);
-			}
 			pmove->movetype = MOVETYPE_NOCLIP;
 		}
 		// BSVR end
 	}
 
 	// BSVR start
-	// Slow down, I'm pulling it! (a box maybe) but only when I'm standing on ground
-	if (pmove->onground != -1 && (pmove->cmd.buttons & IN_USE))
-	{
-		VectorScale(pmove->velocity, 0.3, pmove->velocity);
-	}
+	// Use-key slowdown is already applied via maxspeed in PM_CheckParamters (base SDK), don't apply it twice
+	// // Slow down, I'm pulling it! (a box maybe) but only when I'm standing on ground
+	// if (pmove->onground != -1 && (pmove->cmd.buttons & IN_USE))
+	// {
+	// 	VectorScale(pmove->velocity, 0.3, pmove->velocity);
+	// }
 	// Always calculate movement (on land) as if ducking, then afterwards unduck if possible or stay ducked if not possible (this essentially makes players autoduck if necessary)
 	// In water we don't do this, as it messes with waterjump
-	bool tryAutoDuck = VRIsAutoDuckingEnabled(pmove->player_index) && pmove->usehull == 0 && !(pmove->flags & FL_DUCKING) && !pLadder && pmove->waterlevel == 0;
+	bool tryAutoDuck = VRIsAutoDuckingEnabled(pmove->player_index) && pmove->usehull == 0 && (pmove->flags & FL_DUCKING) == 0 && nullptr == pLadder && pmove->waterlevel == 0;
 
 	if (tryAutoDuck && pmove->onground != -1)
 	{
@@ -4026,7 +4005,7 @@ void PM_PlayerMove(qboolean server)
 				VectorCopy(duckmove_origin, pmove->origin);
 			}
 		}
-		else  // Use standing otherwise
+		else // Use standing otherwise
 		{
 			VectorCopy(standmove_origin, pmove->origin);
 			VectorCopy(standmove_velocity, pmove->velocity);
@@ -4164,8 +4143,7 @@ void PM_Move(struct playermove_s* ppmove, qboolean server)
 	if (VRIsPullingOnLedge(ppmove->player_index))
 		return;
 
-	if (VRGetLadderMode() == VR_LADDER_MODE_IMMERSIVE_ONLY
-		&& VRIsGrabbingLadder())
+	if (VRGetLadderMode() == VR_LADDER_MODE_IMMERSIVE_ONLY && VRIsGrabbingLadder())
 	{
 		return;
 	}

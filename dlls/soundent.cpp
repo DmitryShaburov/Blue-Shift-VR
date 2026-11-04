@@ -288,6 +288,12 @@ int CSoundEnt::ISoundsInList(int iListType)
 	{
 		i++;
 
+		// BSVR start
+		// Guard against a self-linked list entry (infinite loop)
+		if (iThisSound == m_SoundPool[iThisSound].m_iNext)
+			break;
+		// BSVR end
+
 		iThisSound = m_SoundPool[iThisSound].m_iNext;
 	}
 

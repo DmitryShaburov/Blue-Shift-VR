@@ -475,7 +475,7 @@ void CRpg::PrimaryAttack()
 #ifdef CLIENT_DLL
 		VRRegisterRecoil(1.f);
 #endif
-// BSVR end
+		// BSVR end
 	}
 	else
 	{
@@ -570,7 +570,7 @@ void CRpg::UpdateSpot()
 		// Vector vecAiming = gpGlobals->v_forward; - original
 		UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
 		Vector vecSrc = m_pPlayer->GetGunPosition();
-		Vector vecAiming = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
+		Vector vecAiming = m_pPlayer->GetAutoaimVector(); //gpGlobals->v_forward;
 		// BSVR end
 
 		TraceResult tr;

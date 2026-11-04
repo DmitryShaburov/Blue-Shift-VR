@@ -6,7 +6,6 @@
 #include "vector.h"
 #include "cbase.h"
 #include "player.h"
-#include "VRPhysicsHelper.h"
 #include "pm_defs.h"
 
 VRLevelChangeData g_vrLevelChangeData;
@@ -24,19 +23,6 @@ bool GlobalXenMounds::Has(const Vector& position)
 	for (auto m_xen_mound : m_xen_mounds)
 	{
 		if ((m_xen_mound.first - position).Length2D() <= XEN_MOUND_MAX_TRIGGER_DISTANCE)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-bool GlobalXenMounds::IsSame(const Vector& pos1, const Vector& pos2)
-{
-	for (auto m_xen_mound : m_xen_mounds)
-	{
-		if ((m_xen_mound.first - pos1).Length2D() <= XEN_MOUND_MAX_TRIGGER_DISTANCE
-			&& (m_xen_mound.first - pos2).Length2D() <= XEN_MOUND_MAX_TRIGGER_DISTANCE)
 		{
 			return true;
 		}
@@ -70,11 +56,6 @@ bool VRGlobalIsInstantDecelerateOn()
 	return CVAR_GET_FLOAT("vr_move_instant_decelerate") != 0.f;
 }
 
-void VRGlobalGetEntityOrigin(int ent, float* entorigin)
-{
-	((INDEXENT(ent)->v.absmin + INDEXENT(ent)->v.absmax) * 0.5f).CopyToArray(entorigin);
-}
-
 bool VRGlobalGetNoclipMode()
 {
 	return CVAR_GET_FLOAT("sv_cheats") != 0.f && CVAR_GET_FLOAT("vr_noclip") != 0.f;
@@ -85,7 +66,7 @@ bool VRGlobalIsPointInsideEnt(const float* point, int ent)
 	if (FNullEnt(INDEXENT(ent)))
 		return false;
 
-	return UTIL_PointInsideRotatedBBox(INDEXENT(ent)->v.origin, INDEXENT(ent)->v.angles, INDEXENT(ent)->v.mins, INDEXENT(ent)->v.maxs, Vector{ point[0], point[1], point[2] });
+	return UTIL_PointInsideRotatedBBox(INDEXENT(ent)->v.origin, INDEXENT(ent)->v.angles, INDEXENT(ent)->v.mins, INDEXENT(ent)->v.maxs, Vector{point[0], point[1], point[2]});
 }
 
 void VRGetMaxClimbSpeed(float& updown, float& sideways)
@@ -144,13 +125,4 @@ bool VRIsAutoDuckingEnabled(int player)
 float VRGetSmoothStepsSetting()
 {
 	return CVAR_GET_FLOAT("vr_smooth_steps");
-}
-
-bool VRIsInUpwardsTriggerPush(int player)
-{
-	CBasePlayer* pPlayer = dynamic_cast<CBasePlayer*>(UTIL_PlayerByIndex(player + 1));
-	if (pPlayer == nullptr)
-		return false;
-
-	return pPlayer->GetCurrentUpwardsTriggerPush() != nullptr;
 }

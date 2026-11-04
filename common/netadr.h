@@ -27,7 +27,7 @@ typedef enum
 	NA_LOOPBACK,
 	NA_BROADCAST,
 	NA_IP,
-	NA_IPX, // deprecated
+	NA_IPX,			  // deprecated
 	NA_BROADCAST_IPX, // deprecated
 } netadrtype_t;
 

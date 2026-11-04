@@ -159,7 +159,7 @@ bool CFuncWall::CheckIsSpecialVREntity()
 								if ((buttonScannerCenter - retinaScannerCenter).Length() <= 16.f)
 								{
 									EHandleT<CBaseEntity> hButton = CBaseEntity::SafeInstance<CBaseEntity>(pentButton);
-									g_vrRetinaScanners[EHandleT<CBaseEntity>{ this }] = hButton;
+									g_vrRetinaScanners[EHandleT<CBaseEntity>{this}] = hButton;
 									g_vrRetinaScannerButtons.insert(hButton);
 									break;
 								}

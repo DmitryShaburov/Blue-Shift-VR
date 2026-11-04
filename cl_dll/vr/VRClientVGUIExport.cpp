@@ -7,10 +7,10 @@
 
 namespace
 {
-	void* CreateClientVGUI()
-	{
-		return VRGetClientVGUI();
-	}
+void* CreateClientVGUI()
+{
+	return VRGetClientVGUI();
+}
 
-	InterfaceReg g_ClientVGUIReg(CreateClientVGUI, "VClientVGUI001");
+InterfaceReg g_ClientVGUIReg(CreateClientVGUI, "VClientVGUI001");
 }

@@ -15,7 +15,6 @@ public:
 	unsigned int GetVRSkyboxTexture(const std::string& name, int index);
 
 	const char* GetSkyboxNameFromMapName(const std::string& mapName);
-	const char* GetCurrentSkyboxName();
 
 	static VRTextureHelper& Instance() { return instance; }
 
@@ -39,7 +38,7 @@ private:
 	static const std::unordered_map<std::string, std::string> m_mapSkyboxNames;
 	static const std::array<std::string, 6> m_vrMapSkyboxIndices;
 
-	bool m_isInitialized{ false };
+	bool m_isInitialized{false};
 
 	void UpdateTextureMode();
 	std::string m_lastTextureMode;

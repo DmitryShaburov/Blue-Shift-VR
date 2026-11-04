@@ -1,49 +1,45 @@
 
 #include "VRSteamworksManager.h"
-#include "VRGameFunctions.h"
 
 #pragma warning(push)
-#pragma warning(disable: 4996)  // Steam API uses deprecated functions, suppress warnings when including Steam headers
+#pragma warning(disable : 4996) // Steam API uses deprecated functions, suppress warnings when including Steam headers
 // #include "../steam/steam_api.h"
 // #include "../steam/isteamuserstats.h"
 #pragma warning(pop)
 
-#include <string>
-#include <memory>
 #include <unordered_set>
-#include <sstream>
 
 namespace
 {
-	bool didGetUserStats = false;
-	bool achievementsNeedStoring = false;
+bool didGetUserStats = false;
+bool achievementsNeedStoring = false;
 
-	bool isSteamAPIInitialized = false;
+bool isSteamAPIInitialized = false;
 
-	std::unordered_set<int> achievementsToGive;
+std::unordered_set<int> achievementsToGive;
 
-	// class UserStatsCallback
-	// {
-	// private:
-	// 	STEAM_CALLBACK(UserStatsCallback, OnUserStatsReceived, UserStatsReceived_t);
-	// };
+// class UserStatsCallback
+// {
+// private:
+// 	STEAM_CALLBACK(UserStatsCallback, OnUserStatsReceived, UserStatsReceived_t);
+// };
 
-	// void UserStatsCallback::OnUserStatsReceived(UserStatsReceived_t* pCallback)
-	// {
-	// 	if (pCallback->m_nGameID == 1908720)
-	// 	{
-	// 		didGetUserStats = true;
-	// 		return;
-	// 	}
-	// 	else
-	// 	{
-	// 		VRGameFunctions::PrintToConsole(("Warning: Achievements couldn't be initialized, wrong Steam APP Id: "
-	// 			+ std::to_string(pCallback->m_nGameID)
-	// 			+ ". Make sure you run the game through Steam or have a steam_appid.txt with the correct APP Id.\n").c_str());
-	// 	}
-	// }
+// void UserStatsCallback::OnUserStatsReceived(UserStatsReceived_t* pCallback)
+// {
+// 	if (pCallback->m_nGameID == 1908720)
+// 	{
+// 		didGetUserStats = true;
+// 		return;
+// 	}
+// 	else
+// 	{
+// 		VRGameFunctions::PrintToConsole(("Warning: Achievements couldn't be initialized, wrong Steam APP Id: "
+// 			+ std::to_string(pCallback->m_nGameID)
+// 			+ ". Make sure you run the game through Steam or have a steam_appid.txt with the correct APP Id.\n").c_str());
+// 	}
+// }
 
-	// std::unique_ptr<UserStatsCallback> pUserStatsCallback;
+// std::unique_ptr<UserStatsCallback> pUserStatsCallback;
 }
 
 bool VRSteamworksManager::Init()

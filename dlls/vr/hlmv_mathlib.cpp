@@ -30,103 +30,6 @@ double VectorLength(Vector v)
 }
 
 
-int VectorCompare(Vector v1, Vector v2)
-{
-	int i = 0;
-
-	for (i = 0; i < 3; i++)
-		if (fabsf(v1[i] - v2[i]) > EQUAL_EPSILON)
-			return false;
-
-	return true;
-}
-
-vec_t Q_rint(vec_t in)
-{
-	return floor(in + 0.5);
-}
-
-void VectorMA(Vector va, double scale, Vector vb, Vector vc)
-{
-	vc[0] = va[0] + scale * vb[0];
-	vc[1] = va[1] + scale * vb[1];
-	vc[2] = va[2] + scale * vb[2];
-}
-
-void CrossProduct(Vector v1, Vector v2, Vector cross)
-{
-	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
-	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
-	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
-}
-
-void _VectorScale(Vector v, vec_t scale, Vector out)
-{
-	out[0] = v[0] * scale;
-	out[1] = v[1] * scale;
-	out[2] = v[2] * scale;
-}
-
-void ClearBounds(Vector mins, Vector maxs)
-{
-	mins[0] = mins[1] = mins[2] = 99999;
-	maxs[0] = maxs[1] = maxs[2] = -99999;
-}
-
-void AddPointToBounds(Vector v, Vector mins, Vector maxs)
-{
-	int i = 0;
-	vec_t val;
-
-	for (i = 0; i < 3; i++)
-	{
-		val = v[i];
-		if (val < mins[i])
-			mins[i] = val;
-		if (val > maxs[i])
-			maxs[i] = val;
-	}
-}
-
-void R_ConcatTransforms(float in1[3][4], float in2[3][4], float out[3][4])
-{
-	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
-		in1[0][2] * in2[2][0];
-	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +
-		in1[0][2] * in2[2][1];
-	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +
-		in1[0][2] * in2[2][2];
-	out[0][3] = in1[0][0] * in2[0][3] + in1[0][1] * in2[1][3] +
-		in1[0][2] * in2[2][3] + in1[0][3];
-	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] +
-		in1[1][2] * in2[2][0];
-	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] +
-		in1[1][2] * in2[2][1];
-	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] +
-		in1[1][2] * in2[2][2];
-	out[1][3] = in1[1][0] * in2[0][3] + in1[1][1] * in2[1][3] +
-		in1[1][2] * in2[2][3] + in1[1][3];
-	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] +
-		in1[2][2] * in2[2][0];
-	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] +
-		in1[2][2] * in2[2][1];
-	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] +
-		in1[2][2] * in2[2][2];
-	out[2][3] = in1[2][0] * in2[0][3] + in1[2][1] * in2[1][3] +
-		in1[2][2] * in2[2][3] + in1[2][3];
-}
-
-
-
-void VectorTransform(const Vector in1, const float in2[3][4], Vector out)
-{
-	out[0] = DotProduct(in1, in2[0]) + in2[0][3];
-	out[1] = DotProduct(in1, in2[1]) + in2[1][3];
-	out[2] = DotProduct(in1, in2[2]) + in2[2][3];
-}
-
-
-
 void AngleQuaternion(const Vector angles, vec4_t quaternion)
 {
 	float angle = 0.f;
@@ -143,13 +46,13 @@ void AngleQuaternion(const Vector angles, vec4_t quaternion)
 	sr = sin(angle);
 	cr = cos(angle);
 
-	quaternion[0] = sr * cp * cy - cr * sp * sy;  // X
-	quaternion[1] = cr * sp * cy + sr * cp * sy;  // Y
-	quaternion[2] = cr * cp * sy - sr * sp * cy;  // Z
-	quaternion[3] = cr * cp * cy + sr * sp * sy;  // W
+	quaternion[0] = sr * cp * cy - cr * sp * sy; // X
+	quaternion[1] = cr * sp * cy + sr * cp * sy; // Y
+	quaternion[2] = cr * cp * sy - sr * sp * cy; // Z
+	quaternion[3] = cr * cp * cy + sr * sp * sy; // W
 }
 
-void QuaternionMatrix(const vec4_t quaternion, float(*matrix)[4])
+void QuaternionMatrix(const vec4_t quaternion, float (*matrix)[4])
 {
 	matrix[0][0] = 1.0 - 2.0 * quaternion[1] * quaternion[1] - 2.0 * quaternion[2] * quaternion[2];
 	matrix[1][0] = 2.0 * quaternion[0] * quaternion[1] + 2.0 * quaternion[3] * quaternion[2];

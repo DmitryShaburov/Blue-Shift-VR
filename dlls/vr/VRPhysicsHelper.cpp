@@ -12,26 +12,20 @@ Disable warnings for:
 
 #include "../../external/reactphysics3d/include/reactphysics3d.h"
 #include "pm_defs.h"
-#include "plane.h"
 #include "com_model.h"
 #include "vr/VRComModelHL25.h"
-#include "studio.h"
 
 #include <fstream>
 #include <memory>
 
 #include "VRPhysicsHelper.h"
-#include "VRModelHelper.h"
 
 #include "util.h"
 #include "cbase.h"
-#include "effects.h"
-#include "game.h"
 
 #include "animation.h"
 
 #include <chrono>
-#include <cstdlib>
 
 #include "VRPhysicsHelperHelpers.hpp"
 
@@ -64,7 +58,7 @@ void VRPhysicsHelper::TraceLine(const Vector& vecStart, const Vector& vecEnd, ed
 	catch (VRException& e)
 	{
 		ALERT(at_console, "ERROR: VRException in VRPhysicsHelper::TraceLine: %s\n", e.what());
-		ptr->fAllSolid = true;
+		ptr->fAllSolid = 1;
 		ptr->flFraction = 0.f;
 	}
 }
@@ -227,7 +221,9 @@ VRPhysicsHelper::~VRPhysicsHelper()
 	{
 		ALERT(at_console, "ERROR: VRException in ~VRPhysicsHelper: %s\n", e.what());
 	}
-	catch (...) {}
+	catch (...)
+	{
+	}
 }
 
 bool VRPhysicsHelper::Internal_CheckIfLineIsBlocked(const Vector& hlPos1, const Vector& hlPos2, Vector& hlResult)
@@ -242,7 +238,7 @@ bool VRPhysicsHelper::Internal_CheckIfLineIsBlocked(const Vector& hlPos1, const 
 	Vector3 pos1 = HLVecToRP3DVec(hlPos1);
 	Vector3 pos2 = HLVecToRP3DVec(hlPos2);
 
-	Ray ray{ pos1, pos2, 1. };
+	Ray ray{pos1, pos2, 1.};
 	RaycastInfo raycastInfo{};
 
 	bool result = m_bspModelData[m_currentMapName].m_collisionBody->raycast(ray, raycastInfo) && raycastInfo.hitFraction < (1. - EPSILON);
@@ -266,25 +262,26 @@ bool VRPhysicsHelper::TestCollision(reactphysics3d::CollisionBody* body1, reactp
 		if (result)
 		{
 			std::vector<reactphysics3d::Vector3> manifoldPoints;
-			MyCollisionCallback callback{ [&manifoldPoints](const reactphysics3d::CollisionCallback::CollisionCallbackInfo& collisionCallbackInfo) {
-				auto contactManifoldElement = collisionCallbackInfo.contactManifoldElements;
-				while (contactManifoldElement)
+			MyCollisionCallback callback{[&manifoldPoints](const reactphysics3d::CollisionCallback::CollisionCallbackInfo& collisionCallbackInfo)
 				{
-					auto contactManifold = contactManifoldElement->getContactManifold();
-					while (contactManifold)
+					auto contactManifoldElement = collisionCallbackInfo.contactManifoldElements;
+					while (contactManifoldElement)
 					{
-						auto localToBodyTransform = contactManifold->getShape1()->getLocalToBodyTransform();
-						auto contactPoint = contactManifold->getContactPoints();
-						while (contactPoint)
+						auto contactManifold = contactManifoldElement->getContactManifold();
+						while (contactManifold)
 						{
-							manifoldPoints.push_back(localToBodyTransform * contactPoint->getLocalPointOnShape1());
-							contactPoint = contactPoint->getNext();
+							auto localToBodyTransform = contactManifold->getShape1()->getLocalToBodyTransform();
+							auto contactPoint = contactManifold->getContactPoints();
+							while (contactPoint)
+							{
+								manifoldPoints.push_back(localToBodyTransform * contactPoint->getLocalPointOnShape1());
+								contactPoint = contactPoint->getNext();
+							}
+							contactManifold = contactManifold->getNext();
 						}
-						contactManifold = contactManifold->getNext();
+						contactManifoldElement = contactManifoldElement->getNext();
 					}
-					contactManifoldElement = contactManifoldElement->getNext();
-				}
-			} };
+				}};
 			m_collisionWorld->testCollision(body1, body2, &callback);
 			if (!manifoldPoints.empty())
 			{
@@ -311,7 +308,7 @@ reactphysics3d::CollisionBody* VRPhysicsHelper::GetHitBoxBody(size_t cacheIndex,
 
 	auto& hitboxCache = m_hitboxCaches[cacheIndex];
 
-	HitBox hitbox{ bboxMins, bboxMaxs };
+	HitBox hitbox{bboxMins, bboxMaxs};
 	std::shared_ptr<HitBoxModelData> data;
 
 	if (hitboxCache.count(hitbox) == 0)
@@ -334,10 +331,10 @@ bool VRPhysicsHelper::Internal_ModelIntersectsCapsule(CBaseEntity* pModel, const
 	if (!CheckWorld())
 		return false;
 
-	if (!pModel->pev->model)
+	if (0 == pModel->pev->model)
 		return false;
 
-	auto bspModelData = m_bspModelData.find(std::string{ STRING(pModel->pev->model) });
+	auto bspModelData = m_bspModelData.find(std::string{STRING(pModel->pev->model)});
 	if (bspModelData == m_bspModelData.end())
 		return false;
 
@@ -360,11 +357,11 @@ bool VRPhysicsHelper::Internal_ModelIntersectsCapsule(CBaseEntity* pModel, const
 		m_capsuleShape = nullptr;
 	}
 
-	m_capsuleShape = new CapsuleShape{ (radius)*HL_TO_RP3D, (height)*HL_TO_RP3D };
+	m_capsuleShape = new CapsuleShape{(radius)*HL_TO_RP3D, (height)*HL_TO_RP3D};
 	m_capsuleProxyShape = m_capsuleBody->addCollisionShape(m_capsuleShape, rp3d::Transform::identity());
-	m_capsuleBody->setTransform(rp3d::Transform{ HLVecToRP3DVec(capsuleCenter), HLAnglesToRP3DQuaternion(Vector{0.f, 0.f, 90.f}) });
+	m_capsuleBody->setTransform(rp3d::Transform{HLVecToRP3DVec(capsuleCenter), HLAnglesToRP3DQuaternion(Vector{0.f, 0.f, 90.f})});
 
-	bspModelData->second.m_collisionBody->setTransform(rp3d::Transform{ HLVecToRP3DVec(pModel->pev->origin), HLAnglesToRP3DQuaternion(pModel->pev->angles) });
+	bspModelData->second.m_collisionBody->setTransform(rp3d::Transform{HLVecToRP3DVec(pModel->pev->origin), HLAnglesToRP3DQuaternion(pModel->pev->angles)});
 
 	return TestCollision(bspModelData->second.m_collisionBody, m_capsuleBody);
 }
@@ -427,13 +424,13 @@ bool VRPhysicsHelper::Internal_ModelIntersectsLine(CBaseEntity* pModel, const Ve
 	if (!CheckWorld())
 		return false;
 
-	if (!pModel->pev->model)
+	if (0 == pModel->pev->model)
 	{
 		// No model, use bounding box
 		return BBoxIntersectsLine(pModel->pev->origin, pModel->pev->mins, pModel->pev->maxs, Vector{}, lineA, lineB, result);
 	}
 
-	std::string modelName{ STRING(pModel->pev->model) };
+	std::string modelName{STRING(pModel->pev->model)};
 
 	auto bspModelData = m_bspModelData.find(modelName);
 	if (bspModelData != m_bspModelData.end() && bspModelData->second.HasData())
@@ -473,7 +470,7 @@ bool VRPhysicsHelper::Internal_ModelIntersectsLine(CBaseEntity* pModel, const Ve
 
 		std::vector<StudioHitBox> studiohitboxes;
 		studiohitboxes.resize(numhitboxes);
-		if (GetHitboxesAndAttachments(pModel->pev, pmodel, pModel->pev->sequence, pModel->pev->frame, studiohitboxes.data(), nullptr, false))
+		if (0 != GetHitboxesAndAttachments(pModel->pev, pmodel, pModel->pev->sequence, pModel->pev->frame, studiohitboxes.data(), nullptr, false))
 		{
 			for (const auto& studiohitbox : studiohitboxes)
 			{
@@ -501,13 +498,13 @@ bool VRPhysicsHelper::Internal_ModelIntersectsBBox(CBaseEntity* pModel, const Ve
 	if (!CheckWorld())
 		return false;
 
-	if (!pModel->pev->model)
+	if (0 == pModel->pev->model)
 	{
 		// No model, use bounding box
 		return ModelBBoxIntersectsBBox(pModel->pev->origin, pModel->pev->mins, pModel->pev->maxs, Vector{}, bboxCenter, bboxMins, bboxMaxs, bboxAngles, result);
 	}
 
-	std::string modelName{ STRING(pModel->pev->model) };
+	std::string modelName{STRING(pModel->pev->model)};
 
 	auto bspModelData = m_bspModelData.find(modelName);
 	if (bspModelData != m_bspModelData.end() && bspModelData->second.HasData())
@@ -517,7 +514,7 @@ bool VRPhysicsHelper::Internal_ModelIntersectsBBox(CBaseEntity* pModel, const Ve
 		if (!bboxBody)
 			return false;
 
-		bspModelData->second.m_collisionBody->setTransform(rp3d::Transform{ HLVecToRP3DVec(pModel->pev->origin), HLAnglesToRP3DQuaternion(pModel->pev->angles) });
+		bspModelData->second.m_collisionBody->setTransform(rp3d::Transform{HLVecToRP3DVec(pModel->pev->origin), HLAnglesToRP3DQuaternion(pModel->pev->angles)});
 		return TestCollision(bspModelData->second.m_collisionBody, bboxBody, result);
 	}
 	else
@@ -544,7 +541,7 @@ bool VRPhysicsHelper::Internal_ModelIntersectsBBox(CBaseEntity* pModel, const Ve
 
 		std::vector<StudioHitBox> studiohitboxes;
 		studiohitboxes.resize(numhitboxes);
-		if (GetHitboxesAndAttachments(pModel->pev, pmodel, pModel->pev->sequence, pModel->pev->frame, studiohitboxes.data(), nullptr, false))
+		if (0 != GetHitboxesAndAttachments(pModel->pev, pmodel, pModel->pev->sequence, pModel->pev->frame, studiohitboxes.data(), nullptr, false))
 		{
 			for (const auto& studiohitbox : studiohitboxes)
 			{
@@ -576,7 +573,7 @@ void VRPhysicsHelper::Internal_TraceLine(const Vector& vecStart, const Vector& v
 		Vector3 pos1 = HLVecToRP3DVec(vecStart);
 		Vector3 pos2 = HLVecToRP3DVec(vecEnd);
 
-		Ray ray{ pos1, pos2, 1. };
+		Ray ray{pos1, pos2, 1.};
 		RaycastInfo raycastInfo{};
 
 		if (m_bspModelData[m_currentMapName].m_collisionBody->raycast(ray, raycastInfo) && raycastInfo.hitFraction < ptr->flFraction)
@@ -585,9 +582,9 @@ void VRPhysicsHelper::Internal_TraceLine(const Vector& vecStart, const Vector& v
 			ptr->vecPlaneNormal = RP3DVecToHLVec(raycastInfo.worldNormal).Normalize();
 			ptr->flPlaneDist = DotProduct(ptr->vecPlaneNormal, -ptr->vecEndPos);
 
-			ptr->fAllSolid = false;
-			ptr->fInOpen = false;
-			ptr->fInWater = UTIL_PointContents(ptr->vecEndPos) == CONTENTS_WATER;
+			ptr->fAllSolid = 0;
+			ptr->fInOpen = 0;
+			ptr->fInWater = static_cast<int>(UTIL_PointContents(ptr->vecEndPos) == CONTENTS_WATER);
 			ptr->flFraction = raycastInfo.hitFraction;
 			ptr->iHitgroup = 0;
 			ptr->pHit = INDEXENT(0);
@@ -608,9 +605,9 @@ void VRPhysicsHelper::Internal_TraceLine(const Vector& vecStart, const Vector& v
 				continue;
 			}
 
-			BoxShape boxShape{ ladderSize };
+			BoxShape boxShape{ladderSize};
 
-			CollisionBody* body = m_collisionWorld->createCollisionBody(rp3d::Transform{ ladderPosition, Matrix3x3::identity() });
+			CollisionBody* body = m_collisionWorld->createCollisionBody(rp3d::Transform{ladderPosition, Matrix3x3::identity()});
 			body->addCollisionShape(&boxShape, rp3d::Transform::identity());
 
 			if (body->raycast(ray, raycastInfo))
@@ -623,9 +620,9 @@ void VRPhysicsHelper::Internal_TraceLine(const Vector& vecStart, const Vector& v
 					ptr->vecPlaneNormal = RP3DVecToHLVec(raycastInfo.worldNormal).Normalize();
 					ptr->flPlaneDist = DotProduct(ptr->vecPlaneNormal, -ptr->vecEndPos);
 
-					ptr->fAllSolid = false;
-					ptr->fInOpen = false;
-					ptr->fInWater = UTIL_PointContents(ptr->vecEndPos) == CONTENTS_WATER;
+					ptr->fAllSolid = 0;
+					ptr->fInOpen = 0;
+					ptr->fInWater = static_cast<int>(UTIL_PointContents(ptr->vecEndPos) == CONTENTS_WATER);
 					ptr->flFraction = raycastInfo.hitFraction;
 					ptr->iHitgroup = 0;
 					ptr->pHit = pent;
@@ -645,7 +642,7 @@ void VRPhysicsHelper::InitPhysicsWorld()
 	}
 	if (m_dynamicsWorld == nullptr)
 	{
-		m_dynamicsWorld = new VRDynamicsWorld{ rp3d::Vector3{0, 0, 0} };
+		m_dynamicsWorld = new VRDynamicsWorld{rp3d::Vector3{0, 0, 0}};
 	}
 }
 
@@ -655,19 +652,19 @@ VRPhysicsHelper::HitBoxModelData::~HitBoxModelData()
 	{
 		DeleteData();
 	}
-	catch (...) {}
+	catch (...)
+	{
+	}
 }
 
 void VRPhysicsHelper::HitBoxModelData::CreateData(CollisionWorld* collisionWorld, const Vector& origin, const Vector& mins, const Vector& maxs, const Vector& angles)
 {
-	m_mins = mins;
-	m_maxs = maxs;
-	m_center = (m_mins + m_maxs) * 0.5f;
+	m_center = (mins + maxs) * 0.5f;
 
 	Vector3 size = HLVecToRP3DVec(maxs - mins);
 
 	m_collisionBody = collisionWorld->createCollisionBody(rp3d::Transform::identity());
-	m_bboxShape = new BoxShape{ size * 0.5 };
+	m_bboxShape = new BoxShape{size * 0.5};
 	m_proxyShape = m_collisionBody->addCollisionShape(m_bboxShape, rp3d::Transform::identity());
 
 	m_collisionWorld = collisionWorld;
@@ -683,7 +680,7 @@ void VRPhysicsHelper::HitBoxModelData::UpdateTransform(const Vector& origin, con
 
 	Vector3 rotatedCenter = HLVecToRP3DVec(VRPhysicsHelper::Instance().RotateVectorInline(m_center, angles));
 
-	m_collisionBody->setTransform(rp3d::Transform{ HLVecToRP3DVec(origin) + rotatedCenter, HLAnglesToRP3DQuaternion(angles) });
+	m_collisionBody->setTransform(rp3d::Transform{HLVecToRP3DVec(origin) + rotatedCenter, HLAnglesToRP3DQuaternion(angles)});
 }
 
 void VRPhysicsHelper::HitBoxModelData::DeleteData()
@@ -718,7 +715,9 @@ VRPhysicsHelper::BSPModelData::~BSPModelData()
 		m_indices.clear();
 		DeleteData();
 	}
-	catch (...) {}
+	catch (...)
+	{
+	}
 }
 
 void VRPhysicsHelper::BSPModelData::CreateData(CollisionWorld* collisionWorld)
@@ -792,7 +791,9 @@ VRPhysicsHelper::DynamicBSPModelData::~DynamicBSPModelData()
 		m_indices.clear();
 		DeleteData();
 	}
-	catch (...) {}
+	catch (...)
+	{
+	}
 }
 
 void VRPhysicsHelper::DynamicBSPModelData::CreateData(DynamicsWorld* dynamicsWorld)
@@ -864,7 +865,7 @@ bool VRPhysicsHelper::GetPhysicsMapDataFromFile(const std::string& mapFilePath, 
 
 	try
 	{
-		std::ifstream physicsMapDataFileStream{ physicsMapDataFilePath, std::ios_base::in | std::ios_base::binary };
+		std::ifstream physicsMapDataFileStream{physicsMapDataFilePath, std::ios_base::in | std::ios_base::binary};
 		if (!physicsMapDataFileStream.fail() && physicsMapDataFileStream.good())
 		{
 			uint32_t magic = 0;
@@ -910,13 +911,13 @@ bool VRPhysicsHelper::GetPhysicsMapDataFromFile(const std::string& mapFilePath, 
 							}
 							else
 							{
-								throw VRException{ "invalid bsp data name at index " + std::to_string(bspDataIndex) };
+								throw VRException{"invalid bsp data name at index " + std::to_string(bspDataIndex)};
 							}
 						}
 					}
 					else
 					{
-						throw VRException{ "invalid bsp data size" };
+						throw VRException{"invalid bsp data size"};
 					}
 				}
 
@@ -947,25 +948,25 @@ bool VRPhysicsHelper::GetPhysicsMapDataFromFile(const std::string& mapFilePath, 
 							}
 							else
 							{
-								throw VRException{ "invalid dynamic bsp data name at index " + std::to_string(dynamicBSPDataIndex) };
+								throw VRException{"invalid dynamic bsp data name at index " + std::to_string(dynamicBSPDataIndex)};
 							}
 						}
 					}
 					else
 					{
-						throw VRException{ "invalid dynamic dynamic bsp data size" };
+						throw VRException{"invalid dynamic dynamic bsp data size"};
 					}
 				}
 
 				char checkeof;
-				if (physicsMapDataFileStream >> checkeof)  // this should fail
+				if (physicsMapDataFileStream >> checkeof) // this should fail
 				{
-					throw VRException{ "expected eof, but didn't reach eof" };
+					throw VRException{"expected eof, but didn't reach eof"};
 				}
 
 				if (m_bspModelData.count(m_currentMapName) == 0 || m_dynamicBSPModelData.count(m_currentMapName) == 0)
 				{
-					throw VRException{ "sanity check failed, invalid physics data" };
+					throw VRException{"sanity check failed, invalid physics data"};
 				}
 
 				ALERT(at_console, "Successfully loaded physics data from %s\n", physicsMapDataFilePath.c_str());
@@ -973,7 +974,7 @@ bool VRPhysicsHelper::GetPhysicsMapDataFromFile(const std::string& mapFilePath, 
 			}
 			else
 			{
-				throw VRException{ "invalid header" };
+				throw VRException{"invalid header"};
 			}
 		}
 		else
@@ -993,7 +994,7 @@ bool VRPhysicsHelper::GetPhysicsMapDataFromFile(const std::string& mapFilePath, 
 
 void VRPhysicsHelper::StorePhysicsMapDataToFile(const std::string& mapFilePath, const std::string& physicsMapDataFilePath)
 {
-	std::ofstream physicsMapDataFileStream{ physicsMapDataFilePath, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary };
+	std::ofstream physicsMapDataFileStream{physicsMapDataFilePath, std::ios_base::out | std::ios_base::trunc | std::ios_base::binary};
 	if (!physicsMapDataFileStream.fail())
 	{
 		uint64_t hash = HashFileData(mapFilePath);
@@ -1007,7 +1008,7 @@ void VRPhysicsHelper::StorePhysicsMapDataToFile(const std::string& mapFilePath, 
 		WriteBinaryData(physicsMapDataFileStream, HLVR_MAP_PHYSDATA_FILE_VERSION);
 		WriteBinaryData(physicsMapDataFileStream, hash);
 
-		WriteBinaryData(physicsMapDataFileStream, static_cast<uint32_t>(m_bspModelData.size()));  // bspDataCount
+		WriteBinaryData(physicsMapDataFileStream, static_cast<uint32_t>(m_bspModelData.size())); // bspDataCount
 		for (auto& bspModelData : m_bspModelData)
 		{
 			WriteBinaryData(physicsMapDataFileStream, static_cast<uint32_t>(bspModelData.second.m_vertices.size()));
@@ -1068,7 +1069,7 @@ void VRPhysicsHelper::StorePhysicsMapDataToFile(const std::string& mapFilePath, 
 
 void VRPhysicsHelper::GetPhysicsMapDataFromModel()
 {
-	const std::string mapModelNameStart{ "maps/" };
+	const std::string mapModelNameStart{"maps/"};
 
 	m_bspModelData.clear();
 	m_dynamicBSPModelData.clear();
@@ -1084,7 +1085,7 @@ void VRPhysicsHelper::GetPhysicsMapDataFromModel()
 		if (!model)
 			continue;
 
-		const std::string modelName{ model->name };
+		const std::string modelName{model->name};
 		bool isMapModel = (modelName.compare(0, mapModelNameStart.length(), mapModelNameStart) == 0);
 
 		auto& bspModelData = m_bspModelData[modelName];
@@ -1116,7 +1117,7 @@ void VRPhysicsHelper::GetPhysicsMapDataFromModel()
 	if (mapModel)
 	{
 		// Create map model for dynamic world
-		auto& dynamicBSPModelData = m_dynamicBSPModelData[std::string{ mapModel->name }];
+		auto& dynamicBSPModelData = m_dynamicBSPModelData[std::string{mapModel->name}];
 		PlaneFacesMap planeFaces;
 		PlaneVertexMetaDataMap planeVertexMetaData;
 		TriangulateBSPModel(mapModel, planeFaces, planeVertexMetaData, dynamicBSPModelData.m_vertices, &dynamicBSPModelData.m_normals, dynamicBSPModelData.m_indices, false);
@@ -1144,10 +1145,10 @@ bool VRPhysicsHelper::CheckWorld()
 					InitPhysicsWorld();
 				}
 
-				m_currentMapName = std::string{ world->name };
-				const std::string mapName{ m_currentMapName.substr(0, m_currentMapName.find_last_of(".")) };
-				const std::string mapFilePath{ UTIL_GetFilePath("/" + mapName + ".bsp") };
-				const std::string physicsMapDataFilePath{ mapFilePath.substr(0, mapFilePath.length() - 4) + ".hlvrphysdata"};
+				m_currentMapName = std::string{world->name};
+				const std::string mapName{m_currentMapName.substr(0, m_currentMapName.find_last_of("."))};
+				const std::string mapFilePath{UTIL_GetFilePath("/" + mapName + ".bsp")};
+				const std::string physicsMapDataFilePath{mapFilePath.substr(0, mapFilePath.length() - 4) + ".hlvrphysdata"};
 
 				ALERT(at_console, "Initializing physics data for current map (%s)...\n", m_currentMapName.data());
 				auto start = std::chrono::system_clock::now();
@@ -1260,13 +1261,6 @@ void VRPhysicsHelper::RotateVector(Vector& vecToRotate, const Vector& vecAngles,
 	}
 }
 
-Vector VRPhysicsHelper::AngularVelocityToLinearVelocity(const Vector& avelocity, const Vector& pos)
-{
-	Vector rotatedPos = pos;
-	RotateVector(rotatedPos, avelocity);
-	return rotatedPos - pos;
-}
-
 void VRPhysicsHelper::CreateInstance()
 {
 	assert(!m_instance);
@@ -1286,4 +1280,4 @@ VRPhysicsHelper& VRPhysicsHelper::Instance()
 	return *m_instance;
 }
 
-VRPhysicsHelper* VRPhysicsHelper::m_instance{ nullptr };
+VRPhysicsHelper* VRPhysicsHelper::m_instance{nullptr};

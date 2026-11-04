@@ -167,7 +167,7 @@ void CHgun::PrimaryAttack()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.1f);
 #endif
-// BSVR start
+	// BSVR start
 }
 
 
@@ -266,7 +266,7 @@ void CHgun::SecondaryAttack()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.2f);
 #endif
-// BSVR start
+	// BSVR start
 }
 
 

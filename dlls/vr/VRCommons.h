@@ -5,7 +5,6 @@
 #include <map>
 #include "vector.h"
 
-typedef int BOOL;
 class CBasePlayer;
 
 enum class VRControllerID : int32_t

@@ -166,9 +166,13 @@ inline bool FNullEnt(EOFFSET eoffset)
 {
 	return eoffset == 0;
 }
-inline bool FNullEnt(const edict_t* pent) { return pent == NULL || FNullEnt(OFFSET(pent)); }
+// BSVR start
+// Treat freed or invalid edicts as null too (VR code iterates over all edicts)
+// inline bool FNullEnt(const edict_t* pent) { return pent == NULL || FNullEnt(OFFSET(pent)); }
+inline bool FNullEnt(const edict_t* pent) { return pent == NULL || 0 != pent->free || pent->v.pContainingEntity != pent || FNullEnt(OFFSET(pent)); }
+// BSVR end
 inline bool FNullEnt(entvars_t* pev) { return pev == NULL || FNullEnt(OFFSET(pev)); }
-inline bool FWorldEnt(const edict_t* pent) { return pent != nullptr && !pent->free && pent->v.pContainingEntity == pent && OFFSET(pent) == eoNullEntity; }
+inline bool FWorldEnt(const edict_t* pent) { return pent != nullptr && 0 == pent->free && pent->v.pContainingEntity == pent && OFFSET(pent) == eoNullEntity; }
 inline bool FWorldEnt(entvars_t* pev) { return pev != nullptr && FWorldEnt(ENT(pev)); }
 
 // Testing strings for nullity
@@ -654,7 +658,6 @@ std::string UTIL_GetFilePath(const std::string& filename);
 extern bool UTIL_PointInsideBSPModel(const Vector& vec, const Vector& absmin, const Vector& absmax);
 extern int UTIL_PointContents(const Vector& vec, bool detectSolidEntities = false, edict_t** pPent = nullptr);
 extern bool UTIL_CheckClearSight(const Vector& pos1, const Vector& pos2, IGNORE_MONSTERS igmon, IGNORE_GLASS ignoreGlass, edict_t* pentIgnore = nullptr);
-extern void UTIL_GetAnglesFromVectors(const Vector& forward, const Vector& right, const Vector& up, Vector& angles);
 extern bool UTIL_BBoxIntersectsBBox(const Vector& absmins1, const Vector& absmaxs1, const Vector& absmins2, const Vector& absmaxs2);
 extern bool UTIL_PointInsideRotatedBBox(const Vector& bboxCenter, const Vector& bboxAngles, const Vector& bboxMins, const Vector& bboxMaxs, const Vector& checkVec);
 extern bool UTIL_PointInsideBBox(const Vector& vec, const Vector& absmin, const Vector& absmax);

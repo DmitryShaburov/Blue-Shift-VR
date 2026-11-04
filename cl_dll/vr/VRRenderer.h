@@ -22,27 +22,16 @@ enum class VRHUDRenderType
 	PAIN
 };
 
-namespace vr
-{
-	class IVRSystem;
-}
-
 class VRRenderer
 {
 public:
 	VRRenderer();
 	~VRRenderer();
 
-	enum class MultiPassMode : int
-	{
-		TRUE_DISPLAYLIST = 0,
-		MIXED_DISPLAYLIST = 1
-	};
-
 	void Init();
 	void VidInit();
 
-	void Frame(double frametime);
+	void Frame();
 	void UpdateGameRenderState();
 	void CalcRefdef(struct ref_params_s* pparams);
 
@@ -51,24 +40,13 @@ public:
 
 	void InterceptHUDRedraw(float time, int intermission);
 
-	void GetViewOrg(float* origin);
 	void GetViewAngles(float* angles);
-	void GetViewVectors(Vector& forward, Vector& right, Vector& up);
 	Vector GetMovementAngles();
 
 
 	// For studiomodelrenderer
-	void EnableDepthTest();
 	void ReverseCullface();
 	void RestoreCullface();
-
-	/*
-	bool ShouldMirrorCurrentModel(cl_entity_t* ent);
-	bool IsCurrentModelHandWithSkeletalData(cl_entity_t* ent, float fingerCurl[5]);
-	*/
-
-	// Called in Frame if no game is running
-	void RenderIntermissionRoom();
 
 	// Called in DrawTransparent()
 	void RenderHUDSprites();
@@ -83,25 +61,9 @@ public:
 	void VRHUDDrawFinished();
 
 	VRHelper* GetHelper() { return vrHelper; }
-	vr::IVRSystem* GetVRSystem();
-
-	bool HasValidHandController();
-	Vector GetHandPosition();
-	Vector GetHandAngles();
-
-	bool HasValidWeaponController();
-	Vector GetWeaponPosition();
-	Vector GetWeaponAngles();
 
 	bool HasValidLeftController();
-	Vector GetLeftControllerPosition();
-	Vector GetLeftControllerAngles();
-	Vector GetLeftControllerForward();
-
 	bool HasValidRightController();
-	Vector GetRightControllerPosition();
-	Vector GetRightControllerAngles();
-	Vector GetRightControllerForward();
 
 	bool IsDeadInGame();
 	bool IsInGame();
@@ -115,9 +77,8 @@ public:
 	void RotateVectorY(Vector& vecToRotate, const float angle);
 	void RotateVectorZ(Vector& vecToRotate, const float angle);
 	void RotateVector(Vector& vecToRotate, const Vector& vecAngles, const bool reverse = false);
-	void HLAnglesToGLMatrix(const Vector& angles, float matrix[16]);
 
-	double m_clientTime{ 0.0 };	// keeps track of current time
+	double m_clientTime{0.0}; // keeps track of current time
 
 	bool IsHandModel(const char* modelname) const;
 	bool IsHandSkeletalModel(const char* modelname) const;
@@ -131,47 +92,44 @@ public:
 	bool GetHandControllerAttachment(Vector& out, int attachment);
 
 private:
-	float m_leftControllerAttachments[4][3]{ 0.f };
-	float m_rightControllerAttachments[4][3]{ 0.f };
-	int m_numLeftControllerAttachments{ 0 };
-	int m_numRightControllerAttachments{ 0 };
+	float m_leftControllerAttachments[4][3]{0.f};
+	float m_rightControllerAttachments[4][3]{0.f};
+	int m_numLeftControllerAttachments{0};
+	int m_numRightControllerAttachments{0};
 
-	struct model_s* m_currentMapModel{ nullptr };
+	struct model_s* m_currentMapModel{nullptr};
 	void UpdateSkyboxForMap();
 	void RenderVRHandsAndHUDAndStuff();
-	void DebugRenderPhysicsPolygons();
 
 	bool m_fIsOnlyClientDraw = false;
 
 	VRHelper* vrHelper = nullptr;
 
-	bool m_isInGame{ false };
-	bool m_isInMenu{ true };
+	bool m_isInGame{false};
+	bool m_isInMenu{true};
 	// BSVR: m_wasMenuJustRendered removed, the menu is captured every frame it is open (see Frame)
-	unsigned int m_hlMenuTransparentTexture{ 0 };
-	bool m_CalcRefdefWasCalled{ false };
-	bool m_HUDRedrawWasCalled{ false };
-
-	bool m_useDisplayList = false;
+	unsigned int m_hlMenuTransparentTexture{0};
+	bool m_CalcRefdefWasCalled{false};
+	bool m_HUDRedrawWasCalled{false};
 
 	// HUD Render stuff
-	VRHUDRenderType m_hudRenderType{ VRHUDRenderType::NONE };
-	HSPRITE m_hudSpriteHandle{ 0 };
-	color24 m_hudSpriteColor{ 0, 0, 0 };
+	VRHUDRenderType m_hudRenderType{VRHUDRenderType::NONE};
+	HSPRITE m_hudSpriteHandle{0};
+	color24 m_hudSpriteColor{0, 0, 0};
 	int m_iHUDFirstSpriteX = 0;
 	int m_iHUDFirstSpriteY = 0;
 	bool m_fIsFirstSprite = true;
 
-	float m_hudRedrawTime{ 0.f };
-	int m_hudRedrawIntermission{ 0 };
+	float m_hudRedrawTime{0.f};
+	int m_hudRedrawIntermission{0};
 
-	bool m_isDrawingDamage{ false };
-	float m_flDrawingDamageTime{ 0.f };
+	bool m_isDrawingDamage{false};
+	float m_flDrawingDamageTime{0.f};
 	Vector m_damageColor;
 
-	VREyeMode m_eyeMode{ VREyeMode::Both };
+	VREyeMode m_eyeMode{VREyeMode::Both};
 
-	bool m_isVeryFirstFrameEver{ true };
+	bool m_isVeryFirstFrameEver{true};
 
 	void GetStartingPosForHUDRenderType(const VRHUDRenderType m_hudRenderType, float& hudStartPositionUpOffset, float& hudStartPositionRightOffset);
 	bool GetHUDSpriteOriginAndOrientation(const VRHUDRenderType m_hudRenderType, Vector& origin, Vector& forward, Vector& right, Vector& up);

@@ -493,7 +493,7 @@ void CSqueak::Holster()
 // BSVR start completely new primary attack method
 void CSqueak::PrimaryAttack()
 {
-	if (!m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
+	if (0 == m_flStartThrow && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] > 0)
 	{
 		/*
 		if (RANDOM_FLOAT(0, 1) <= 0.5)
@@ -601,7 +601,7 @@ void CSqueak::SecondaryAttack()
 void CSqueak::WeaponIdle()
 {
 	// BSVR start
-	if (m_flStartThrow)
+	if (0 != m_flStartThrow)
 	{
 		Throw();
 		m_flStartThrow = 0;

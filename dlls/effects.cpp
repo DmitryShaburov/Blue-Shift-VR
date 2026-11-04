@@ -1255,11 +1255,6 @@ void CSprite::AnimateThink()
 
 	pev->nextthink = gpGlobals->time + 0.1;
 	m_lastTime = gpGlobals->time;
-
-	// BSVR start
-	if (m_fSetAnimtime)
-		pev->animtime = gpGlobals->time;
-	// BSVR end
 }
 
 void CSprite::AnimateUntilDead()
@@ -2179,6 +2174,10 @@ void CEnvBeverage::Precache()
 {
 	PRECACHE_MODEL("models/can.mdl");
 	PRECACHE_SOUND("weapons/g_bounce3.wav");
+	// BSVR start
+	PRECACHE_SOUND("gonarch/gon_sack2.wav"); // drinking sound for VR soda cans (CItemSoda::Drink)
+
+	// BSVR end
 }
 
 LINK_ENTITY_TO_CLASS(env_beverage, CEnvBeverage);
@@ -2247,7 +2246,7 @@ public:
 	// void EXPORT CanThink(); - original
 	// void EXPORT CanTouch(CBaseEntity* pOther); - original
 	virtual void HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles) override;
-	virtual bool IsDraggable() override { return !(pev->effects & EF_NODRAW) && CGib::IsDraggable(); }
+	virtual bool IsDraggable() override { return (pev->effects & EF_NODRAW) == 0 && CGib::IsDraggable(); }
 	virtual void HandleDragStart() override;
 	virtual void HandleDragStop() override;
 	// BSVR end
@@ -2334,7 +2333,7 @@ void CItemSoda::Drink(CBaseEntity* pDrinker)
 	// closest audio file to drinking sound i could find xD
 	EMIT_SOUND_DYN(ENT(pev), CHAN_WEAPON, "gonarch/gon_sack2.wav", 1, ATTN_NORM, 0, PITCH_HIGH);
 
-	pDrinker->TakeHealth(1, DMG_GENERIC);  // a bit of health.
+	pDrinker->TakeHealth(1, DMG_GENERIC); // a bit of health.
 
 	pev->solid = SOLID_NOT;
 	pev->movetype = MOVETYPE_NONE;

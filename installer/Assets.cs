@@ -46,6 +46,9 @@ static class Assets
         Console.WriteLine("Options that do nothing in VR");
         OptionsLocks.Install(halfLifeDir, modDir);
 
+        Console.WriteLine("NPC lines for VR");
+        Sentences.Install(halfLifeDir, modDir);
+
         Console.WriteLine("Saved games");
         RenameSaves(modDir);
     }

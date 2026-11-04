@@ -105,10 +105,10 @@ CGrenade* CGrenade::ShootContact(entvars_t* pevOwner, Vector vecStart, Vector ve
 void CGrenade::DetonateUse(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value) {}
 // BSVR start
 bool CGrenade::IsDraggable() { return false; }
-void CGrenade::HandleDragStart() { }
-void CGrenade::HandleDragStop() { }
-void CGrenade::HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles) { }
-void CGrenade::BaseBalled(CBaseEntity* pPlayer, const Vector& velocity) { }
+void CGrenade::HandleDragStart() {}
+void CGrenade::HandleDragStop() {}
+void CGrenade::HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles) {}
+void CGrenade::BaseBalled(CBaseEntity* pPlayer, const Vector& velocity) {}
 // BSVR end
 
 void UTIL_Remove(CBaseEntity* pEntity) {}
@@ -353,18 +353,6 @@ bool CBasePlayer::IsWeaponUnderWater()
 	float weaponPos[3];
 	GetWeaponPosition().CopyToArray(weaponPos);
 	return gEngfuncs.PM_PointContents(weaponPos, nullptr) == CONTENTS_WATER;
-}
-bool CBasePlayer::IsWeaponPositionValid()
-{
-	extern cl_enginefunc_t gEngfuncs;
-	float weaponPos[3];
-	GetWeaponPosition().CopyToArray(weaponPos);
-	int weaponOriginContent = gEngfuncs.PM_PointContents(weaponPos, nullptr);
-	return weaponOriginContent == CONTENTS_EMPTY || weaponOriginContent == CONTENTS_WATER;
-}
-float CBasePlayer::GetAnalogFire()
-{
-	return gVRRenderer.GetHelper()->GetAnalogFire();
 }
 bool CBasePlayer::VRCanAttack()
 {

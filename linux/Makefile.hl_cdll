@@ -111,7 +111,6 @@ HL1_OBJS = \
 	$(HL1_OBJ_DIR)/vr/VRGameFunctions.o \
 	$(HL1_OBJ_DIR)/vr/VRSteamworksManager.o \
 	$(HL1_OBJ_DIR)/vr/VRModExtraDataCacheHook.o \
-	$(HL1_OBJ_DIR)/vr/VRDebugPhysicsRenderer.o \
 	$(HL1_OBJ_DIR)/vr/VRSettingsPages.o \
 	$(HL1_OBJ_DIR)/vr/VRClientVGUI.o \
 	$(HL1_OBJ_DIR)/vr/VRClientVGUIExport.o \

@@ -4,11 +4,10 @@
 #include "EasyHook/include/easyhook.h"
 
 #include <Windows.h>
-#include <algorithm>
 
 namespace
 {
-	bool g_wasthreadattached = false;
+bool g_wasthreadattached = false;
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)

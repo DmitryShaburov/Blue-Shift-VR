@@ -427,6 +427,11 @@ void CAM_OutUp() { KeyUp(&cam_out); }
 
 void CAM_ToThirdPerson()
 {
+	// BSVR start
+	// No third person in VR
+	return;
+	// BSVR end
+
 	Vector viewangles;
 
 #if !defined(_DEBUG)
@@ -616,7 +621,11 @@ int DLLEXPORT CL_IsThirdPerson()
 {
 	//	RecClCL_IsThirdPerson();
 
-	return static_cast<int>(cam_thirdperson || (0 != g_iUser1 && (g_iUser2 == gEngfuncs.GetLocalPlayer()->index)));
+	// BSVR start
+	// No third person in VR
+	// return static_cast<int>(cam_thirdperson || (0 != g_iUser1 && (g_iUser2 == gEngfuncs.GetLocalPlayer()->index)));
+	return 0;
+	// BSVR end
 }
 
 void DLLEXPORT CL_CameraOffset(float* ofs)

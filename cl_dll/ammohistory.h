@@ -69,7 +69,7 @@ public:
 	{
 		for (int i = 0; i < MAX_WEAPONS; i++)
 		{
-			if (rgWeapons[i].iId)
+			if (0 != rgWeapons[i].iId)
 				DropWeapon(&rgWeapons[i]);
 		}
 	}

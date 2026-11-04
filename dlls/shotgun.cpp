@@ -167,7 +167,7 @@ void CShotgun::PrimaryAttack()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.4f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 
@@ -251,7 +251,7 @@ void CShotgun::SecondaryAttack()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.8f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 

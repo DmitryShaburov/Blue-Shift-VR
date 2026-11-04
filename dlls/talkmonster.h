@@ -182,8 +182,9 @@ public:
 
 	// BSVR start
 	// react to player throwing stuff at me
-	virtual void GibAttack(EHandleT<CBaseEntity> thrower, const Vector& pos, int bloodcolor) override;};
-	// BSVR end
+	virtual void GibAttack(EHandleT<CBaseEntity> thrower, const Vector& pos, int bloodcolor) override;
+};
+// BSVR end
 
 
 // Clients can push talkmonsters out of their way

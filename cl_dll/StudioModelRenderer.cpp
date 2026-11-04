@@ -47,50 +47,50 @@ engine_studio_api_t IEngineStudio;
 
 namespace
 {
-	enum Finger
-	{
-		Finger_Thumb = 0,
-		Finger_Index,
-		Finger_Middle,
-		Finger_Ring,
-		Finger_Pinky,
-		Finger_Count
-	};
+enum Finger
+{
+	Finger_Thumb = 0,
+	Finger_Index,
+	Finger_Middle,
+	Finger_Ring,
+	Finger_Pinky,
+	Finger_Count
+};
 
-	constexpr const int VRHAND_Bones_Count = 31;
+constexpr const int VRHAND_Bones_Count = 31;
 
-	enum HandModelSequences
-	{
-		IDLE = 0,
-		POINT_START,
-		POINT_END,
-		WAIT_START,
-		WAIT_END,
-		HALFGRAB_START,
-		HALFGRAB_END,
-		FULLGRAB_START,
-		FULLGRAB_END
-	};
+enum HandModelSequences
+{
+	IDLE = 0,
+	POINT_START,
+	POINT_END,
+	WAIT_START,
+	WAIT_END,
+	HALFGRAB_START,
+	HALFGRAB_END,
+	FULLGRAB_START,
+	FULLGRAB_END
+};
 
-	const char* FingerBoneName(Finger finger)
+const char* FingerBoneName(Finger finger)
+{
+	switch (finger)
 	{
-		switch (finger)
-		{
-		case Finger_Thumb: return "Finger0";
-		case Finger_Index: return "Finger1";
-		case Finger_Middle: return "Finger2";
-		case Finger_Ring: return "Finger3";
-		case Finger_Pinky: return "Finger4";
-		default: return nullptr;
-		}
+	case Finger_Thumb: return "Finger0";
+	case Finger_Index: return "Finger1";
+	case Finger_Middle: return "Finger2";
+	case Finger_Ring: return "Finger3";
+	case Finger_Pinky: return "Finger4";
+	default: return nullptr;
 	}
+}
 
-	bool IsFingerBoneName(Finger finger, const std::string& name)
-	{
-		const char* fingerbonename = FingerBoneName(finger);
-		return fingerbonename != nullptr && name.find(fingerbonename) != std::string::npos;
-	}
-}  // namespace
+bool IsFingerBoneName(Finger finger, const std::string& name)
+{
+	const char* fingerbonename = FingerBoneName(finger);
+	return fingerbonename != nullptr && name.find(fingerbonename) != std::string::npos;
+}
+} // namespace
 
 
 
@@ -117,7 +117,7 @@ studiohdr_t* Mod_Extradata(const char* callerInfo, cl_entity_t* ent, model_t* mo
 		return static_cast<studiohdr_t*>(r);
 	}
 
-	mod = IEngineStudio.Mod_ForName(mod->name, true);
+	mod = IEngineStudio.Mod_ForName(mod->name, 1);
 
 	if (!mod->cache.data)
 	{
@@ -150,10 +150,10 @@ void CStudioModelRenderer::Init()
 	IEngineStudio.GetModelCounters(&m_pStudioModelCount, &m_pModelsDrawn);
 
 	// Get pointers to engine data structures
-	m_pbonetransform = (float(*)[MAXSTUDIOBONES][3][4])IEngineStudio.StudioGetBoneTransform();
-	m_plighttransform = (float(*)[MAXSTUDIOBONES][3][4])IEngineStudio.StudioGetLightTransform();
-	m_paliastransform = (float(*)[3][4])IEngineStudio.StudioGetAliasTransform();
-	m_protationmatrix = (float(*)[3][4])IEngineStudio.StudioGetRotationMatrix();
+	m_pbonetransform = (float (*)[MAXSTUDIOBONES][3][4])IEngineStudio.StudioGetBoneTransform();
+	m_plighttransform = (float (*)[MAXSTUDIOBONES][3][4])IEngineStudio.StudioGetLightTransform();
+	m_paliastransform = (float (*)[3][4])IEngineStudio.StudioGetAliasTransform();
+	m_protationmatrix = (float (*)[3][4])IEngineStudio.StudioGetRotationMatrix();
 }
 
 /*
@@ -621,13 +621,13 @@ void CStudioModelRenderer::StudioSetUpTransform(bool trivial_accept)
 	{
 		// create mirror matrix
 		static float mirrormatrix[3][4] = {
-			{ 1.f, 0.f, 0.f, 1.f },
-			{ 0.f, -1.f, 0.f, 1.f },
-			{ 0.f, 0.f, 1.f, 1.f },
+			{1.f, 0.f, 0.f, 1.f},
+			{0.f, -1.f, 0.f, 1.f},
+			{0.f, 0.f, 1.f, 1.f},
 		};
 
 		// copy rotation matrix
-		float rotationmatrix_copy[3][4] = { 0 };
+		float rotationmatrix_copy[3][4] = {0};
 		MatrixCopy(*m_protationmatrix, rotationmatrix_copy);
 
 		// concat mirror and rotation matrix
@@ -894,224 +894,224 @@ StudioSetupBones
 void CStudioModelRenderer::StudioSetupBones()
 {
 	StudioSetupBonesInline(*m_pbonetransform, *m_plighttransform);
-// 	int i;
-// 	double f;
+	// 	int i;
+	// 	double f;
 
-// 	mstudiobone_t* pbones;
-// 	mstudioseqdesc_t* pseqdesc;
-// 	mstudioanim_t* panim;
+	// 	mstudiobone_t* pbones;
+	// 	mstudioseqdesc_t* pseqdesc;
+	// 	mstudioanim_t* panim;
 
-// 	static float pos[MAXSTUDIOBONES][3];
-// 	static vec4_t q[MAXSTUDIOBONES];
-// 	float bonematrix[3][4];
+	// 	static float pos[MAXSTUDIOBONES][3];
+	// 	static vec4_t q[MAXSTUDIOBONES];
+	// 	float bonematrix[3][4];
 
-// 	static float pos2[MAXSTUDIOBONES][3];
-// 	static vec4_t q2[MAXSTUDIOBONES];
-// 	static float pos3[MAXSTUDIOBONES][3];
-// 	static vec4_t q3[MAXSTUDIOBONES];
-// 	static float pos4[MAXSTUDIOBONES][3];
-// 	static vec4_t q4[MAXSTUDIOBONES];
+	// 	static float pos2[MAXSTUDIOBONES][3];
+	// 	static vec4_t q2[MAXSTUDIOBONES];
+	// 	static float pos3[MAXSTUDIOBONES][3];
+	// 	static vec4_t q3[MAXSTUDIOBONES];
+	// 	static float pos4[MAXSTUDIOBONES][3];
+	// 	static vec4_t q4[MAXSTUDIOBONES];
 
-// 	if (m_pCurrentEntity->curstate.sequence >= m_pStudioHeader->numseq)
-// 	{
-// 		m_pCurrentEntity->curstate.sequence = 0;
-// 	}
+	// 	if (m_pCurrentEntity->curstate.sequence >= m_pStudioHeader->numseq)
+	// 	{
+	// 		m_pCurrentEntity->curstate.sequence = 0;
+	// 	}
 
-// 	pseqdesc = (mstudioseqdesc_t*)((byte*)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pCurrentEntity->curstate.sequence;
+	// 	pseqdesc = (mstudioseqdesc_t*)((byte*)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pCurrentEntity->curstate.sequence;
 
-// 	// always want new gait sequences to start on frame zero
-// 	/*	if ( m_pPlayerInfo )
-// 	{
-// 		int playerNum = m_pCurrentEntity->index - 1;
+	// 	// always want new gait sequences to start on frame zero
+	// 	/*	if ( m_pPlayerInfo )
+	// 	{
+	// 		int playerNum = m_pCurrentEntity->index - 1;
 
-// 		// new jump gaitsequence?  start from frame zero
-// 		if ( m_nPlayerGaitSequences[ playerNum ] != m_pPlayerInfo->gaitsequence )
-// 		{
-// 	//		m_pPlayerInfo->gaitframe = 0.0;
-// 			gEngfuncs.Con_Printf( "Setting gaitframe to 0\n" );
-// 		}
+	// 		// new jump gaitsequence?  start from frame zero
+	// 		if ( m_nPlayerGaitSequences[ playerNum ] != m_pPlayerInfo->gaitsequence )
+	// 		{
+	// 	//		m_pPlayerInfo->gaitframe = 0.0;
+	// 			gEngfuncs.Con_Printf( "Setting gaitframe to 0\n" );
+	// 		}
 
-// 		m_nPlayerGaitSequences[ playerNum ] = m_pPlayerInfo->gaitsequence;
-// //		gEngfuncs.Con_Printf( "index: %d     gaitsequence: %d\n",playerNum, m_pPlayerInfo->gaitsequence);
-// 	}
-// */
-// 	f = StudioEstimateFrame(pseqdesc);
+	// 		m_nPlayerGaitSequences[ playerNum ] = m_pPlayerInfo->gaitsequence;
+	// //		gEngfuncs.Con_Printf( "index: %d     gaitsequence: %d\n",playerNum, m_pPlayerInfo->gaitsequence);
+	// 	}
+	// */
+	// 	f = StudioEstimateFrame(pseqdesc);
 
-// 	if (m_pCurrentEntity->latched.prevframe > f)
-// 	{
-// 		//Con_DPrintf("%f %f\n", m_pCurrentEntity->prevframe, f );
-// 	}
+	// 	if (m_pCurrentEntity->latched.prevframe > f)
+	// 	{
+	// 		//Con_DPrintf("%f %f\n", m_pCurrentEntity->prevframe, f );
+	// 	}
 
-// 	panim = StudioGetAnim(m_pRenderModel, pseqdesc);
-// 	StudioCalcRotations(pos, q, pseqdesc, panim, f);
+	// 	panim = StudioGetAnim(m_pRenderModel, pseqdesc);
+	// 	StudioCalcRotations(pos, q, pseqdesc, panim, f);
 
-// 	if (pseqdesc->numblends > 1)
-// 	{
-// 		float s;
-// 		float dadt;
+	// 	if (pseqdesc->numblends > 1)
+	// 	{
+	// 		float s;
+	// 		float dadt;
 
-// 		panim += m_pStudioHeader->numbones;
-// 		StudioCalcRotations(pos2, q2, pseqdesc, panim, f);
+	// 		panim += m_pStudioHeader->numbones;
+	// 		StudioCalcRotations(pos2, q2, pseqdesc, panim, f);
 
-// 		dadt = StudioEstimateInterpolant();
-// 		s = (m_pCurrentEntity->curstate.blending[0] * dadt + m_pCurrentEntity->latched.prevblending[0] * (1.0 - dadt)) / 255.0;
+	// 		dadt = StudioEstimateInterpolant();
+	// 		s = (m_pCurrentEntity->curstate.blending[0] * dadt + m_pCurrentEntity->latched.prevblending[0] * (1.0 - dadt)) / 255.0;
 
-// 		StudioSlerpBones(q, pos, q2, pos2, s);
+	// 		StudioSlerpBones(q, pos, q2, pos2, s);
 
-// 		if (pseqdesc->numblends == 4)
-// 		{
-// 			panim += m_pStudioHeader->numbones;
-// 			StudioCalcRotations(pos3, q3, pseqdesc, panim, f);
+	// 		if (pseqdesc->numblends == 4)
+	// 		{
+	// 			panim += m_pStudioHeader->numbones;
+	// 			StudioCalcRotations(pos3, q3, pseqdesc, panim, f);
 
-// 			panim += m_pStudioHeader->numbones;
-// 			StudioCalcRotations(pos4, q4, pseqdesc, panim, f);
+	// 			panim += m_pStudioHeader->numbones;
+	// 			StudioCalcRotations(pos4, q4, pseqdesc, panim, f);
 
-// 			s = (m_pCurrentEntity->curstate.blending[0] * dadt + m_pCurrentEntity->latched.prevblending[0] * (1.0 - dadt)) / 255.0;
-// 			StudioSlerpBones(q3, pos3, q4, pos4, s);
+	// 			s = (m_pCurrentEntity->curstate.blending[0] * dadt + m_pCurrentEntity->latched.prevblending[0] * (1.0 - dadt)) / 255.0;
+	// 			StudioSlerpBones(q3, pos3, q4, pos4, s);
 
-// 			s = (m_pCurrentEntity->curstate.blending[1] * dadt + m_pCurrentEntity->latched.prevblending[1] * (1.0 - dadt)) / 255.0;
-// 			StudioSlerpBones(q, pos, q3, pos3, s);
-// 		}
-// 	}
+	// 			s = (m_pCurrentEntity->curstate.blending[1] * dadt + m_pCurrentEntity->latched.prevblending[1] * (1.0 - dadt)) / 255.0;
+	// 			StudioSlerpBones(q, pos, q3, pos3, s);
+	// 		}
+	// 	}
 
-// 	if (m_fDoInterp &&
-// 		0 != m_pCurrentEntity->latched.sequencetime &&
-// 		(m_pCurrentEntity->latched.sequencetime + 0.2 > m_clTime) &&
-// 		(m_pCurrentEntity->latched.prevsequence < m_pStudioHeader->numseq))
-// 	{
-// 		// blend from last sequence
-// 		static float pos1b[MAXSTUDIOBONES][3];
-// 		static vec4_t q1b[MAXSTUDIOBONES];
-// 		float s;
+	// 	if (m_fDoInterp &&
+	// 		0 != m_pCurrentEntity->latched.sequencetime &&
+	// 		(m_pCurrentEntity->latched.sequencetime + 0.2 > m_clTime) &&
+	// 		(m_pCurrentEntity->latched.prevsequence < m_pStudioHeader->numseq))
+	// 	{
+	// 		// blend from last sequence
+	// 		static float pos1b[MAXSTUDIOBONES][3];
+	// 		static vec4_t q1b[MAXSTUDIOBONES];
+	// 		float s;
 
-// 		if (m_pCurrentEntity->latched.prevsequence >= m_pStudioHeader->numseq)
-// 		{
-// 			m_pCurrentEntity->latched.prevsequence = 0;
-// 		}
+	// 		if (m_pCurrentEntity->latched.prevsequence >= m_pStudioHeader->numseq)
+	// 		{
+	// 			m_pCurrentEntity->latched.prevsequence = 0;
+	// 		}
 
-// 		pseqdesc = (mstudioseqdesc_t*)((byte*)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pCurrentEntity->latched.prevsequence;
-// 		panim = StudioGetAnim(m_pRenderModel, pseqdesc);
-// 		// clip prevframe
-// 		StudioCalcRotations(pos1b, q1b, pseqdesc, panim, m_pCurrentEntity->latched.prevframe);
+	// 		pseqdesc = (mstudioseqdesc_t*)((byte*)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pCurrentEntity->latched.prevsequence;
+	// 		panim = StudioGetAnim(m_pRenderModel, pseqdesc);
+	// 		// clip prevframe
+	// 		StudioCalcRotations(pos1b, q1b, pseqdesc, panim, m_pCurrentEntity->latched.prevframe);
 
-// 		if (pseqdesc->numblends > 1)
-// 		{
-// 			panim += m_pStudioHeader->numbones;
-// 			StudioCalcRotations(pos2, q2, pseqdesc, panim, m_pCurrentEntity->latched.prevframe);
+	// 		if (pseqdesc->numblends > 1)
+	// 		{
+	// 			panim += m_pStudioHeader->numbones;
+	// 			StudioCalcRotations(pos2, q2, pseqdesc, panim, m_pCurrentEntity->latched.prevframe);
 
-// 			s = (m_pCurrentEntity->latched.prevseqblending[0]) / 255.0;
-// 			StudioSlerpBones(q1b, pos1b, q2, pos2, s);
+	// 			s = (m_pCurrentEntity->latched.prevseqblending[0]) / 255.0;
+	// 			StudioSlerpBones(q1b, pos1b, q2, pos2, s);
 
-// 			if (pseqdesc->numblends == 4)
-// 			{
-// 				panim += m_pStudioHeader->numbones;
-// 				StudioCalcRotations(pos3, q3, pseqdesc, panim, m_pCurrentEntity->latched.prevframe);
+	// 			if (pseqdesc->numblends == 4)
+	// 			{
+	// 				panim += m_pStudioHeader->numbones;
+	// 				StudioCalcRotations(pos3, q3, pseqdesc, panim, m_pCurrentEntity->latched.prevframe);
 
-// 				panim += m_pStudioHeader->numbones;
-// 				StudioCalcRotations(pos4, q4, pseqdesc, panim, m_pCurrentEntity->latched.prevframe);
+	// 				panim += m_pStudioHeader->numbones;
+	// 				StudioCalcRotations(pos4, q4, pseqdesc, panim, m_pCurrentEntity->latched.prevframe);
 
-// 				s = (m_pCurrentEntity->latched.prevseqblending[0]) / 255.0;
-// 				StudioSlerpBones(q3, pos3, q4, pos4, s);
+	// 				s = (m_pCurrentEntity->latched.prevseqblending[0]) / 255.0;
+	// 				StudioSlerpBones(q3, pos3, q4, pos4, s);
 
-// 				s = (m_pCurrentEntity->latched.prevseqblending[1]) / 255.0;
-// 				StudioSlerpBones(q1b, pos1b, q3, pos3, s);
-// 			}
-// 		}
+	// 				s = (m_pCurrentEntity->latched.prevseqblending[1]) / 255.0;
+	// 				StudioSlerpBones(q1b, pos1b, q3, pos3, s);
+	// 			}
+	// 		}
 
-// 		s = 1.0 - (m_clTime - m_pCurrentEntity->latched.sequencetime) / 0.2;
-// 		StudioSlerpBones(q, pos, q1b, pos1b, s);
-// 	}
-// 	else
-// 	{
-// 		//Con_DPrintf("prevframe = %4.2f\n", f);
-// 		m_pCurrentEntity->latched.prevframe = f;
-// 	}
+	// 		s = 1.0 - (m_clTime - m_pCurrentEntity->latched.sequencetime) / 0.2;
+	// 		StudioSlerpBones(q, pos, q1b, pos1b, s);
+	// 	}
+	// 	else
+	// 	{
+	// 		//Con_DPrintf("prevframe = %4.2f\n", f);
+	// 		m_pCurrentEntity->latched.prevframe = f;
+	// 	}
 
-// 	pbones = (mstudiobone_t*)((byte*)m_pStudioHeader + m_pStudioHeader->boneindex);
+	// 	pbones = (mstudiobone_t*)((byte*)m_pStudioHeader + m_pStudioHeader->boneindex);
 
-// 	// bounds checking
-// 	if (m_pPlayerInfo)
-// 	{
-// 		if (m_pPlayerInfo->gaitsequence >= m_pStudioHeader->numseq)
-// 		{
-// 			m_pPlayerInfo->gaitsequence = 0;
-// 		}
-// 	}
+	// 	// bounds checking
+	// 	if (m_pPlayerInfo)
+	// 	{
+	// 		if (m_pPlayerInfo->gaitsequence >= m_pStudioHeader->numseq)
+	// 		{
+	// 			m_pPlayerInfo->gaitsequence = 0;
+	// 		}
+	// 	}
 
-// 	// calc gait animation
-// 	if (m_pPlayerInfo && m_pPlayerInfo->gaitsequence != 0)
-// 	{
-// 		if (m_pPlayerInfo->gaitsequence >= m_pStudioHeader->numseq)
-// 		{
-// 			m_pPlayerInfo->gaitsequence = 0;
-// 		}
+	// 	// calc gait animation
+	// 	if (m_pPlayerInfo && m_pPlayerInfo->gaitsequence != 0)
+	// 	{
+	// 		if (m_pPlayerInfo->gaitsequence >= m_pStudioHeader->numseq)
+	// 		{
+	// 			m_pPlayerInfo->gaitsequence = 0;
+	// 		}
 
-// 		bool copy = true;
+	// 		bool copy = true;
 
-// 		pseqdesc = (mstudioseqdesc_t*)((byte*)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pPlayerInfo->gaitsequence;
+	// 		pseqdesc = (mstudioseqdesc_t*)((byte*)m_pStudioHeader + m_pStudioHeader->seqindex) + m_pPlayerInfo->gaitsequence;
 
-// 		panim = StudioGetAnim(m_pRenderModel, pseqdesc);
-// 		StudioCalcRotations(pos2, q2, pseqdesc, panim, m_pPlayerInfo->gaitframe);
+	// 		panim = StudioGetAnim(m_pRenderModel, pseqdesc);
+	// 		StudioCalcRotations(pos2, q2, pseqdesc, panim, m_pPlayerInfo->gaitframe);
 
-// 		for (i = 0; i < m_pStudioHeader->numbones; i++)
-// 		{
-// 			auto bone = &pbones[i];
+	// 		for (i = 0; i < m_pStudioHeader->numbones; i++)
+	// 		{
+	// 			auto bone = &pbones[i];
 
-// 			if (0 == strcmp(bone->name, "Bip01 Spine"))
-// 			{
-// 				copy = false;
-// 			}
-// 			else if (bone->parent >= 0 &&
-// 					 bone->parent < m_pStudioHeader->numbones &&
-// 					 0 == strcmp(pbones[bone->parent].name, "Bip01 Pelvis"))
-// 			{
-// 				copy = true;
-// 			}
+	// 			if (0 == strcmp(bone->name, "Bip01 Spine"))
+	// 			{
+	// 				copy = false;
+	// 			}
+	// 			else if (bone->parent >= 0 &&
+	// 					 bone->parent < m_pStudioHeader->numbones &&
+	// 					 0 == strcmp(pbones[bone->parent].name, "Bip01 Pelvis"))
+	// 			{
+	// 				copy = true;
+	// 			}
 
-// 			if (copy)
-// 			{
-// 				memcpy(pos[i], pos2[i], sizeof(pos[i]));
-// 				memcpy(q[i], q2[i], sizeof(q[i]));
-// 			}
-// 		}
-// 	}
+	// 			if (copy)
+	// 			{
+	// 				memcpy(pos[i], pos2[i], sizeof(pos[i]));
+	// 				memcpy(q[i], q2[i], sizeof(q[i]));
+	// 			}
+	// 		}
+	// 	}
 
-// 	for (i = 0; i < m_pStudioHeader->numbones; i++)
-// 	{
-// 		const int parent = pbones[i].parent;
+	// 	for (i = 0; i < m_pStudioHeader->numbones; i++)
+	// 	{
+	// 		const int parent = pbones[i].parent;
 
-// 		QuaternionMatrix(q[i], bonematrix);
+	// 		QuaternionMatrix(q[i], bonematrix);
 
-// 		bonematrix[0][3] = pos[i][0];
-// 		bonematrix[1][3] = pos[i][1];
-// 		bonematrix[2][3] = pos[i][2];
+	// 		bonematrix[0][3] = pos[i][0];
+	// 		bonematrix[1][3] = pos[i][1];
+	// 		bonematrix[2][3] = pos[i][2];
 
-// 		if (parent == -1)
-// 		{
-// 			if (0 != IEngineStudio.IsHardware())
-// 			{
-// 				ConcatTransforms((*m_protationmatrix), bonematrix, (*m_pbonetransform)[i]);
+	// 		if (parent == -1)
+	// 		{
+	// 			if (0 != IEngineStudio.IsHardware())
+	// 			{
+	// 				ConcatTransforms((*m_protationmatrix), bonematrix, (*m_pbonetransform)[i]);
 
-// 				// MatrixCopy should be faster...
-// 				//ConcatTransforms ((*m_protationmatrix), bonematrix, (*m_plighttransform)[i]);
-// 				MatrixCopy((*m_pbonetransform)[i], (*m_plighttransform)[i]);
-// 			}
-// 			else
-// 			{
-// 				ConcatTransforms((*m_paliastransform), bonematrix, (*m_pbonetransform)[i]);
-// 				ConcatTransforms((*m_protationmatrix), bonematrix, (*m_plighttransform)[i]);
-// 			}
+	// 				// MatrixCopy should be faster...
+	// 				//ConcatTransforms ((*m_protationmatrix), bonematrix, (*m_plighttransform)[i]);
+	// 				MatrixCopy((*m_pbonetransform)[i], (*m_plighttransform)[i]);
+	// 			}
+	// 			else
+	// 			{
+	// 				ConcatTransforms((*m_paliastransform), bonematrix, (*m_pbonetransform)[i]);
+	// 				ConcatTransforms((*m_protationmatrix), bonematrix, (*m_plighttransform)[i]);
+	// 			}
 
-// 			// Apply client-side effects to the transformation matrix
-// 			StudioFxTransform(m_pCurrentEntity, (*m_pbonetransform)[i]);
-// 		}
-// 		else if (parent >= 0 && parent < m_pStudioHeader->numbones)
-// 		{
-// 			ConcatTransforms((*m_pbonetransform)[parent], bonematrix, (*m_pbonetransform)[i]);
-// 			ConcatTransforms((*m_plighttransform)[parent], bonematrix, (*m_plighttransform)[i]);
-// 		}
-// 	}
-// BSVR end
+	// 			// Apply client-side effects to the transformation matrix
+	// 			StudioFxTransform(m_pCurrentEntity, (*m_pbonetransform)[i]);
+	// 		}
+	// 		else if (parent >= 0 && parent < m_pStudioHeader->numbones)
+	// 		{
+	// 			ConcatTransforms((*m_pbonetransform)[parent], bonematrix, (*m_pbonetransform)[i]);
+	// 			ConcatTransforms((*m_plighttransform)[parent], bonematrix, (*m_plighttransform)[i]);
+	// 		}
+	// 	}
+	// BSVR end
 }
 
 // BSVR start
@@ -1183,7 +1183,7 @@ void CStudioModelRenderer::StudioSetupBonesInline(float bonetransform[MAXSTUDIOB
 	}
 
 	if (m_fDoInterp &&
-		m_pCurrentEntity->latched.sequencetime &&
+		0 != m_pCurrentEntity->latched.sequencetime &&
 		(m_pCurrentEntity->latched.sequencetime + 0.2f > m_clTime) &&
 		(m_pCurrentEntity->latched.prevsequence < m_pStudioHeader->numseq))
 	{
@@ -1259,9 +1259,7 @@ void CStudioModelRenderer::StudioSetupBonesInline(float bonetransform[MAXSTUDIOB
 	MatrixCopy(*m_protationmatrix, rotationmatrix_backup);
 
 	// Added studio model scaling - Max Makes Mods, 2017-08-26
-	if (g_curFrameTempEnts.count(m_pCurrentEntity) == 0
-		&& m_pCurrentEntity->curstate.scale > 0.f
-		&& m_pCurrentEntity->prevstate.scale == m_pCurrentEntity->curstate.scale)
+	if (g_curFrameTempEnts.count(m_pCurrentEntity) == 0 && m_pCurrentEntity->curstate.scale > 0.f && m_pCurrentEntity->prevstate.scale == m_pCurrentEntity->curstate.scale)
 	{
 		for (int j = 0; j < 3; j++)
 		{
@@ -1282,7 +1280,7 @@ void CStudioModelRenderer::StudioSetupBonesInline(float bonetransform[MAXSTUDIOB
 
 		if (pbones[i].parent == -1)
 		{
-			if (IEngineStudio.IsHardware())
+			if (0 != IEngineStudio.IsHardware())
 			{
 				ConcatTransforms((*m_protationmatrix), bonematrix, bonetransform[i]);
 				MatrixCopy(bonetransform[i], lighttransform[i]);
@@ -1483,7 +1481,10 @@ bool CStudioModelRenderer::DrawVREntity(
 		return false;
 
 	cl_entity_t backupviewent = *viewent;
-	DoOnDestruct doOnDestruct{ [&]() { *viewent = backupviewent; } };
+	DoOnDestruct doOnDestruct{[&]()
+		{
+			*viewent = backupviewent;
+		}};
 
 	m_pCurrentEntity = viewent;
 
@@ -1522,13 +1523,12 @@ bool CStudioModelRenderer::DrawVREntity(
 	IEngineStudio.StudioSetHeader(m_pStudioHeader);
 	IEngineStudio.SetRenderModel(m_pRenderModel);
 
-	StudioSetUpTransform(0);
+	StudioSetUpTransform(false);
 
 	VRQuaternion bone_quaternions[VRHAND_Bones_Count];
 	Vector bone_positions[VRHAND_Bones_Count];
 	float fingerCurl[Finger_Count];
-	if (isController && m_pStudioHeader->numbones == VRHAND_Bones_Count && gVRRenderer.IsHandSkeletalModel(modelname)
-		&& gVRRenderer.HasSkeletalDataForHand(mirrored, bone_quaternions, bone_positions))
+	if (isController && m_pStudioHeader->numbones == VRHAND_Bones_Count && gVRRenderer.IsHandSkeletalModel(modelname) && gVRRenderer.HasSkeletalDataForHand(mirrored, bone_quaternions, bone_positions))
 	{
 		m_pCurrentEntity->curstate.frame = 0;
 		m_pCurrentEntity->curstate.framerate = 0;
@@ -1656,13 +1656,13 @@ void CStudioModelRenderer::StudioDrawVRHand(const ControllerModelData& controlle
 	std::string controllermodelname = controllerModelData.controller.modelname;
 
 	if (DrawVREntity(controllermodelname.c_str(),
-		origin, angles,
-		controllerModelData.controller.body, controllerModelData.controller.skin, controllerModelData.controller.scale,
-		controllerModelData.controller.frame, controllerModelData.controller.framerate,
-		controllerModelData.controller.animtime, controllerModelData.controller.sequence,
-		controllerModelData.controller.effects,
-		controllerModelData.controller.rendermode, controllerModelData.controller.renderamt, controllerModelData.controller.renderfx, controllerModelData.controller.rendercolor,
-		true, mirrored))
+			origin, angles,
+			controllerModelData.controller.body, controllerModelData.controller.skin, controllerModelData.controller.scale,
+			controllerModelData.controller.frame, controllerModelData.controller.framerate,
+			controllerModelData.controller.animtime, controllerModelData.controller.sequence,
+			controllerModelData.controller.effects,
+			controllerModelData.controller.rendermode, controllerModelData.controller.renderamt, controllerModelData.controller.renderfx, controllerModelData.controller.rendercolor,
+			true, mirrored))
 	{
 		int numattachments = std::min(4, m_pStudioHeader->numattachments);
 		mstudioattachment_t* pattachment = reinterpret_cast<mstudioattachment_t*>(reinterpret_cast<byte*>(m_pStudioHeader) + m_pStudioHeader->attachmentindex);
@@ -1688,8 +1688,7 @@ void CStudioModelRenderer::StudioDrawVRHand(const ControllerModelData& controlle
 
 bool IsDraggedEntity(cl_entity_t* ent)
 {
-	return (gVRRenderer.HasValidLeftController() && gHUD.m_leftControllerModelData.hasDraggedEnt && ent->index == gHUD.m_leftControllerModelData.draggedEntIndex)
-		|| (gVRRenderer.HasValidRightController() && gHUD.m_rightControllerModelData.hasDraggedEnt && ent->index == gHUD.m_rightControllerModelData.draggedEntIndex);
+	return (gVRRenderer.HasValidLeftController() && gHUD.m_leftControllerModelData.hasDraggedEnt && ent->index == gHUD.m_leftControllerModelData.draggedEntIndex) || (gVRRenderer.HasValidRightController() && gHUD.m_rightControllerModelData.hasDraggedEnt && ent->index == gHUD.m_rightControllerModelData.draggedEntIndex);
 }
 // BSVR end
 
@@ -1701,11 +1700,6 @@ StudioDrawModel
 */
 // BSVR start
 #define VR_MUZZLE_ATTACHMENT 0
-/*
-#define VR_MUZZLE_FORWARD 1
-#define VR_MUZZLE_RIGHT 2
-#define VR_MUZZLE_UP 3
-*/
 // BSVR end
 bool CStudioModelRenderer::StudioDrawModel(int flags)
 {
@@ -1760,13 +1754,13 @@ bool CStudioModelRenderer::StudioDrawModel(int flags)
 	m_pRenderModel = m_pCurrentEntity->model;
 	// BSVR start
 	if (!m_pRenderModel)
-		return 0;
+		return false;
 	// BSVR end
 
 	m_pStudioHeader = Mod_Extradata("StudioDrawModel", m_pCurrentEntity, m_pRenderModel);
 	// BSVR start
 	if (!m_pStudioHeader)
-		return 0;
+		return false;
 	// BSVR end
 
 	IEngineStudio.StudioSetHeader(m_pStudioHeader);
@@ -1816,7 +1810,7 @@ bool CStudioModelRenderer::StudioDrawModel(int flags)
 	if (viewmodel != nullptr && m_pCurrentEntity == viewmodel)
 	{
 		// Don't draw viewmodel, server has proper controller entities for rendering instead - Max Makes Mods, 2019-03-30
-		return 1;
+		return true;
 	}
 	// BSVR end
 
@@ -2070,7 +2064,7 @@ bool CStudioModelRenderer::StudioDrawPlayer(int flags, entity_state_t* pplayer)
 	m_pStudioHeader = Mod_Extradata("StudioDrawPlayer", m_pCurrentEntity, m_pRenderModel);
 	// BSVR start
 	if (!m_pStudioHeader)
-		return 0;
+		return false;
 	// BSVR end
 
 	IEngineStudio.StudioSetHeader(m_pStudioHeader);

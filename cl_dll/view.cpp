@@ -549,9 +549,9 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 	// pparams->vieworg[0] += 1.0 / 32; - original
 	// pparams->vieworg[1] += 1.0 / 32; - original
 	// pparams->vieworg[2] += 1.0 / 32; - original
-	pparams->vieworg[0] += 1.f / 256.f;  //1.0/32;
-	pparams->vieworg[1] += 1.f / 256.f;  //1.0/32;
-	pparams->vieworg[2] += 1.f / 256.f;  //1.0/32;
+	pparams->vieworg[0] += 1.f / 256.f; //1.0/32;
+	pparams->vieworg[1] += 1.f / 256.f; //1.0/32;
+	pparams->vieworg[2] += 1.f / 256.f; //1.0/32;
 	// BSVR end
 
 	// Check for problems around water, move the viewer artificially if necessary
@@ -735,9 +735,9 @@ void V_CalcNormalRefdef(struct ref_params_s* pparams)
 		if (pparams->simorg[2] - oldz > 18)
 			oldz = pparams->simorg[2] - 18;
 		pparams->vieworg[2] += oldz - pparams->simorg[2];
-	// BSVR start - upstream removed
-	// 	view->origin[2] += oldz - pparams->simorg[2];
-	// BSVR end
+		// BSVR start - upstream removed
+		// 	view->origin[2] += oldz - pparams->simorg[2];
+		// BSVR end
 	}
 	else
 	{
@@ -1363,7 +1363,8 @@ void V_GetInEyePos(int target, float* origin, float* angles)
 	// 	// exacty eye position can't be caluculated since it depends on
 	// 	// client values like cl_bobcycle, this offset matches the default values
 	// 	VectorAdd(origin, VEC_VIEW, origin);
-	origin[2] += 28;  // DEFAULT_VIEWHEIGHT
+	origin[2] += 28; // DEFAULT_VIEWHEIGHT
+
 	// BSVR end
 }
 
@@ -1470,7 +1471,7 @@ int V_FindViewModelByWeaponModel(int weaponindex)
 			i++;
 		}
 
-	// BSVR start - commented out original
+		// BSVR start - commented out original
 	}
 	// 	return 0;
 	// }
@@ -1764,7 +1765,7 @@ void V_Init()
 	v_centermove = gEngfuncs.pfnRegisterVariable("v_centermove", "0.15", 0);
 	v_centerspeed = gEngfuncs.pfnRegisterVariable("v_centerspeed", "500", 0);
 
-	cl_bobcycle = gEngfuncs.pfnRegisterVariable("cl_bobcycle", "0.8", 0); // best default for my experimental gun wag (sjb)
+	cl_bobcycle = gEngfuncs.pfnRegisterVariable("cl_bobcycle", "0.8", 0);	 // best default for my experimental gun wag (sjb)
 	cl_bob = gEngfuncs.pfnRegisterVariable("cl_bob", "0.01", FCVAR_ARCHIVE); // best default for my experimental gun wag (sjb)
 	cl_bobup = gEngfuncs.pfnRegisterVariable("cl_bobup", "0.5", 0);
 	cl_waterdist = gEngfuncs.pfnRegisterVariable("cl_waterdist", "4", 0);

@@ -252,7 +252,7 @@ public:
 	inline void ClearConditions(int iConditions) { m_afConditions &= ~iConditions; }
 	inline bool HasConditions(int iConditions)
 	{
-		if (m_afConditions & iConditions)
+		if ((m_afConditions & iConditions) != 0)
 			return true;
 		return false;
 	}
@@ -345,7 +345,7 @@ public:
 	inline void Forget(int iMemory) { m_afMemory &= ~iMemory; }
 	inline bool HasMemory(int iMemory)
 	{
-		if (m_afMemory & iMemory)
+		if ((m_afMemory & iMemory) != 0)
 			return true;
 		return false;
 	}

@@ -168,7 +168,7 @@ void CMP5::PrimaryAttack()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.4f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 
@@ -234,7 +234,7 @@ void CMP5::SecondaryAttack()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.8f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 void CMP5::Reload()

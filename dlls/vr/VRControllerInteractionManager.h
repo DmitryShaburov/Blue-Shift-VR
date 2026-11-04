@@ -1,7 +1,6 @@
 #pragma once
 
 class CBasePlayer;
-class CBaseMonster;
 class CTalkMonster; // BSVR: forward declared here instead of in cbase.h
 class VRController;
 struct VRPhysicsHelperModelBBoxIntersectResult;
@@ -19,9 +18,8 @@ private:
 		class InteractionInfo
 		{
 		public:
-			InteractionInfo(bool isSet, bool didChange) :
-				isSet{ isSet },
-				didChange{ didChange }
+			InteractionInfo(bool isSet, bool didChange) : isSet{isSet},
+														  didChange{didChange}
 			{
 			}
 
@@ -29,12 +27,11 @@ private:
 			const bool didChange;
 		};
 
-		Interaction(InteractionInfo touching, InteractionInfo dragging, InteractionInfo hitting, float hitDamage, const Vector& intersectPoint) :
-			touching{ touching },
-			dragging{ dragging },
-			hitting{ hitting },
-			hitDamage{ hitDamage },
-			intersectPoint{ intersectPoint }
+		Interaction(InteractionInfo touching, InteractionInfo dragging, InteractionInfo hitting, float hitDamage, const Vector& intersectPoint) : touching{touching},
+																																				  dragging{dragging},
+																																				  hitting{hitting},
+																																				  hitDamage{hitDamage},
+																																				  intersectPoint{intersectPoint}
 		{
 		}
 

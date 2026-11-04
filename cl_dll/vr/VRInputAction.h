@@ -31,19 +31,19 @@ public:
 	void HandleInput(bool isInGame);
 
 private:
-	void HandleDigitalInput(vr::VRInputValueHandle_t device, bool runHandler = true);  // BSVR: runHandler
+	void HandleDigitalInput(vr::VRInputValueHandle_t device, bool runHandler = true); // BSVR: runHandler
 	void HandleAnalogInput(vr::VRInputValueHandle_t device);
 	void HandlePoseInput(vr::VRInputValueHandle_t device);
 	void HandleSkeletalInput();
 
 	std::string m_id;
-	vr::VRActionHandle_t m_handle{ 0 };
-	ActionType m_type{ ActionType::INVALID };
-	bool m_handleWhenNotInGame{ false };
-	bool m_handAgnostic{ false };
+	vr::VRActionHandle_t m_handle{0};
+	ActionType m_type{ActionType::INVALID};
+	bool m_handleWhenNotInGame{false};
+	bool m_handAgnostic{false};
 
-	DigitalActionHandler m_digitalActionHandler{ nullptr };
-	AnalogActionHandler m_analogActionHandler{ nullptr };
-	PoseActionHandler m_poseActionHandler{ nullptr };
-	SkeletalActionHandler m_skeletalActionHandler{ nullptr };
+	DigitalActionHandler m_digitalActionHandler{nullptr};
+	AnalogActionHandler m_analogActionHandler{nullptr};
+	PoseActionHandler m_poseActionHandler{nullptr};
+	SkeletalActionHandler m_skeletalActionHandler{nullptr};
 };

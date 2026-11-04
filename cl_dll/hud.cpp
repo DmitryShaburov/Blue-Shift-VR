@@ -259,41 +259,41 @@ int __MsgFunc_VRAchvmnt(const char* pszName, int iSize, void* pbuf)
 // Sends index of current grund entity
 int __MsgFunc_GroundEnt(const char* pszName, int iSize, void* pbuf)
 {
-	return gHUD.MsgFunc_GroundEnt(pszName, iSize, pbuf);
+	return static_cast<int>(gHUD.MsgFunc_GroundEnt(pszName, iSize, pbuf));
 }
 
 int __MsgFunc_VRCtrlEnt(const char* pszName, int iSize, void* pbuf)
 {
-	return gHUD.MsgFunc_VRCtrlEnt(pszName, iSize, pbuf);
+	return static_cast<int>(gHUD.MsgFunc_VRCtrlEnt(pszName, iSize, pbuf));
 }
 
 int __MsgFunc_TrainCtrl(const char* pszName, int iSize, void* pbuf)
 {
-	return gHUD.MsgFunc_TrainCtrl(pszName, iSize, pbuf);
+	return static_cast<int>(gHUD.MsgFunc_TrainCtrl(pszName, iSize, pbuf));
 }
 
 int __MsgFunc_VRScrnShke(const char* pszName, int iSize, void* pbuf)
 {
-	return gHUD.MsgFunc_VRScrnShke(pszName, iSize, pbuf);
+	return static_cast<int>(gHUD.MsgFunc_VRScrnShke(pszName, iSize, pbuf));
 }
 
 int __MsgFunc_GrbdLddr(const char* pszName, int iSize, void* pbuf)
 {
-	return gHUD.MsgFunc_GrbdLddr(pszName, iSize, pbuf);
+	return static_cast<int>(gHUD.MsgFunc_GrbdLddr(pszName, iSize, pbuf));
 }
 
 int __MsgFunc_PullLdg(const char* pszName, int iSize, void* pbuf)
 {
-	return gHUD.MsgFunc_PullLdg(pszName, iSize, pbuf);
+	return static_cast<int>(gHUD.MsgFunc_PullLdg(pszName, iSize, pbuf));
 }
 
 int __MsgFunc_VRUpdEgon(const char* pszName, int iSize, void* pbuf)
 {
 	BEGIN_READ(pbuf, iSize);
-	Vector beamStartPos{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
-	Vector beamEndPos{ READ_FLOAT(), READ_FLOAT(), READ_FLOAT() };
+	Vector beamStartPos{READ_FLOAT(), READ_FLOAT(), READ_FLOAT()};
+	Vector beamEndPos{READ_FLOAT(), READ_FLOAT(), READ_FLOAT()};
 
-	extern void EV_UpdateEgon(const Vector & beamStartPos, const Vector & beamEndPos);
+	extern void EV_UpdateEgon(const Vector& beamStartPos, const Vector& beamEndPos);
 	EV_UpdateEgon(beamStartPos, beamEndPos);
 
 	return 0;
@@ -301,7 +301,7 @@ int __MsgFunc_VRUpdEgon(const char* pszName, int iSize, void* pbuf)
 
 int __MsgFunc_VRTouch(const char* pszName, int iSize, void* pbuf)
 {
-	return gHUD.MsgFunc_VRTouch(pszName, iSize, pbuf);
+	return static_cast<int>(gHUD.MsgFunc_VRTouch(pszName, iSize, pbuf));
 }
 // BSVR end
 
@@ -849,7 +849,7 @@ cl_entity_t* CHud::GetGroundEntity()
 
 bool CHud::GetTrainControlsOriginAndOrientation(Vector& origin, Vector& angles)
 {
-	if (m_Train.m_iPos)
+	if (0 != m_Train.m_iPos)
 	{
 		origin = m_trainControlPosition;
 		angles.x = -20.f;

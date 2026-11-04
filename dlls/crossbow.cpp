@@ -297,15 +297,15 @@ void CCrossbow::PrimaryAttack()
 {
 	// BSVR start
 	// no zoom in VR!
-// #ifdef CLIENT_DLL
-// 	if (m_pPlayer->m_iFOV != 0 && bIsMultiplayer())
-// #else
-// 	if (m_pPlayer->m_iFOV != 0 && g_pGameRules->IsMultiplayer())
-// #endif
-// 	{
-// 		FireSniperBolt();
-// 		return;
-// 	}
+	// #ifdef CLIENT_DLL
+	// 	if (m_pPlayer->m_iFOV != 0 && bIsMultiplayer())
+	// #else
+	// 	if (m_pPlayer->m_iFOV != 0 && g_pGameRules->IsMultiplayer())
+	// #endif
+	// 	{
+	// 		FireSniperBolt();
+	// 		return;
+	// 	}
 	// BSVR end
 
 	FireBolt();
@@ -345,8 +345,8 @@ void CCrossbow::FireSniperBolt()
 	// Vector vecSrc = m_pPlayer->GetGunPosition() - gpGlobals->v_up * 2; - original
 	// Vector vecDir = gpGlobals->v_forward; - original
 	UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
-	Vector vecSrc = m_pPlayer->GetGunPosition();    // -gpGlobals->v_up * 2;
-	Vector vecDir = m_pPlayer->GetAutoaimVector();  //gpGlobals->v_forward;
+	Vector vecSrc = m_pPlayer->GetGunPosition();   // -gpGlobals->v_up * 2;
+	Vector vecDir = m_pPlayer->GetAutoaimVector(); //gpGlobals->v_forward;
 	// BSVR end
 
 	UTIL_TraceLine(vecSrc, vecSrc + vecDir * 8192, dont_ignore_monsters, m_pPlayer->edict(), &tr);
@@ -364,7 +364,7 @@ void CCrossbow::FireSniperBolt()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.25f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 void CCrossbow::FireBolt()
@@ -402,8 +402,9 @@ void CCrossbow::FireBolt()
 	// Vector vecDir = gpGlobals->v_forward; - original
 	UTIL_MakeVectors(m_pPlayer->GetWeaponViewAngles());
 
-	Vector vecSrc = m_pPlayer->GetGunPosition();    // -gpGlobals->v_up * 2;
-	Vector vecDir = m_pPlayer->GetAutoaimVector();  // gpGlobals->v_forward;
+	Vector vecSrc = m_pPlayer->GetGunPosition();   // -gpGlobals->v_up * 2;
+	Vector vecDir = m_pPlayer->GetAutoaimVector(); // gpGlobals->v_forward;
+
 	// BSVR end
 
 #ifndef CLIENT_DLL
@@ -448,7 +449,7 @@ void CCrossbow::FireBolt()
 #ifdef CLIENT_DLL
 	VRRegisterRecoil(0.5f);
 #endif
-// BSVR end
+	// BSVR end
 }
 
 

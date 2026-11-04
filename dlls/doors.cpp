@@ -860,16 +860,15 @@ public:
 	void Spawn() override;
 	void SetToggleState(int state) override;
 
-// BSVR start
+	// BSVR start
 protected:
 	virtual bool CanDoVRDragRotation(CBaseEntity* pPlayer, Vector& angleStart, Vector& angleEnd) override;
 	virtual void StartVRDragRotation() override;
 	virtual bool SetVRDragRotation(CBaseEntity* pPlayer, const Vector& angles, float delta) override;
 	virtual void StopVRDragRotation() override;
-	virtual float GetVRDragRotationMoveDistance() override { return m_flMoveDistance; }
 	virtual CBaseEntity* MyEntityPointer() override { return this; }
 	virtual VRRotatableEnt* MyRotatableEntPtr() override { return this; }
-// BSVR end
+	// BSVR end
 };
 
 LINK_ENTITY_TO_CLASS(func_door_rotating, CRotDoor);

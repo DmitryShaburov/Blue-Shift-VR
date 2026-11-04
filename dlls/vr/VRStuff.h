@@ -5,32 +5,6 @@
 #include "vector.h"
 #include "Platform.h"
 
-class SimpleMatrix34
-{
-public:
-	SimpleMatrix34() {}
-	SimpleMatrix34(float(*transform)[4])
-	{
-		std::memcpy(this->transform, transform, sizeof(float) * 12);
-	}
-	float transform[12]{ 0.f };
-};
-
-class TransformedBBox
-{
-public:
-	TransformedBBox() {}
-	TransformedBBox(Vector mins, Vector maxs, float(*transform)[4]) :
-		mins{ mins },
-		maxs{ maxs },
-		transform{ transform }
-	{
-	}
-	const Vector mins{};
-	const Vector maxs{};
-	const SimpleMatrix34 transform{};
-};
-
 class GlobalXenMounds
 {
 public:
@@ -38,7 +12,6 @@ public:
 	bool Trigger(CBasePlayer* pPlayer, const Vector& position);
 	bool Has(const Vector& position);
 	void Clear() { m_xen_mounds.clear(); }
-	bool IsSame(const Vector& pos1, const Vector& pos2);
 
 private:
 	std::map<const Vector, const string_t> m_xen_mounds;
@@ -48,8 +21,8 @@ class VRLevelChangeData
 {
 public:
 	Vector lastHMDOffset{};
-	Vector clientOriginOffset{};  // Must be Vector instead of Vector2D, so save/load works (only has FIELD_VECTOR, which expects 3 floats)
-	BOOL hasData{ false };          // Must be BOOL (int), so save/load works (only has FIELD_BOOLEAN, which expects int)
-	float prevYaw{ 0.f };
-	float currentYaw{ 0.f };
+	Vector clientOriginOffset{}; // Must be Vector instead of Vector2D, so save/load works (only has FIELD_VECTOR, which expects 3 floats)
+	bool hasData{false};
+	float prevYaw{0.f};
+	float currentYaw{0.f};
 };

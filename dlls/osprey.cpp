@@ -405,7 +405,10 @@ void COsprey::FlyThink()
 			do
 			{
 				m_pGoalEnt = CBaseEntity::Instance(FIND_ENTITY_BY_TARGETNAME(NULL, STRING(m_pGoalEnt->pev->target)));
-			} while (m_pGoalEnt->pev->speed < 400 && !HasDead());
+				// BSVR start
+				// } while (m_pGoalEnt->pev->speed < 400 && !HasDead());
+			} while (m_pGoalEnt && m_pGoalEnt->pev->speed < 400 && !HasDead());
+			// BSVR end
 			UpdateGoal();
 		}
 	}

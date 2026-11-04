@@ -409,7 +409,10 @@ bool CHudHealth::DrawDamage(float flTime)
 	if (0 == m_bitsDamage)
 		return true;
 
-	UnpackRGB(r, g, b, RGB_YELLOWISH);
+	// BSVR start
+	// UnpackRGB(r, g, b, RGB_YELLOWISH);
+	UnpackRGB(r, g, b, RGB_REDISH); // damage feedback flashes red
+	// BSVR end
 
 	a = (int)(fabs(sin(flTime * 2)) * 256.0);
 
@@ -486,7 +489,10 @@ void CHudHealth::UpdateTiles(float flTime, long bitsDamage)
 		{
 			// put this one at the bottom
 			pdmg->x = giDmgWidth / 8;
-			pdmg->y = ScreenHeight - giDmgHeight * 2;
+			// BSVR start
+			// pdmg->y = ScreenHeight - giDmgHeight * 2;
+			pdmg->y = ScreenHeight - giDmgHeight * 3; // a bit further up in VR
+			// BSVR end
 			pdmg->fExpire = flTime + DMG_IMAGE_LIFE;
 
 			// move everyone else up

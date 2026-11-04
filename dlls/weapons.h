@@ -75,8 +75,8 @@ public:
 	virtual void BaseBalled(CBaseEntity* pPlayer, const Vector& velocity) override;
 
 private:
-	void (CBaseEntity ::* m_backupThink)(void) = nullptr;
-	void (CBaseEntity ::* m_backupTouch)(CBaseEntity* pOther) = nullptr;
+	void (CBaseEntity ::*m_backupThink)(void) = nullptr;
+	void (CBaseEntity ::*m_backupTouch)(CBaseEntity* pOther) = nullptr;
 	// BSVR end
 };
 
@@ -136,7 +136,10 @@ private:
 #define ROCKET_MAX_CARRY 5
 #define HANDGRENADE_MAX_CARRY 10
 #define SATCHEL_MAX_CARRY 5
-#define TRIPMINE_MAX_CARRY 5
+// BSVR start
+// #define TRIPMINE_MAX_CARRY 5
+#define TRIPMINE_MAX_CARRY 10 // tripmines are fun, allow player to carry 10
+// BSVR end
 #define SNARK_MAX_CARRY 15
 #define HORNET_MAX_CARRY 8
 #define M203_GRENADE_MAX_CARRY 10
@@ -653,7 +656,7 @@ private:
 	bool playedWooshSound = false;
 	float lastWooshSoundTime = 0;
 #endif
-// BSVR end
+	// BSVR end
 };
 
 enum python_e
@@ -1280,7 +1283,7 @@ private:
 	void UpdateGhost();
 	EHandleT<CBaseEntity> m_hGhost;
 #endif
-// BSVR end
+	// BSVR end
 };
 
 enum squeak_e
