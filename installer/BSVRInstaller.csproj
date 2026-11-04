@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>BsvrInstaller</RootNamespace>
     <AssemblyName>bsvr-install</AssemblyName>
     <Version>0.1.0</Version>
@@ -9,7 +9,8 @@
     <Nullable>enable</Nullable>
     <InvariantGlobalization>true</InvariantGlobalization>
 
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Defaults to Windows; pass -r linux-x64 (or another RID) to dotnet publish to build for another platform. -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
@@ -36,5 +37,10 @@
     -->
     <EmbeddedResource Include="..\lib\public\openvr_api.dll" LogicalName="halflife/openvr_api.dll" />
     <EmbeddedResource Include="..\cl_dll\EasyHook\bin\EasyHook32.dll" LogicalName="halflife/EasyHook32.dll" />
+    <!--
+      Linux client.so links against libopenvr_api.so, which hl.sh finds via LD_LIBRARY_PATH in the Half-Life folder.
+      The file is not tracked, so it is embedded only when present.
+    -->
+    <EmbeddedResource Include="..\linux\libopenvr_api.so" LogicalName="halflife/libopenvr_api.so" Condition="Exists('..\linux\libopenvr_api.so')" />
   </ItemGroup>
 </Project>

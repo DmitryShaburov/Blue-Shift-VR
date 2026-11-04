@@ -1,8 +1,8 @@
 # bsvr-install
 
-Interactive single-file Windows installer for Half-Life: VR Mod - Blue Shift.
+Interactive single-file installer (Windows or Linux) for Half-Life: VR Mod - Blue Shift.
 
-It finds Steam through the registry, finds the Half-Life and Half-Life: VR Mod folders from their
+It finds Steam through the registry (on Linux, in its usual folders), finds the Half-Life and Half-Life: VR Mod folders from their
 Steam app manifests, warns when Half-Life/Blue Shift/VR Mod is missing because Steam only lists mods under it,
 then creates `<Half-Life>\bsvr\` and `<Half-Life>\bsvr_hd\` with:
 
@@ -23,7 +23,7 @@ then creates `<Half-Life>\bsvr\` and `<Half-Life>\bsvr_hd\` with:
 
 Both folders come only from Steam; the installer quits with a hint when Steam or a game is not found.
 If the Half-Life folder already has `bsvr\liblist.gam`, the installer asks whether to update it, does not wait for Steam
-to exit (the mod is already in the library) and only waits for `hl.exe` to quit.
+to exit (the mod is already in the library) and only waits for the game to quit.
 
 ## Payload
 
@@ -45,6 +45,44 @@ repository (see the csproj).
 
 ## Build
 
+The target runtime is chosen with `-r`; without it the build defaults to `win-x64`. Every build is self-contained
+and a single file, and can be cross-published from any host OS.
+
 ```
+# Windows (default)
 dotnet publish -c Release
+
+# Linux
+dotnet publish -c Release -r linux-x64
 ```
+
+The output is in `bin/Release/net10.0/<rid>/publish/`.
+
+### Linux
+
+The installer supports both a native Linux Half-Life (it has `hl_linux` and `hl.sh`) and a Windows one run through
+Proton (it has `hl.exe`). It installs whatever is embedded: `hl.so`/`client.so` for native, `hl.dll`/`client.dll` for Proton.
+`liblist.gam` lists both game libraries, and the engine picks the one for its platform.
+
+Build the native libraries from `linux/` (needs `g++ -m32`); the `installer_payload` step of the default target copies
+`release/hl.so` to `payload/dlls/` and `release/client.so` to `payload/cl_dlls/`:
+
+```
+cd ../linux
+make
+```
+
+Then publish the installer as above. `linux/libopenvr_api.so` (untracked) is embedded too, if present, and is installed
+into the Half-Life folder, which `hl.sh` puts on `LD_LIBRARY_PATH`. `client.so` also needs `vgui.so` (shipped with
+Half-Life) and `libSDL2-2.0.so.0`, which is expected to come from the Steam runtime.
+
+The installer looks for Steam in `~/.steam/steam`, `~/.local/share/Steam`, the Flatpak location
+(`~/.var/app/com.valvesoftware.Steam/.local/share/Steam`) and the Snap one (`~/snap/steam/common/.local/share/Steam`),
+and quits if it is in none of them. Half-Life: VR Mod is Windows-only, so its Steam files (the source of the VR
+assets) are the Windows ones regardless.
+
+To run the Windows build instead, force Proton on Half-Life (Steam > Half-Life > Properties > Compatibility) so the
+Windows files, including `hl.exe`, are installed; the Linux installer handles both.
+
+Nothing is locked on Linux, but overwriting a `.so` the game has loaded crashes it, so the installer still waits for
+the game from this Half-Life folder to quit: `hl_linux`, or `hl.exe` under Proton (found by its `Z:\...` command line).

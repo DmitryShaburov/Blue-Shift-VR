@@ -59,14 +59,86 @@ namespace
     #endif
 }
 
+#ifdef _WIN32
 bool VREngineInterceptor::HookEngineFunctions()
 {
-    #ifdef _WIN32
     return HookEngineMethod("RandomFloat", gEngfuncs.pfnRandomFloat, VRRandomFloat)
         && HookEngineMethod("RandomLong", gEngfuncs.pfnRandomLong, VRRandomLong)
         ;
-    #else
-    return true;
-    #endif
 }
+
+#else // Linux
+
+#include <dlfcn.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <cstdint>
+#include <cstring>
+
+namespace
+{
+    constexpr size_t JumpSize = 5;  // jmp rel32
+
+    struct EnginePatch
+    {
+        unsigned char* address;
+        unsigned char original[JumpSize];
+    };
+    std::vector<EnginePatch> enginePatches;
+
+    // Code pages are read-only, so they are made writable just for the copy
+    bool WriteCode(unsigned char* address, const unsigned char* bytes)
+    {
+        const uintptr_t pageSize = sysconf(_SC_PAGESIZE);
+        const uintptr_t start = reinterpret_cast<uintptr_t>(address) & ~(pageSize - 1);
+        const size_t length = reinterpret_cast<uintptr_t>(address) + JumpSize - start;
+        if (mprotect(reinterpret_cast<void*>(start), length, PROT_READ | PROT_WRITE | PROT_EXEC) != 0)
+            return false;
+        std::memcpy(address, bytes, JumpSize);
+        mprotect(reinterpret_cast<void*>(start), length, PROT_READ | PROT_EXEC);
+        return true;
+    }
+}
+
+bool VRPatchEngineFunction(const char* name, void* function, void* replacement)
+{
+    auto* address = static_cast<unsigned char*>(function);
+    if (address == nullptr)
+    {
+        gEngfuncs.Con_DPrintf("Warning: Failed to patch engine function %s: no address\n", name);
+        return false;
+    }
+
+    EnginePatch patch{ address };
+    std::memcpy(patch.original, address, JumpSize);
+
+    const int32_t distance = static_cast<int32_t>(reinterpret_cast<uintptr_t>(replacement) - (reinterpret_cast<uintptr_t>(address) + JumpSize));
+    unsigned char jump[JumpSize] = { 0xE9 };
+    std::memcpy(jump + 1, &distance, sizeof(distance));
+    if (!WriteCode(address, jump))
+    {
+        gEngfuncs.Con_DPrintf("Warning: Failed to patch engine function %s: mprotect failed\n", name);
+        return false;
+    }
+    enginePatches.push_back(patch);
+
+    Dl_info info{};
+    if (dladdr(function, &info) && info.dli_fname)
+        gEngfuncs.Con_DPrintf("Patched engine function %s at %s+0x%x\n", name, info.dli_fname, unsigned(reinterpret_cast<uintptr_t>(function) - reinterpret_cast<uintptr_t>(info.dli_fbase)));
+    return true;
+}
+
+void VRUnpatchEngineFunctions()
+{
+    for (const auto& patch : enginePatches)
+        WriteCode(patch.address, patch.original);
+    enginePatches.clear();
+}
+
+bool VREngineInterceptor::HookEngineFunctions()
+{
+    return VRPatchEngineFunction("RandomFloat", reinterpret_cast<void*>(gEngfuncs.pfnRandomFloat), reinterpret_cast<void*>(VRRandomFloat))
+        && VRPatchEngineFunction("RandomLong", reinterpret_cast<void*>(gEngfuncs.pfnRandomLong), reinterpret_cast<void*>(VRRandomLong));
+}
+#endif
 

@@ -5,6 +5,10 @@
 #include "cl_util.h"
 #include "VRInput.h"
 
+#ifndef _WIN32
+#include <SDL2/SDL_video.h>
+#endif
+
 #ifndef GL_INVALID_FRAMEBUFFER_OPERATION
 #define GL_INVALID_FRAMEBUFFER_OPERATION 0x0506
 #endif
@@ -49,7 +53,8 @@ void* GetOpenGLFuncAddress(const char* name)
 	}
 	return p;
 #else
-	return (void*)glXGetProcAddress((const GLubyte*)name);
+	// SDL resolves through whichever backend the engine window uses (GLX on X11, EGL on Wayland)
+	return SDL_GL_GetProcAddress(name);
 #endif
 }
 
@@ -165,7 +170,6 @@ bool CreateGLFrameBuffer(unsigned int* framebuffer, unsigned int texture, int wi
 
 bool InitAdditionalGLFunctions()
 {
-	#ifdef _WIN32
 	glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)GetOpenGLFuncAddress("glGenFramebuffers");
 	glGenRenderbuffers = (PFNGLGENFRAMEBUFFERSPROC)GetOpenGLFuncAddress("glGenRenderbuffers");
 
@@ -176,7 +180,9 @@ bool InitAdditionalGLFunctions()
 	glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)GetOpenGLFuncAddress("glRenderbufferStorage");
 	glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)GetOpenGLFuncAddress("glFramebufferRenderbuffer");
 
+	#ifdef _WIN32
 	glActiveTexture = (PFNGLACTIVETEXTUREPROC)GetOpenGLFuncAddress("glActiveTexture");
+	#endif
 	glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GetOpenGLFuncAddress("glGenerateMipmap");
 
 	return glGenFramebuffers != nullptr &&
@@ -186,11 +192,7 @@ bool InitAdditionalGLFunctions()
 		glFramebufferTexture2D != nullptr &&
 		glRenderbufferStorage != nullptr &&
 		glFramebufferRenderbuffer != nullptr &&
-		glActiveTexture != nullptr &&
 		glGenerateMipmap != nullptr;
-	#else
-    return true;
-	#endif
 }
 
 void CaptureCurrentScreenToTexture(GLuint texture)

@@ -68,7 +68,9 @@ catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
 {
     Console.WriteLine();
     Console.WriteLine($"Failed: {ex.Message}");
-    Console.WriteLine("Close Steam and the game, or run the installer as administrator, and try again.");
+    Console.WriteLine(OperatingSystem.IsWindows()
+        ? "Close Steam and the game, or run the installer as administrator, and try again."
+        : "Close Steam and the game, check that you can write to the Half-Life folder, and try again.");
     Pause();
     return 1;
 }
@@ -99,20 +101,24 @@ static int Quit(string message)
     return 1;
 }
 
-// The running game keeps the mod DLLs and openvr_api.dll locked.
+// The running game keeps the mod DLLs and openvr_api.dll locked. On Linux nothing is locked, but overwriting
+// a .so the game has loaded crashes it.
 static void WaitForGameToExit(string halfLifeDir)
 {
     while (IsGameRunning(halfLifeDir))
     {
         Console.WriteLine();
-        Console.WriteLine("The game (hl.exe) is running. Quit it so its files can be replaced.");
+        Console.WriteLine($"The game ({(OperatingSystem.IsWindows() ? "hl.exe" : "Half-Life")}) is running. Quit it so its files can be replaced.");
         Console.Write("Press Enter once the game has exited (close this window to cancel): ");
         ReadLine();
     }
 }
 
+static bool IsGameRunning(string halfLifeDir) =>
+    OperatingSystem.IsWindows() ? IsGameRunningWindows(halfLifeDir) : IsGameRunningLinux(halfLifeDir);
+
 // Only hl.exe from this Half-Life folder: Half-Life: VR and other GoldSrc games are hl.exe too, from other folders.
-static bool IsGameRunning(string halfLifeDir)
+static bool IsGameRunningWindows(string halfLifeDir)
 {
     var gameExe = Path.Combine(halfLifeDir, "hl.exe");
     foreach (var process in Process.GetProcessesByName("hl"))
@@ -136,6 +142,45 @@ static bool IsGameRunning(string halfLifeDir)
         finally
         {
             process.Dispose();
+        }
+    }
+    return false;
+}
+
+// Native Half-Life is hl_linux from this folder. Under Proton the process is Wine's, and its command line starts with
+// the Windows path of hl.exe, where drive Z: is the Linux root. Half-Life: VR runs under Proton as hl.exe too.
+static bool IsGameRunningLinux(string halfLifeDir)
+{
+    var nativeExe = Path.Combine(halfLifeDir, "hl_linux");
+    var protonExe = Path.Combine(halfLifeDir, "hl.exe");
+    foreach (var dir in Directory.EnumerateDirectories("/proc"))
+    {
+        if (!int.TryParse(Path.GetFileName(dir), out _))
+        {
+            continue;
+        }
+        try
+        {
+            if (new FileInfo(Path.Combine(dir, "exe")).LinkTarget == nativeExe)
+            {
+                return true;
+            }
+
+            var exe = File.ReadAllText(Path.Combine(dir, "cmdline")).Split('\0')[0];
+            if (!exe.EndsWith("hl.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            // Can't tell where it runs from: wait to be safe
+            if (!exe.StartsWith(@"Z:\", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(exe[2..].Replace('\\', '/'), protonExe, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Another user's process, or it just exited
         }
     }
     return false;

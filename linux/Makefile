@@ -21,6 +21,8 @@ PUBLIC_SRC_DIR=$(SOURCE_DIR)/public
 
 BUILD_OBJ_DIR=$(BUILD_DIR)/obj
 
+INSTALLER_PAYLOAD_DIR=$(SOURCE_DIR)/installer/payload
+
 ARCH=i386
 ELF-GC-DYNSTR=./elf-gc-dynstr
 
@@ -80,6 +82,7 @@ TARGETS=
 TARGETS+= \
  	hl \
 	hl_cdll \
+	installer_payload \
 
 build_dir:
 	-mkdir -p $(BUILD_DIR);
@@ -89,6 +92,12 @@ targets: $(TARGETS)
 
 hl_cdll: build_dir
 	$(MAKE_HL_CDLL) CPLUS=$(CPLUS) ARCH=$(ARCH) ARCH_CFLAGS="$(ARCH_CFLAGS)" SHLIBEXT=$(SHLIBEXT) SHLIBCFLAGS=$(SHLIBCFLAGS) SHLIBLDFLAGS=$(SHLIBLDFLAGS) CPP_LIB="$(CPP_LIB)" CFG=$(CFG) OS=$(OS) BASE_CFLAGS="$(BASE_CFLAGS)" BUILD_DIR=$(BUILD_DIR) BUILD_OBJ_DIR=$(BUILD_OBJ_DIR) SOURCE_DIR=$(SOURCE_DIR) ENGINE_SRC_DIR=$(ENGINE_SRC_DIR) COMMON_SRC_DIR=$(COMMON_SRC_DIR) PUBLIC_SRC_DIR=$(PUBLIC_SRC_DIR) GAME_SHARED_SRC_DIR=$(GAME_SHARED_SRC_DIR) PM_SRC_DIR=$(PM_SRC_DIR)
+
+# Copy the built libraries where the installer embeds them (installer/payload/dlls and cl_dlls)
+installer_payload: hl hl_cdll
+	mkdir -p $(INSTALLER_PAYLOAD_DIR)/dlls $(INSTALLER_PAYLOAD_DIR)/cl_dlls
+	cp -f $(BUILD_DIR)/hl.$(SHLIBEXT) $(INSTALLER_PAYLOAD_DIR)/dlls/
+	cp -f $(BUILD_DIR)/client.$(SHLIBEXT) $(INSTALLER_PAYLOAD_DIR)/cl_dlls/
 
 rp3d: build_dir
 	$(MAKE_RP3D) $(RP3D_COMMON_VARS)

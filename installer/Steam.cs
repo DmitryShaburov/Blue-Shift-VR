@@ -16,6 +16,11 @@ static class Steam
 
     public static string? FindRoot()
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return FindRootLinux();
+        }
+
         try
         {
             // Steam is 32-bit, so its machine-wide key is under WOW6432Node; the per-user key is not redirected.
@@ -29,6 +34,24 @@ static class Steam
         {
             return null;
         }
+    }
+
+    static string? FindRootLinux()
+    {
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string[] candidates =
+        [
+            Path.Combine(home, ".steam", "steam"),
+            Path.Combine(home, ".local", "share", "Steam"),
+            Path.Combine(home, ".var", "app", "com.valvesoftware.Steam", ".local", "share", "Steam"), // Flatpak
+            Path.Combine(home, "snap", "steam", "common", ".local", "share", "Steam"),                // Snap
+        ];
+
+        // ~/.steam/steam is usually a symlink. Resolved, the game folder matches the path its running process reports.
+        return candidates
+            .Where(path => Directory.Exists(Path.Combine(path, "steamapps")))
+            .Select(path => Directory.ResolveLinkTarget(path, returnFinalTarget: true)?.FullName ?? Path.GetFullPath(path))
+            .FirstOrDefault();
     }
 
     public static string? FindApp(string steamRoot, int appId)
@@ -87,7 +110,8 @@ static class Steam
     }
 
     public static bool IsHalfLifeWithBlueShift(string folder) =>
-        File.Exists(Path.Combine(folder, "hl.exe")) && Directory.Exists(Path.Combine(folder, "bshift"));
+        (File.Exists(Path.Combine(folder, "hl.exe")) || File.Exists(Path.Combine(folder, "hl_linux"))) &&
+        Directory.Exists(Path.Combine(folder, "bshift"));
 
     public static bool IsHalfLifeVr(string folder) =>
         File.Exists(Path.Combine(folder, "hl.exe")) && File.Exists(Path.Combine(folder, "valve", "actions", "actions.manifest"));

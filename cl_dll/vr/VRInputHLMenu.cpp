@@ -287,7 +287,13 @@ void VRInput::HandleHLMenuInput()
 		const float texWidth = (float)gVRRenderer.GetHelper()->GetHLMenuTextureWidth();
 		const float texHeight = (float)gVRRenderer.GetHelper()->GetHLMenuTextureHeight();
 		const float aspect = (texWidth > 0.f && texHeight > 0.f) ? texHeight / texWidth : 1.f;
-		const float v = 0.5f - (0.5f - results.vUVs.v[1]) / aspect;
+#ifdef _WIN32
+		const float overlayV = results.vUVs.v[1];
+#else
+		// SteamVR on Linux reports v from the bottom (OpenGL texture convention), on Windows from the top
+		const float overlayV = 1.f - results.vUVs.v[1];
+#endif
+		const float v = 0.5f - (0.5f - overlayV) / aspect;
 
 		isOverMenu = v >= 0.f && v <= 1.f;
 		if (isOverMenu)

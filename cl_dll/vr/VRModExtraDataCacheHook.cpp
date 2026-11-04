@@ -27,11 +27,9 @@ namespace
 {
 	HOOK_TRACE_INFO hHook = { nullptr };
 }
-#endif
 
 void InstallModExtraDataCacheHook()
 {
-	#ifdef _WIN32
 	NTSTATUS result = LhInstallHook(
 		IEngineStudio.DONOTUSEMod_ExtradataDONOTUSE,
 		MyModExtradata,
@@ -50,5 +48,14 @@ void InstallModExtraDataCacheHook()
 		LhSetInclusiveACL(ACLEntries, 1, &hHook);
 		//gEngfuncs.Con_DPrintf("Successfully installed hook!\n");
 	}
-	#endif
 }
+
+#else // Linux
+
+#include "VREngineInterceptor.h"
+
+void InstallModExtraDataCacheHook()
+{
+	VRPatchEngineFunction("Mod_Extradata", reinterpret_cast<void*>(IEngineStudio.DONOTUSEMod_ExtradataDONOTUSE), reinterpret_cast<void*>(MyModExtradata));
+}
+#endif

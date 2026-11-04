@@ -1853,7 +1853,11 @@ void VRHelper::SetSkybox(const char* name)
 		m_skyboxTextures[i].handle = reinterpret_cast<void*>(VRTextureHelper::Instance().GetVRSkyboxTexture(name, i));
 	}
 
+#ifdef _WIN32
+	// SteamVR's 32-bit Linux vrclient.so crashes on this with OpenGL textures (null pointer read inside it),
+	// so on Linux SteamVR shows its own environment while the game isn't submitting frames
 	vrCompositor->SetSkyboxOverride(m_skyboxTextures, 6);
+#endif
 }
 
 void VRHelper::SetSkyboxFromMap(const char* mapName)

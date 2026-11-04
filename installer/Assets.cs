@@ -81,13 +81,17 @@ static class Assets
     }
 
     // Embedded resource "payload/dlls/hl.dll" goes to "<mod>/dlls/hl.dll", and so on.
-    // "halflife/openvr_api.dll" goes next to hl.exe, where Windows resolves client.dll's imports.
+    // "halflife/openvr_api.dll" goes next to hl.exe, where Windows resolves client.dll's imports; likewise
+    // "halflife/libopenvr_api.so" goes next to hl.sh, which puts that folder on LD_LIBRARY_PATH for client.so.
+    // Each set is installed only for the game it is for: native Linux Half-Life has no hl.exe, a Windows one
+    // (also under Proton) has no hl_linux.
     // "halflife/bsvr_hd/models/v_357.mdl" goes to the HD game folder next to the mod, "<Half-Life>/bsvr_hd/models/v_357.mdl".
     static void ExtractPayload(string modDir, string halfLifeDir)
     {
         var assembly = Assembly.GetExecutingAssembly();
         var names = assembly.GetManifestResourceNames();
-        if (!names.Any(n => n.EndsWith("hl.dll")) || !names.Any(n => n.EndsWith("client.dll")))
+        if (!names.Any(n => n.EndsWith("/hl.dll") || n.EndsWith("/hl.so")) ||
+            !names.Any(n => n.EndsWith("/client.dll") || n.EndsWith("/client.so")))
         {
             Console.WriteLine("  warning: game DLLs are not embedded in this build, the mod will not start");
         }
@@ -97,6 +101,11 @@ static class Assets
             var normalized = name.Replace('\\', '/');
             var isHalfLifeRoot = normalized.StartsWith("halflife/");
             var relative = normalized[(isHalfLifeRoot ? "halflife/".Length : "payload/".Length)..];
+            var engine = Path.GetExtension(relative) switch { ".dll" => "hl.exe", ".so" => "hl_linux", _ => null };
+            if (isHalfLifeRoot && engine is not null && !File.Exists(Path.Combine(halfLifeDir, engine)))
+            {
+                continue;
+            }
             var target = Path.Combine(isHalfLifeRoot ? halfLifeDir : modDir, relative);
             Console.WriteLine(isHalfLifeRoot ? $"  {relative} (Half-Life folder)" : $"  {relative}");
 

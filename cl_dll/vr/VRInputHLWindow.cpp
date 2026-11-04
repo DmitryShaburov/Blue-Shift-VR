@@ -25,6 +25,8 @@
 #define HSPRITE WINDOWS_HSPRITE
 #include <windows.h>
 #undef HSPRITE
+#else
+#include <SDL2/SDL_messagebox.h>
 #endif
 
 #ifdef _WIN32
@@ -166,6 +168,8 @@ void VRInput::DisplayErrorPopup(const char* errorMessage)
 {
 	#ifdef _WIN32
 	VRDisplayErrorPopup(errorMessage);
+	#else
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error starting Half-Life: VR", errorMessage, nullptr);
 	#endif
 }
 
