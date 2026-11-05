@@ -93,6 +93,7 @@ HL1_OBJS = \
 	$(HL1_OBJ_DIR)/voice_status.o \
 	$(HL1_OBJ_DIR)/vr/Matrices.o \
 	$(HL1_OBJ_DIR)/vr/VRCommon.o \
+	$(HL1_OBJ_DIR)/vr/VRCvarCache.o \
 	$(HL1_OBJ_DIR)/vr/VRHelper.o \
 	$(HL1_OBJ_DIR)/vr/VRRandom.o \
 	$(HL1_OBJ_DIR)/vr/VRClientDLLUnloadHandler.o \
@@ -110,10 +111,12 @@ HL1_OBJS = \
 	$(HL1_OBJ_DIR)/vr/VRSettings.o \
 	$(HL1_OBJ_DIR)/vr/VRGameFunctions.o \
 	$(HL1_OBJ_DIR)/vr/VRSteamworksManager.o \
+	$(HL1_OBJ_DIR)/vr/VRStudioModelRenderer.o \
 	$(HL1_OBJ_DIR)/vr/VRModExtraDataCacheHook.o \
 	$(HL1_OBJ_DIR)/vr/VRSettingsPages.o \
 	$(HL1_OBJ_DIR)/vr/VRClientVGUI.o \
 	$(HL1_OBJ_DIR)/vr/VRClientVGUIExport.o \
+	$(HL1_OBJ_DIR)/vr/VRClientPlayer.o \
 	$(HL1_OBJ_DIR)/vr/VRIntermissionAndMenuRenderer.o \
 	$(HL1_OBJ_DIR)/vr/VRHUDRenderer.o \
 	$(HL1_OBJ_DIR)/vr/VRHudAmmo.o \

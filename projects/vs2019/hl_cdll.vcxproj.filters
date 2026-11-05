@@ -306,6 +306,9 @@
     <ClCompile Include="..\..\cl_dll\vr\VRCommon.cpp">
       <Filter>VR\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRCvarCache.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRHelper.cpp">
       <Filter>VR\Source Files</Filter>
     </ClCompile>
@@ -396,6 +399,9 @@
     <ClCompile Include="..\..\cl_dll\vr\VRSteamworksManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRStudioModelRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRModExtraDataCacheHook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -427,6 +433,9 @@
       <Filter>VR\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRClientVGUIExport.cpp">
+      <Filter>VR\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRClientPlayer.cpp">
       <Filter>VR\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\external\hl1_source_sdk\public\filesystem_helpers.cpp">

@@ -30,7 +30,6 @@ This file contains "stubs" of class member implementations so that we can predic
 #include "soundent.h"
 #include "skill.h"
 // BSVR start
-#include "cl_entity.h"
 #include "cl_dll.h"
 #include "vr/VRHelper.h"
 #include "vr/VRRenderer.h"
@@ -328,35 +327,6 @@ Vector CBasePlayer::GetGunPosition(void)
 Vector CBasePlayer::GetAutoaimVector(float flDelta)
 {
 	return gVRRenderer.GetHelper()->GetAutoaimVector();
-}
-Vector CBasePlayer::GetAimAngles()
-{
-	return UTIL_VecToAngles(GetAutoaimVector());
-}
-const Vector CBasePlayer::GetWeaponPosition()
-{
-	return gVRRenderer.GetHelper()->GetWeaponPosition();
-}
-const Vector CBasePlayer::GetWeaponAngles()
-{
-	return gVRRenderer.GetHelper()->GetWeaponAngles();
-}
-const Vector CBasePlayer::GetWeaponViewAngles()
-{
-	Vector angles = GetWeaponAngles();
-	angles.x = -angles.x;
-	return angles;
-}
-bool CBasePlayer::IsWeaponUnderWater()
-{
-	extern cl_enginefunc_t gEngfuncs;
-	float weaponPos[3];
-	GetWeaponPosition().CopyToArray(weaponPos);
-	return gEngfuncs.PM_PointContents(weaponPos, nullptr) == CONTENTS_WATER;
-}
-bool CBasePlayer::VRCanAttack()
-{
-	return gVRRenderer.GetHelper()->CanAttack();
 }
 // BSVR end
 

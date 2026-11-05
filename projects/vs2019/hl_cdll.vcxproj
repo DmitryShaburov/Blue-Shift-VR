@@ -185,6 +185,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\cl_dll\voice_status.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\Matrices.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRCommon.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRCvarCache.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRHelper.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRRandom.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRClientDLLUnloadHandler.cpp" />
@@ -202,6 +203,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\cl_dll\vr\VRSettings.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRGameFunctions.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRSteamworksManager.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRStudioModelRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRModExtraDataCacheHook.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRSettingsPages.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRClientVGUI.cpp">
@@ -209,6 +211,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
       <PreprocessorDefinitions>$(VguiSdkDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRClientVGUIExport.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRClientPlayer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRIntermissionAndMenuRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRHUDRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRHudAmmo.cpp" />
