@@ -225,6 +225,7 @@ void CBasePlayerWeapon::SendWeaponAnim(int iAnim, int body)
 
 	HUD_SendWeaponAnim(iAnim, body, false);
 	// BSVR start
+	extern void InterCept_EV_WeaponAnimation(int sequence, int body); // vr/VRWeaponAnimation.cpp
 	InterCept_EV_WeaponAnimation(iAnim, body);
 	// BSVR end
 }

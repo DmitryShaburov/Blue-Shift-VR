@@ -123,6 +123,7 @@ HL1_OBJS = \
 	$(HL1_OBJ_DIR)/vr/VRHudAmmo.o \
 	$(HL1_OBJ_DIR)/vr/VRHudMessages.o \
 	$(HL1_OBJ_DIR)/vr/VRWeaponWheel.o \
+	$(HL1_OBJ_DIR)/vr/VRWeaponAnimation.o \
 	$(HL1_OBJ_DIR)/vr/VRRenderer.o \
 	$(HL1_OBJ_DIR)/vr/VRTextureHelper.o \
 	$(HL1_OBJ_DIR)/vr/lodepng.o \

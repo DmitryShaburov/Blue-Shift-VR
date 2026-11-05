@@ -426,6 +426,9 @@
     <ClCompile Include="..\..\cl_dll\vr\VRWeaponWheel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRWeaponAnimation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRTextureHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

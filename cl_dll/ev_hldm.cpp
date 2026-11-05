@@ -492,10 +492,7 @@ void EV_FireGlock1(event_args_t* args)
 	if (EV_IsLocal(idx))
 	{
 		EV_MuzzleFlash();
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(empty ? GLOCK_SHOOT_EMPTY : GLOCK_SHOOT, 0); - original
-		InterCept_EV_WeaponAnimation(empty ? GLOCK_SHOOT_EMPTY : GLOCK_SHOOT, 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(empty ? GLOCK_SHOOT_EMPTY : GLOCK_SHOOT, 0);
 
 		V_PunchAxis(0, -2.0);
 	}
@@ -551,10 +548,7 @@ void EV_FireGlock2(event_args_t* args)
 	{
 		// Add muzzle flash to current weapon model
 		EV_MuzzleFlash();
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(empty ? GLOCK_SHOOT_EMPTY : GLOCK_SHOOT, 0); - original
-		InterCept_EV_WeaponAnimation(empty ? GLOCK_SHOOT_EMPTY : GLOCK_SHOOT, 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(empty ? GLOCK_SHOOT_EMPTY : GLOCK_SHOOT, 0);
 
 		V_PunchAxis(0, -2.0);
 	}
@@ -615,10 +609,7 @@ void EV_FireShotGunDouble(event_args_t* args)
 	{
 		// Add muzzle flash to current weapon model
 		EV_MuzzleFlash();
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(SHOTGUN_FIRE2, 0); - original
-		InterCept_EV_WeaponAnimation(SHOTGUN_FIRE2, 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(SHOTGUN_FIRE2, 0);
 		V_PunchAxis(0, -10.0);
 	}
 
@@ -679,10 +670,7 @@ void EV_FireShotGunSingle(event_args_t* args)
 	{
 		// Add muzzle flash to current weapon model
 		EV_MuzzleFlash();
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(SHOTGUN_FIRE, 0); - original
-		InterCept_EV_WeaponAnimation(SHOTGUN_FIRE, 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(SHOTGUN_FIRE, 0);
 
 		V_PunchAxis(0, -5.0);
 	}
@@ -745,10 +733,7 @@ void EV_FireMP5(event_args_t* args)
 	{
 		// Add muzzle flash to current weapon model
 		EV_MuzzleFlash();
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(MP5_FIRE1 + gEngfuncs.pfnRandomLong(0, 2), 0); - original
-		InterCept_EV_WeaponAnimation(MP5_FIRE1 + gEngfuncs.pfnRandomLong(0, 2), 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(MP5_FIRE1 + gEngfuncs.pfnRandomLong(0, 2), 0);
 
 		V_PunchAxis(0, gEngfuncs.pfnRandomFloat(-2, 2));
 	}
@@ -788,10 +773,7 @@ void EV_FireMP52(event_args_t* args)
 
 	if (EV_IsLocal(idx))
 	{
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(MP5_LAUNCH, 0); - original
-		InterCept_EV_WeaponAnimation(MP5_LAUNCH, 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(MP5_LAUNCH, 0);
 		V_PunchAxis(0, -10);
 	}
 
@@ -848,10 +830,7 @@ void EV_FirePython(event_args_t* args)
 
 		// Add muzzle flash to current weapon model
 		EV_MuzzleFlash();
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(PYTHON_FIRE1, multiplayer ? 1 : 0); - original
-		InterCept_EV_WeaponAnimation(PYTHON_FIRE1, multiplayer ? 1 : 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(PYTHON_FIRE1, multiplayer ? 1 : 0);
 
 		V_PunchAxis(0, -10.0);
 	}
@@ -981,10 +960,7 @@ void EV_FireGauss(event_args_t* args)
 	if (EV_IsLocal(idx))
 	{
 		V_PunchAxis(0, -2.0);
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(GAUSS_FIRE2, 0); - original
-		InterCept_EV_WeaponAnimation(GAUSS_FIRE2, 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(GAUSS_FIRE2, 0);
 
 		if (!m_fPrimaryFire)
 			g_flApplyVel = flDamage;
@@ -1247,13 +1223,13 @@ void EV_Crowbar(event_args_t* args)
 	// 	switch ((g_iSwing++) % 3)
 	// 	{
 	// 	case 0:
-	// 		InterCept_EV_WeaponAnimation(CROWBAR_ATTACK1MISS, 0);
+	// 		gEngfuncs.pEventAPI->EV_WeaponAnimation(CROWBAR_ATTACK1MISS, 0);
 	// 		break;
 	// 	case 1:
-	// 		InterCept_EV_WeaponAnimation(CROWBAR_ATTACK2MISS, 0);
+	// 		gEngfuncs.pEventAPI->EV_WeaponAnimation(CROWBAR_ATTACK2MISS, 0);
 	// 		break;
 	// 	case 2:
-	// 		InterCept_EV_WeaponAnimation(CROWBAR_ATTACK3MISS, 0);
+	// 		gEngfuncs.pEventAPI->EV_WeaponAnimation(CROWBAR_ATTACK3MISS, 0);
 	// 		break;
 	// 	}
 	// }
@@ -1317,15 +1293,9 @@ void EV_FireCrossbow2(event_args_t* args)
 	if (EV_IsLocal(idx))
 	{
 		if (0 != args->iparam1)
-			// BSVR start
-			// gEngfuncs.pEventAPI->EV_WeaponAnimation(CROSSBOW_FIRE1, 0); - original
-			InterCept_EV_WeaponAnimation(CROSSBOW_FIRE1, 0);
-		// BSVR end
+			gEngfuncs.pEventAPI->EV_WeaponAnimation(CROSSBOW_FIRE1, 0);
 		else
-			// BSVR start
-			// gEngfuncs.pEventAPI->EV_WeaponAnimation(CROSSBOW_FIRE3, 0); - original
-			InterCept_EV_WeaponAnimation(CROSSBOW_FIRE3, 0);
-		// BSVR end
+			gEngfuncs.pEventAPI->EV_WeaponAnimation(CROSSBOW_FIRE3, 0);
 	}
 
 	// Store off the old count
@@ -1406,15 +1376,9 @@ void EV_FireCrossbow(event_args_t* args)
 	if (EV_IsLocal(idx))
 	{
 		if (0 != args->iparam1)
-			// BSVR start
-			// gEngfuncs.pEventAPI->EV_WeaponAnimation(CROSSBOW_FIRE1, 0); - original
-			InterCept_EV_WeaponAnimation(CROSSBOW_FIRE1, 0);
-		// BSVR end
+			gEngfuncs.pEventAPI->EV_WeaponAnimation(CROSSBOW_FIRE1, 0);
 		else
-			// BSVR start
-			// gEngfuncs.pEventAPI->EV_WeaponAnimation(CROSSBOW_FIRE3, 0); - original
-			InterCept_EV_WeaponAnimation(CROSSBOW_FIRE3, 0);
-		// BSVR end
+			gEngfuncs.pEventAPI->EV_WeaponAnimation(CROSSBOW_FIRE3, 0);
 
 		V_PunchAxis(0, -2.0);
 	}
@@ -1447,10 +1411,7 @@ void EV_FireRpg(event_args_t* args)
 	//Only play the weapon anims if I shot it.
 	if (EV_IsLocal(idx))
 	{
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(RPG_FIRE2, 0); - original
-		InterCept_EV_WeaponAnimation(RPG_FIRE2, 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(RPG_FIRE2, 0);
 
 		V_PunchAxis(0, -5.0);
 	}
@@ -1507,10 +1468,7 @@ void EV_EgonFire(event_args_t* args)
 
 	//Only play the weapon anims if I shot it.
 	if (EV_IsLocal(idx))
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(g_fireAnims1[gEngfuncs.pfnRandomLong(0, 3)], 0); - original
-		InterCept_EV_WeaponAnimation(g_fireAnims1[gEngfuncs.pfnRandomLong(0, 3)], 0);
-	// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(g_fireAnims1[gEngfuncs.pfnRandomLong(0, 3)], 0);
 
 	// BSVR start
 	// if (iStartup && EV_IsLocal(idx) && !pBeam && !pBeam2 && 0 != cl_lw->value) //Adrian: Added the cl_lw check for those lital people that hate weapon prediction. - original
@@ -1647,10 +1605,7 @@ void EV_EgonStop(event_args_t* args)
 		// HACK: only reset animation if the Egon is still equipped.
 		if (g_CurrentWeaponId == WEAPON_EGON)
 		{
-			// BSVR start
-			// gEngfuncs.pEventAPI->EV_WeaponAnimation(EGON_IDLE1, 0); - original
-			InterCept_EV_WeaponAnimation(EGON_IDLE1, 0);
-			// BSVR end
+			gEngfuncs.pEventAPI->EV_WeaponAnimation(EGON_IDLE1, 0);
 		}
 	}
 }
@@ -1681,10 +1636,7 @@ void EV_HornetGunFire(event_args_t* args)
 	if (EV_IsLocal(idx))
 	{
 		V_PunchAxis(0, gEngfuncs.pfnRandomLong(0, 2));
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(HGUN_SHOOT, 0); - original
-		InterCept_EV_WeaponAnimation(HGUN_SHOOT, 0);
-		// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(HGUN_SHOOT, 0);
 	}
 
 	switch (gEngfuncs.pfnRandomLong(0, 2))
@@ -1750,10 +1702,7 @@ void EV_TripmineFire(event_args_t* args)
 
 	//Hit something solid
 	if (tr.fraction < 1.0)
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(TRIPMINE_DRAW, 0); - original
-		InterCept_EV_WeaponAnimation(TRIPMINE_DRAW, 0);
-	// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(TRIPMINE_DRAW, 0);
 
 	gEngfuncs.pEventAPI->EV_PopPMStates();
 }
@@ -1803,10 +1752,7 @@ void EV_SnarkFire(event_args_t* args)
 
 	//Find space to drop the thing.
 	if (tr.allsolid == 0 && tr.startsolid == 0 && tr.fraction > 0.25)
-		// BSVR start
-		// gEngfuncs.pEventAPI->EV_WeaponAnimation(SQUEAK_THROW, 0); - original
-		InterCept_EV_WeaponAnimation(SQUEAK_THROW, 0);
-	// BSVR end
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(SQUEAK_THROW, 0);
 
 	gEngfuncs.pEventAPI->EV_PopPMStates();
 }
@@ -1884,18 +1830,3 @@ bool EV_TFC_IsAllyTeam(int iTeam1, int iTeam2)
 {
 	return false;
 }
-
-// BSVR start
-void InterCept_EV_WeaponAnimation(int sequence, int body)
-{
-	// "Hack" - Since we use server side entities for our weapons bound to VR controllers,
-	// and some weapon animations are client side only,
-	// we simply send a message up to the server here instead of fixing all places in code
-	// where client side animations are used. - Max Makes Mods, 2019-04-13
-
-	std::string cmd = "vr_wpnanim " + std::to_string(sequence) + " " + std::to_string(body);
-	gEngfuncs.pfnClientCmd(cmd.data());
-
-	// gEngfuncs.pEventAPI->EV_WeaponAnimation(sequence, body);
-}
-// BSVR end

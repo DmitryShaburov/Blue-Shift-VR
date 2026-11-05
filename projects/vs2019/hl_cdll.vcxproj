@@ -218,6 +218,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\cl_dll\vr\VRHudAmmo.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRHudMessages.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRWeaponWheel.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VRWeaponAnimation.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRRenderer.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRTextureHelper.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\lodepng.cpp" />
