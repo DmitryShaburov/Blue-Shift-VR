@@ -23,11 +23,6 @@
 #include "activity.h"
 #include "enginecallback.h"
 // BSVR start
-
-float CVAR_GET_FLOAT(const char* x);
-const char* CVAR_GET_STRING(const char* x);
-void* GET_MODEL_PTR(edict_t* pent);
-
 #include <string>
 // BSVR end
 

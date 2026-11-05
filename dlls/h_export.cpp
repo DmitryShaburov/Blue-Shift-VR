@@ -32,8 +32,15 @@
 #define DLLEXPORT __attribute__((visibility("default")))
 #endif
 
+// BSVR start
+void VRHookEngineFuncs(); // vr/VREngineCallbacks.cpp
+// BSVR end
+
 extern "C" void DLLEXPORT GiveFnptrsToDll(enginefuncs_t* pengfuncsFromEngine, globalvars_t* pGlobals)
 {
 	memcpy(&g_engfuncs, pengfuncsFromEngine, sizeof(enginefuncs_t));
+	// BSVR start
+	VRHookEngineFuncs();
+	// BSVR end
 	gpGlobals = pGlobals;
 }

@@ -32,10 +32,7 @@ inline enginefuncs_t g_engfuncs;
 #define MODEL_INDEX (*g_engfuncs.pfnModelIndex)
 #define MODEL_FRAMES (*g_engfuncs.pfnModelFrames)
 #define SET_SIZE (*g_engfuncs.pfnSetSize)
-// BSVR start
-// #define CHANGE_LEVEL (*g_engfuncs.pfnChangeLevel) // upstream
-void CHANGE_LEVEL(char* s1, char* s2);
-// BSVR end
+#define CHANGE_LEVEL (*g_engfuncs.pfnChangeLevel)
 #define GET_SPAWN_PARMS (*g_engfuncs.pfnGetSpawnParms)
 #define SAVE_SPAWN_PARMS (*g_engfuncs.pfnSaveSpawnParms)
 #define VEC_TO_YAW (*g_engfuncs.pfnVecToYaw)
@@ -100,10 +97,8 @@ void CHANGE_LEVEL(char* s1, char* s2);
 // BSVR end
 
 #define CVAR_REGISTER (*g_engfuncs.pfnCVarRegister)
-// BSVR start, moved to util
-// #define CVAR_GET_FLOAT (*g_engfuncs.pfnCVarGetFloat)
-// #define CVAR_GET_STRING (*g_engfuncs.pfnCVarGetString)
-// BSVR end
+#define CVAR_GET_FLOAT (*g_engfuncs.pfnCVarGetFloat)
+#define CVAR_GET_STRING (*g_engfuncs.pfnCVarGetString)
 #define CVAR_SET_FLOAT (*g_engfuncs.pfnCVarSetFloat)
 #define CVAR_SET_STRING (*g_engfuncs.pfnCVarSetString)
 #define CVAR_GET_POINTER (*g_engfuncs.pfnCVarGetPointer)
@@ -125,9 +120,7 @@ inline void* GET_PRIVATE(edict_t* pent)
 #define FIND_ENTITY_IN_SPHERE (*g_engfuncs.pfnFindEntityInSphere)
 #define FIND_CLIENT_IN_PVS (*g_engfuncs.pfnFindClientInPVS)
 #define EMIT_AMBIENT_SOUND (*g_engfuncs.pfnEmitAmbientSound)
-// BSVR start
-// #define GET_MODEL_PTR (*g_engfuncs.pfnGetModelPtr) - original, moved to util
-// BSVR end
+#define GET_MODEL_PTR (*g_engfuncs.pfnGetModelPtr)
 #define REG_USER_MSG (*g_engfuncs.pfnRegUserMsg)
 #define GET_BONE_POSITION (*g_engfuncs.pfnGetBonePosition)
 #define FUNCTION_FROM_NAME (*g_engfuncs.pfnFunctionFromName)

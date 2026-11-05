@@ -1,4 +1,4 @@
-// Cached engine cvar/model lookups and the changelevel hook, moved from util.cpp
+// Cached engine cvar/model lookups and the changelevel hook, swapped into g_engfuncs by VRHookEngineFuncs
 
 #include "extdll.h"
 #include "util.h"
@@ -19,16 +19,14 @@ namespace
 static std::unordered_map<std::string, float> cvarfloatcache;
 static std::unordered_map<std::string, std::unique_ptr<std::string>> cvarstringcache;
 static std::unordered_map<std::string, std::vector<unsigned char>> modelpointercache;
-}
 
-void VRClearCvarCache()
-{
-	cvarfloatcache.clear();
-	cvarstringcache.clear();
-	modelpointercache.clear();
-}
+// The engine's own functions, called on a cache miss
+float (*s_engineCVarGetFloat)(const char* szVarName);
+const char* (*s_engineCVarGetString)(const char* szVarName);
+void* (*s_engineGetModelPtr)(edict_t* pEdict);
+void (*s_engineChangeLevel)(const char* s1, const char* s2);
 
-float CVAR_GET_FLOAT(const char* x)
+float VRCVarGetFloat(const char* x)
 {
 	auto it = cvarfloatcache.find(x);
 	if (it != cvarfloatcache.end())
@@ -37,13 +35,13 @@ float CVAR_GET_FLOAT(const char* x)
 	}
 	else
 	{
-		float result = g_engfuncs.pfnCVarGetFloat(x);
+		float result = s_engineCVarGetFloat(x);
 		cvarfloatcache[x] = result;
 		return result;
 	}
 }
 
-const char* CVAR_GET_STRING(const char* x)
+const char* VRCVarGetString(const char* x)
 {
 	auto it = cvarstringcache.find(x);
 	if (it != cvarstringcache.end() && it->second)
@@ -52,13 +50,13 @@ const char* CVAR_GET_STRING(const char* x)
 	}
 	else
 	{
-		const char* result = g_engfuncs.pfnCVarGetString(x);
+		const char* result = s_engineCVarGetString(x);
 		cvarstringcache[x] = std::make_unique<std::string>(result);
 		return result;
 	}
 }
 
-void* GET_MODEL_PTR(edict_t* pent)
+void* VRGetModelPtr(edict_t* pent)
 {
 	constexpr const int STUDIO_HEADER_LENGTH_OFFSET = 72; // see studiohdr_t in studio.h
 
@@ -77,7 +75,7 @@ void* GET_MODEL_PTR(edict_t* pent)
 		void* model = nullptr;
 		if (modelName.size() > 4 && modelName[0] != '*' && modelName.find(".mdl") == modelName.size() - 4)
 		{
-			model = (*g_engfuncs.pfnGetModelPtr)(pent);
+			model = s_engineGetModelPtr(pent);
 		}
 #ifdef _DEBUG
 		else
@@ -97,11 +95,33 @@ void* GET_MODEL_PTR(edict_t* pent)
 	}
 }
 
-// From enginecallback.h, intercepts changelevel calls
-void CHANGE_LEVEL(char* s1, char* s2)
+// Tells the client about the level change before passing it on
+void VRChangeLevel(const char* s1, const char* s2)
 {
 	MESSAGE_BEGIN(MSG_ALL, gmsgVRLevelChange);
 	MESSAGE_END();
 
-	g_engfuncs.pfnChangeLevel(s1, s2);
+	s_engineChangeLevel(s1, s2);
+}
+}
+
+void VRClearCvarCache()
+{
+	cvarfloatcache.clear();
+	cvarstringcache.clear();
+	modelpointercache.clear();
+}
+
+// Called from GiveFnptrsToDll: every CVAR_GET_FLOAT, CVAR_GET_STRING, GET_MODEL_PTR and CHANGE_LEVEL in the DLL goes through g_engfuncs
+void VRHookEngineFuncs()
+{
+	s_engineCVarGetFloat = g_engfuncs.pfnCVarGetFloat;
+	s_engineCVarGetString = g_engfuncs.pfnCVarGetString;
+	s_engineGetModelPtr = g_engfuncs.pfnGetModelPtr;
+	s_engineChangeLevel = g_engfuncs.pfnChangeLevel;
+
+	g_engfuncs.pfnCVarGetFloat = VRCVarGetFloat;
+	g_engfuncs.pfnCVarGetString = VRCVarGetString;
+	g_engfuncs.pfnGetModelPtr = VRGetModelPtr;
+	g_engfuncs.pfnChangeLevel = VRChangeLevel;
 }
