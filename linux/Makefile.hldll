@@ -153,6 +153,8 @@ VR_OBJS = \
 	$(VR_OBJ_DIR)/VRCrushEntityHandler.o \
 	$(VR_OBJ_DIR)/VREngineCallbacks.o \
 	$(VR_OBJ_DIR)/VRGroundEntityHandler.o \
+	$(VR_OBJ_DIR)/VRGibs.o \
+	$(VR_OBJ_DIR)/VRGrenadeDrag.o \
 	$(VR_OBJ_DIR)/VRModelHelper.o \
 	$(VR_OBJ_DIR)/VRMovementHandler.o \
 	$(VR_OBJ_DIR)/VRPhysicsHelper.o \
@@ -160,7 +162,8 @@ VR_OBJS = \
 	$(VR_OBJ_DIR)/VRRotatableEnt.o \
 	$(VR_OBJ_DIR)/VRUtil.o \
 	$(VR_OBJ_DIR)/VRAnimatedModelHelper.o \
-	$(VR_OBJ_DIR)/VRAnimation.o
+	$(VR_OBJ_DIR)/VRAnimation.o \
+	$(VR_OBJ_DIR)/VRBreakable.o
 
 all: dirs hl.$(SHLIBEXT)
 

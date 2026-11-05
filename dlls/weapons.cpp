@@ -31,53 +31,9 @@
 #include "gamerules.h"
 #include "UserMessages.h"
 
-//BSVR start
-#include <regex>
-#include <filesystem>
-//BSVR end
-
 #define NOT_USED 255
 
 #define TRACER_FREQ 4 // Tracers fire every fourth bullet
-
-// BSVR start
-// Returns the minimum speed required to do melee damage with a VR controller - Max Makes Mods, 2019-04-07
-float GetMeleeSwingSpeed()
-{
-	float speed = CVAR_GET_FLOAT("vr_melee_swing_speed");
-	// Don't allow negative or 0 values
-	return std::max(1.f, speed);
-}
-
-float GetWeaponScale(const char* weaponModelName)
-{
-	float baseWeaponScale = CVAR_GET_FLOAT("vr_weaponscale");
-	if (baseWeaponScale < 0.01f)
-		baseWeaponScale = 1.f;
-
-	float worldScale = CVAR_GET_FLOAT("vr_world_scale");
-	if (worldScale == 0.f)
-		worldScale = 1.f;
-	else if (worldScale < 0.1f)
-		worldScale = 0.1f;
-	else if (worldScale > 100.f)
-		worldScale = 100.f;
-	baseWeaponScale /= worldScale;
-
-	// "models/w_<weapon>.mdl" -> "vr_<weapon>_scale"
-	// "models/v_<weapon>.mdl" -> "vr_<weapon>_scale"
-	std::string cvarWeaponModelScale =
-		std::regex_replace(
-			std::string{weaponModelName},
-			std::regex{"models/[vw]_([a-zA-Z_-]+)\\.mdl"},
-			"vr_$1_scale");
-	float weaponScale = CVAR_GET_FLOAT(cvarWeaponModelScale.data());
-	if (weaponScale < 0.01f)
-		weaponScale = 1.f;
-
-	return baseWeaponScale * weaponScale;
-}
-// BSVR end
 
 
 //=========================================================

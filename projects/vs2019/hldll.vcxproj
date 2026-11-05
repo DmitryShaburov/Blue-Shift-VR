@@ -239,6 +239,8 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\dlls\vr\VRCrushEntityHandler.cpp" />
     <ClCompile Include="..\..\dlls\vr\VREngineCallbacks.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRGroundEntityHandler.cpp" />
+    <ClCompile Include="..\..\dlls\vr\VRGibs.cpp" />
+    <ClCompile Include="..\..\dlls\vr\VRGrenadeDrag.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRModelHelper.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRMovementHandler.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRPhysicsHelper.cpp" />
@@ -247,6 +249,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\dlls\vr\VRUtil.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRAnimatedModelHelper.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRAnimation.cpp" />
+    <ClCompile Include="..\..\dlls\vr\VRBreakable.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\dlls\vr\hlmv_mathlib.h" />

@@ -396,6 +396,12 @@
     <ClCompile Include="..\..\dlls\vr\VRGroundEntityHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\dlls\vr\VRGibs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\vr\VRGrenadeDrag.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\dlls\vr\VRModelHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -418,6 +424,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\dlls\vr\VRAnimation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dlls\vr\VRBreakable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
