@@ -1,4 +1,4 @@
-// Cached engine cvar/model lookups and the changelevel hook, swapped into g_engfuncs by VRHookEngineFuncs
+// Cached engine cvar/model lookups and the changelevel hook, swapped into g_engfuncs by VRSwapEngineCallbacks
 
 #include "extdll.h"
 #include "util.h"
@@ -112,8 +112,8 @@ void VRClearCvarCache()
 	modelpointercache.clear();
 }
 
-// Called from GiveFnptrsToDll: every CVAR_GET_FLOAT, CVAR_GET_STRING, GET_MODEL_PTR and CHANGE_LEVEL in the DLL goes through g_engfuncs
-void VRHookEngineFuncs()
+// Every CVAR_GET_FLOAT, CVAR_GET_STRING, GET_MODEL_PTR and CHANGE_LEVEL in the DLL goes through g_engfuncs
+void VRSwapEngineCallbacks()
 {
 	s_engineCVarGetFloat = g_engfuncs.pfnCVarGetFloat;
 	s_engineCVarGetString = g_engfuncs.pfnCVarGetString;

@@ -98,6 +98,7 @@ HL1_OBJS = \
 	$(HL1_OBJ_DIR)/vr/VRRandom.o \
 	$(HL1_OBJ_DIR)/vr/VRClientDLLUnloadHandler.o \
 	$(HL1_OBJ_DIR)/vr/VREngineInterceptor.o \
+	$(HL1_OBJ_DIR)/vr/VREngineFuncSwaps.o \
 	$(HL1_OBJ_DIR)/vr/VROpenGLInterceptor.o \
 	$(HL1_OBJ_DIR)/vr/VRInput.o \
 	$(HL1_OBJ_DIR)/vr/VRInputAction.o \

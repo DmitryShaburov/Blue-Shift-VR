@@ -26,7 +26,8 @@ void VRGameFunctions::CloseMenu()
 
 float VRGameFunctions::GetCVar(const char* cvar)
 {
-	return gEngfuncs.pfnGetCvarFloat(cvar);
+	extern float VRGetCvarFloatUncached(const char* x); // vr/VRCvarCache.cpp
+	return VRGetCvarFloatUncached(cvar);
 }
 
 void VRGameFunctions::SetCVar(const char* cvar, float value)

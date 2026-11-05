@@ -538,7 +538,7 @@ bool VRRenderer::HasValidRightController()
 	return vrHelper->HasValidRightController();
 }
 
-// For extern declarations in cl_util.h
+// Swapped into gEngfuncs by VRSwapHUDSpriteFuncs below
 void InterceptSPR_Set(HSPRITE hPic, int r, int g, int b)
 {
 	gVRRenderer.InterceptSPR_Set(hPic, r, g, b);
@@ -546,4 +546,12 @@ void InterceptSPR_Set(HSPRITE hPic, int r, int g, int b)
 void InterceptSPR_DrawAdditive(int frame, int x, int y, const Rect* prc)
 {
 	gVRRenderer.InterceptSPR_DrawAdditive(frame, x, y, prc);
+}
+
+// Every SPR_Set and SPR_DrawAdditive in the client goes through gEngfuncs.
+// The VR renderer captures HUD sprites and draws them in 3D space, never passing them to the engine.
+void VRSwapHUDSpriteFuncs()
+{
+	gEngfuncs.pfnSPR_Set = InterceptSPR_Set;
+	gEngfuncs.pfnSPR_DrawAdditive = InterceptSPR_DrawAdditive;
 }

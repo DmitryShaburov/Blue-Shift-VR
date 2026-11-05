@@ -40,6 +40,8 @@
 
 // BSVR start
 #include "vr/VRRenderer.h"
+
+void VRSwapEngineFuncs(); // vr/VREngineFuncSwaps.cpp
 // BSVR end
 
 cl_enginefunc_t gEngfuncs;
@@ -147,6 +149,10 @@ int DLLEXPORT Initialize(cl_enginefunc_t* pEnginefuncs, int iVersion)
 		return 0;
 
 	memcpy(&gEngfuncs, pEnginefuncs, sizeof(cl_enginefunc_t));
+
+	// BSVR start
+	VRSwapEngineFuncs();
+	// BSVR end
 
 	const bool result = CL_InitClient();
 

@@ -393,6 +393,9 @@
     <ClCompile Include="..\..\dlls\vr\VREngineCallbacks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\dlls\vr\VREngineFuncSwaps.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\dlls\vr\VRGroundEntityHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

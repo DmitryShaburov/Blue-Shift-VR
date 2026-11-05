@@ -363,6 +363,9 @@
     <ClCompile Include="..\..\cl_dll\vr\VREngineInterceptor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VREngineFuncSwaps.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRInput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

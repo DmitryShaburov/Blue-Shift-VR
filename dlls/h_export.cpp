@@ -33,14 +33,14 @@
 #endif
 
 // BSVR start
-void VRHookEngineFuncs(); // vr/VREngineCallbacks.cpp
+void VRSwapEngineFuncs(); // vr/VREngineFuncSwaps.cpp
 // BSVR end
 
 extern "C" void DLLEXPORT GiveFnptrsToDll(enginefuncs_t* pengfuncsFromEngine, globalvars_t* pGlobals)
 {
 	memcpy(&g_engfuncs, pengfuncsFromEngine, sizeof(enginefuncs_t));
 	// BSVR start
-	VRHookEngineFuncs();
+	VRSwapEngineFuncs();
 	// BSVR end
 	gpGlobals = pGlobals;
 }

@@ -190,6 +190,7 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\cl_dll\vr\VRRandom.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRClientDLLUnloadHandler.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VREngineInterceptor.cpp" />
+    <ClCompile Include="..\..\cl_dll\vr\VREngineFuncSwaps.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VROpenGLInterceptor.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRInput.cpp" />
     <ClCompile Include="..\..\cl_dll\vr\VRInputAction.cpp" />
