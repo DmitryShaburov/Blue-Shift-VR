@@ -408,6 +408,12 @@
     <ClCompile Include="..\..\cl_dll\vr\VRHUDRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRHudAmmo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\vr\VRHudMessages.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\cl_dll\vr\VRWeaponWheel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -714,6 +720,9 @@
       <Filter>VR\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\cl_dll\vr\VRCommon.h">
+      <Filter>VR\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\vr\VRControllerModelData.h">
       <Filter>VR\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\cl_dll\vr\VRHelper.h">
