@@ -2241,8 +2241,8 @@ class CItemSoda : public CGib
 {
 public:
 	void Spawn() override;
-	// void Precache() override;
 	// BSVR start
+	// void Precache() override; - original
 	// void EXPORT CanThink(); - original
 	// void EXPORT CanTouch(CBaseEntity* pOther); - original
 	virtual void HandleDragUpdate(const Vector& origin, const Vector& velocity, const Vector& angles) override;

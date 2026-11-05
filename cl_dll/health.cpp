@@ -111,9 +111,10 @@ bool CHudHealth::MsgFunc_Health(const char* pszName, int iSize, void* pbuf)
 	// Only update the fade if we've changed health
 	if (x != m_iHealth)
 	{
-
 		m_fFade = FADE_TIME;
+		// BSVR start
 		// m_iHealth = x; - original
+		// BSVR end
 	}
 
 	// BSVR start
@@ -259,9 +260,11 @@ bool CHudHealth::Draw(float flTime)
 	gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::PAIN);
 	bool painResult = DrawPain(flTime);
 	gVRRenderer.VRHUDDrawFinished();
-	// BSVR end
 
+	// DrawDamage(flTime); - original
+	// return DrawPain(flTime); - original
 	return painResult;
+	// BSVR end
 }
 
 void CHudHealth::CalcDamageDirection(Vector vecFrom)

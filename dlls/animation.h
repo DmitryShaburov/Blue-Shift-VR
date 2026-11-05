@@ -25,7 +25,7 @@ int LookupActivity(void* pmodel, entvars_t* pev, int activity);
 int LookupActivityHeaviest(void* pmodel, entvars_t* pev, int activity);
 int LookupSequence(void* pmodel, const char* label);
 // BSVR start
-// stock GetSequenceInfo removed, replaced by the extended version below (as in Half-Life-VR)
+// void GetSequenceInfo(void* pmodel, entvars_t* pev, float* pflFrameRate, float* pflGroundSpeed); - original, replaced by the extended version below (as in Half-Life-VR)
 // BSVR end
 int GetSequenceFlags(void* pmodel, entvars_t* pev);
 int LookupAnimationEvents(void* pmodel, entvars_t* pev, float flStart, float flEnd);

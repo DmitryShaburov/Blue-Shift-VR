@@ -58,8 +58,10 @@ typedef enum
 	TLK_WOUND,
 	TLK_MORTAL,
 
+	// BSVR start
 	TLK_GIB_NEUTRAL,
 	TLK_GIB_BLOODY,
+	// BSVR end
 
 	TLK_CGROUPS, // MUST be last entry
 } TALKGROUPNAMES;

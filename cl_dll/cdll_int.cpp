@@ -38,7 +38,9 @@
 #include "vgui_TeamFortressViewport.h"
 #include "filesystem_utils.h"
 
+// BSVR start
 #include "vr/VRRenderer.h"
+// BSVR end
 
 cl_enginefunc_t gEngfuncs;
 CHud gHUD;

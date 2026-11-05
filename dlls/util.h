@@ -172,8 +172,10 @@ inline bool FNullEnt(EOFFSET eoffset)
 inline bool FNullEnt(const edict_t* pent) { return pent == NULL || 0 != pent->free || pent->v.pContainingEntity != pent || FNullEnt(OFFSET(pent)); }
 // BSVR end
 inline bool FNullEnt(entvars_t* pev) { return pev == NULL || FNullEnt(OFFSET(pev)); }
+// BSVR start
 inline bool FWorldEnt(const edict_t* pent) { return pent != nullptr && 0 == pent->free && pent->v.pContainingEntity == pent && OFFSET(pent) == eoNullEntity; }
 inline bool FWorldEnt(entvars_t* pev) { return pev != nullptr && FWorldEnt(ENT(pev)); }
+// BSVR end
 
 // Testing strings for nullity
 #define iStringNull 0

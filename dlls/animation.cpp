@@ -270,7 +270,38 @@ void SequencePrecache(void* pmodel, const char* pSequenceName)
 }
 
 // BSVR start
-// stock GetSequenceInfo removed, replaced by the extended version further below (as in Half-Life-VR)
+// stock GetSequenceInfo, replaced by the extended version further below (as in Half-Life-VR) - original:
+// void GetSequenceInfo(void* pmodel, entvars_t* pev, float* pflFrameRate, float* pflGroundSpeed)
+// {
+// 	studiohdr_t* pstudiohdr;
+//
+// 	pstudiohdr = (studiohdr_t*)pmodel;
+// 	if (!pstudiohdr)
+// 		return;
+//
+// 	mstudioseqdesc_t* pseqdesc;
+//
+// 	if (pev->sequence < 0 || pev->sequence >= pstudiohdr->numseq)
+// 	{
+// 		*pflFrameRate = 0.0;
+// 		*pflGroundSpeed = 0.0;
+// 		return;
+// 	}
+//
+// 	pseqdesc = (mstudioseqdesc_t*)((byte*)pstudiohdr + pstudiohdr->seqindex) + (int)pev->sequence;
+//
+// 	if (pseqdesc->numframes > 1)
+// 	{
+// 		*pflFrameRate = 256 * pseqdesc->fps / (pseqdesc->numframes - 1);
+// 		*pflGroundSpeed = sqrt(pseqdesc->linearmovement[0] * pseqdesc->linearmovement[0] + pseqdesc->linearmovement[1] * pseqdesc->linearmovement[1] + pseqdesc->linearmovement[2] * pseqdesc->linearmovement[2]);
+// 		*pflGroundSpeed = *pflGroundSpeed * pseqdesc->fps / (pseqdesc->numframes - 1);
+// 	}
+// 	else
+// 	{
+// 		*pflFrameRate = 256.0;
+// 		*pflGroundSpeed = 0.0;
+// 	}
+// }
 
 int GetSequenceInfo(void* pmodel, entvars_t* pev, float* pflFrameRate, float* pflGroundSpeed, float* pflFPS, int* piNumFrames, bool* pfIsLooping)
 {
@@ -365,13 +396,19 @@ int GetAnimationEvent(void* pmodel, entvars_t* pev, MonsterEvent_t* pMonsterEven
 
 	for (; index < pseqdesc->numevents; index++)
 	{
+		// BSVR start - client-side events are checked below and passed to pClientAnimEvent
+		// // Don't send client-side events to the server AI
+		// if (pevent[index].event >= EVENT_CLIENT)
+		// 	continue;
+		// BSVR end
+
 		if ((pevent[index].frame >= flStart && pevent[index].frame < flEnd) ||
 			((pseqdesc->flags & STUDIO_LOOPING) != 0 && flEnd >= pseqdesc->numframes - 1 && pevent[index].frame < flEnd - pseqdesc->numframes + 1))
 		{
+			// BSVR start
 			// Don't send client-side events to the server AI
 			if (pevent[index].event >= EVENT_CLIENT)
 			{
-				// BSVR start
 				if (pClientAnimEvent)
 				{
 					pClientAnimEvent->isSet = true;
@@ -379,18 +416,18 @@ int GetAnimationEvent(void* pmodel, entvars_t* pev, MonsterEvent_t* pMonsterEven
 					pClientAnimEvent->options = pevent[index].options;
 					return index + 1;
 				}
-				// BSVR end
 			}
 			else
 			{
-				// BSVR start
 				if (pClientAnimEvent)
 					pClientAnimEvent->isSet = false;
 				// BSVR end
 				pMonsterEvent->event = pevent[index].event;
 				pMonsterEvent->options = pevent[index].options;
 				return index + 1;
+				// BSVR start
 			}
+			// BSVR end
 		}
 	}
 	return 0;

@@ -756,10 +756,10 @@ void CGib::BounceGibTouch(CBaseEntity* pOther)
 			m_cBloodDecals--;
 		}
 
-
-		// BSVR additional condition
+		// BSVR start - additional condition
 		if (!playsound)
 		{
+			// BSVR end
 			if (m_material != matNone && RANDOM_LONG(0, 2) == 0)
 			{
 				// float volume; BSVR moved up
@@ -771,16 +771,18 @@ void CGib::BounceGibTouch(CBaseEntity* pOther)
 				playsound = true;
 				// BSVR end
 			}
+			// BSVR start
 		}
-	}
-
-	if (playsound && material != matNone)
-	{
-		// BSVR start
-		// CBreakable::MaterialSoundRandom(edict(), (Materials)m_material, volume); - original
-		CBreakable::MaterialSoundRandom(edict(), (Materials)material, volume);
 		// BSVR end
 	}
+
+	// BSVR start
+	if (playsound && material != matNone)
+	{
+		// CBreakable::MaterialSoundRandom(edict(), (Materials)m_material, volume); - original
+		CBreakable::MaterialSoundRandom(edict(), (Materials)material, volume);
+	}
+	// BSVR end
 }
 
 //

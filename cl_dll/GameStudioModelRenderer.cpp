@@ -40,7 +40,9 @@
 // Global engine <-> studio model rendering code interface
 extern engine_studio_api_t IEngineStudio;
 
+// BSVR start
 studiohdr_t* Mod_Extradata(const char* callerInfo, cl_entity_t* ent, model_t* mod);
+// BSVR end
 
 
 // The renderer object, created on the stack.

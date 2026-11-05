@@ -1239,8 +1239,9 @@ bool CStudioModelRenderer::StudioDrawModel(int flags)
 		return false;
 	// BSVR end
 
-	m_pStudioHeader = Mod_Extradata("StudioDrawModel", m_pCurrentEntity, m_pRenderModel);
 	// BSVR start
+	// m_pStudioHeader = (studiohdr_t*)IEngineStudio.Mod_Extradata(m_pRenderModel); - original
+	m_pStudioHeader = Mod_Extradata("StudioDrawModel", m_pCurrentEntity, m_pRenderModel);
 	if (!m_pStudioHeader)
 		return false;
 	// BSVR end
@@ -1543,8 +1544,9 @@ bool CStudioModelRenderer::StudioDrawPlayer(int flags, entity_state_t* pplayer)
 	if (m_pRenderModel == NULL)
 		return false;
 
-	m_pStudioHeader = Mod_Extradata("StudioDrawPlayer", m_pCurrentEntity, m_pRenderModel);
 	// BSVR start
+	// m_pStudioHeader = (studiohdr_t*)IEngineStudio.Mod_Extradata(m_pRenderModel); - original
+	m_pStudioHeader = Mod_Extradata("StudioDrawPlayer", m_pCurrentEntity, m_pRenderModel);
 	if (!m_pStudioHeader)
 		return false;
 	// BSVR end
@@ -1666,7 +1668,10 @@ bool CStudioModelRenderer::StudioDrawPlayer(int flags, entity_state_t* pplayer)
 
 			model_t* pweaponmodel = IEngineStudio.GetModelByIndex(pplayer->weaponmodel);
 
+			// BSVR start
+			// m_pStudioHeader = (studiohdr_t*)IEngineStudio.Mod_Extradata(pweaponmodel); - original
 			m_pStudioHeader = Mod_Extradata("StudioDrawPlayer/pplayer->weaponmodel", m_pCurrentEntity, pweaponmodel);
+			// BSVR end
 			// BSVR start wrapped into if
 			if (m_pStudioHeader)
 			{

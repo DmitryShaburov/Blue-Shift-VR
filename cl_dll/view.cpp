@@ -20,7 +20,9 @@
 #include "hltv.h"
 #include "Exports.h"
 
+// BSVR start
 #include "vr/VRRenderer.h"
+// BSVR end
 
 int CL_IsThirdPerson();
 void CL_CameraOffset(float* ofs);

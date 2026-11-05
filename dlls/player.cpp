@@ -3320,8 +3320,10 @@ ReturnSpot:
 
 void CBasePlayer::Spawn()
 {
+	// BSVR start
 	ClearLadderGrabbingControllers();
 	StopPullingLedge();
+	// BSVR end
 
 	m_flStartCharge = gpGlobals->time;
 	m_bIsSpawning = true;
@@ -3476,9 +3478,10 @@ bool CBasePlayer::Save(CSave& save)
 	if (!CBaseMonster::Save(save))
 		return false;
 
+	// BSVR start
 	StoreVROffsetsForLevelchange();
 
-	// BSVR start
+	// return save.WriteFields("PLAYER", this, m_playerSaveData, ARRAYSIZE(m_playerSaveData)); - original
 	bool result = save.WriteFields("PLAYER", this, m_playerSaveData, ARRAYSIZE(m_playerSaveData));
 
 	save.WriteFields("PLAYERVROffsetsForLevelchange", &g_vrLevelChangeData, g_vrLevelChangeDataSaveData, (int)std::size(g_vrLevelChangeDataSaveData));

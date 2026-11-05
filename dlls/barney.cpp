@@ -217,7 +217,9 @@ DEFINE_CUSTOM_SCHEDULES(CBarney){
 	slBarneyEnemyDraw,
 	slBaFaceTarget,
 	slIdleBaStand,
+	// BSVR start
 	slBarneyDisarm,
+	// BSVR end
 };
 
 

@@ -1276,7 +1276,10 @@ const char* GetGameDescription()
 	if (g_pGameRules) // this function may be called before the world has spawned, and the game rules initialized
 		return g_pGameRules->GetGameDescription();
 	else
+		// BSVR start
+		// return "Half-Life"; - original
 		return "Half-Life: Blue Shift VR";
+	// BSVR end
 }
 
 /*

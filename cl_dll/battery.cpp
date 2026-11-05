@@ -117,7 +117,9 @@ bool CHudBattery::Draw(float flTime)
 	y = ScreenHeight - gHUD.m_iFontHeight - gHUD.m_iFontHeight / 2;
 	x = ScreenWidth / 4;
 
+	// BSVR start
 	gVRRenderer.VRHUDDrawBegin(VRHUDRenderType::BATTERY);
+	// BSVR end
 
 	// make sure we have the right sprite handles
 	if (0 == m_hSprite1)

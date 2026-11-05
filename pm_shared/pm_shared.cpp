@@ -2832,8 +2832,11 @@ void PM_Physics_Toss()
 	// add gravity
 	if (pmove->movetype != MOVETYPE_FLY &&
 		pmove->movetype != MOVETYPE_BOUNCEMISSILE &&
+		// BSVR start
+		// pmove->movetype != MOVETYPE_FLYMISSILE) - original
 		pmove->movetype != MOVETYPE_FLYMISSILE &&
 		(pmove->flags & FL_BARNACLED) == 0)
+		// BSVR end
 		PM_AddGravity();
 
 	// move origin
@@ -2951,6 +2954,7 @@ void PM_NoClip()
 	// BSVR end
 }
 
+// BSVR start
 bool PM_TryUnstuck()
 {
 	// Trying to determine if a player can move while being stuck (move away from wall) - Max Makes Mods, 2018-04-01
@@ -3034,6 +3038,7 @@ bool PM_TryUnstuck()
 	// try again ducking
 	return PM_TryUnstuck();
 }
+// BSVR end
 
 // BSVR start
 /*

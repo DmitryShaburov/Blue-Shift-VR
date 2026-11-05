@@ -732,6 +732,7 @@ void UTIL_ScreenShake(const Vector& center, float amplitude, float frequency, fl
 
 			MESSAGE_END();
 
+			// BSVR start
 			MESSAGE_BEGIN(MSG_ONE, gmsgVRScreenShake, nullptr, pPlayer->edict());
 
 			WRITE_FLOAT(localAmplitude / 25.f);
@@ -739,6 +740,7 @@ void UTIL_ScreenShake(const Vector& center, float amplitude, float frequency, fl
 			WRITE_FLOAT(100.f / frequency);
 
 			MESSAGE_END();
+			// BSVR end
 		}
 	}
 }
