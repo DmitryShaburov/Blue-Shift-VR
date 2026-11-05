@@ -854,12 +854,12 @@ void PM_AddCorrectGravity()
 	if (0 != pmove->waterjumptime)
 		return;
 
-	// BSVR end
+	// BSVR start
 	if (IsInWaterAndIsGravityDisabled())
 	{
 		return;
 	}
-	// BSVR start
+	// BSVR end
 
 	if (0 != pmove->gravity)
 		ent_gravity = pmove->gravity;
@@ -964,11 +964,12 @@ int PM_FlyMove()
 		{
 			// BSVR start
 			PM_VR_MoveAwayFromStuckEntityIfPossible(end, trace);
-			// BSVR original commented code
+			// original commented code
 			// // entity is trapped in another solid
 			// VectorCopy(vec3_origin, pmove->velocity);
 			// //Con_DPrintf("Trapped 4\n");
 			// return 4;
+			// BSVR end
 		}
 
 		allFraction += trace.fraction; // BSVR moved from above
@@ -2284,6 +2285,7 @@ void PM_Duck()
 
 			// BSVR start changed condition
 			if (switchToDuck)
+			// BSVR end
 			{
 				// Finish ducking immediately if duck time is over or not on ground
 				// BSVR start commented out

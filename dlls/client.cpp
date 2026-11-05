@@ -1203,7 +1203,7 @@ void ClientPrecache()
 	PRECACHE_SOUND("debris/wood3.wav");
 
 	PRECACHE_SOUND("plats/train_use1.wav"); // use a train
-	// BVVR start
+	// BSVR start
 	PRECACHE_SOUND("plats/train_use2.wav"); // use a train in VR
 	// BSVR end
 

@@ -2064,7 +2064,7 @@ void CBasePlayer::PreThink()
 	// This also means that trains and elevators just move through us. To avoid this, we do appropriate movement handling here.
 	// P.S. In pm_shared.cpp we do some modified normal movement as if we were MOVETYPE_WALK
 	GetGroundEntityHandler().HandleMovingWithSolidGroundEntities();
-	// BSVR start
+	// BSVR end
 
 	UTIL_MakeVectors(pev->v_angle); // is this still used?
 
@@ -5186,6 +5186,7 @@ Vector CBasePlayer::GetGunPosition()
 // 	UTIL_MakeVectors(pev->v_angle + pev->punchangle + m_vecAutoAim);
 // 	return gpGlobals->v_forward;
 // }
+// BSVR end
 
 // BSVR start
 Vector CBasePlayer::GetAimAngles()

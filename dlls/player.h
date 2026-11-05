@@ -393,7 +393,7 @@ private:
 	struct VRLadderGrabbingController
 	{
 		VRControllerID controller;
-		// BSVR changes
+		// BSVR start - changed
 		EHANDLE ladder;
 		// BSVR end
 	};

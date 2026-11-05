@@ -97,7 +97,6 @@ bool IsFingerBoneName(Finger finger, const std::string& name)
 // BSVR start
 // Set by HUD_TempEntUpdate, used here to filter out temp ents when applying scale (as scale is used as a timer in HUD_TempEntUpdate) - Max Makes Mods, 2019-05-26
 std::unordered_set<cl_entity_t*> g_curFrameTempEnts;
-// BSVR end
 
 // Custom implementation of Mod_Extradata based on WinQuake to prevent the engine from
 // crashing to desktop with "Mod_Extradata: caching failed" errors. Instead we display

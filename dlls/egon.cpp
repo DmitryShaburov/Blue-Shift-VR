@@ -319,6 +319,7 @@ void CEgon::Fire(const Vector& vecOrigSrc, const Vector& vecDir)
 				}
 				ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 			}
+			// BSVR end
 
 			if (g_pGameRules->IsMultiplayer())
 			{

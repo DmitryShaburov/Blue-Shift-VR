@@ -647,7 +647,7 @@ void CFuncTank::TrackTarget()
 	else if (pev->avelocity.x < -m_pitchRate)
 		pev->avelocity.x = -m_pitchRate;
 
-	// BSVR added body
+	// BSVR start - added body
 	if (m_pController)
 	{
 		if (CVAR_GET_FLOAT("vr_tankcontrols_instant_turn") != 0.f)

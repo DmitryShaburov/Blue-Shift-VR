@@ -121,7 +121,7 @@ void CHandGrenade::WeaponIdle()
 	if (m_flReleaseThrow == 0 && 0 != m_flStartThrow)
 		m_flReleaseThrow = gpGlobals->time;
 
-	// BSVR - commented out
+	// BSVR start - commented out
 	// if (m_flTimeWeaponIdle > UTIL_WeaponTimeBase())
 	// 	return;
 	// BSVR end

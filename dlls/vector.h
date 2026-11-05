@@ -134,6 +134,7 @@ public:
 	{
 		return Vector(-x, y, z);
 	}
+	// BSVR end
 
 	// Members
 	vec_t x = 0, y = 0, z = 0;

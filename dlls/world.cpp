@@ -511,6 +511,7 @@ void RestoreGlobalState(SAVERESTOREDATA* pSaveData)
 		g_didRestoreSaveGameFail = false;
 		g_didRestoreSaveGameFail_MapChangedToSafety = false;
 	}
+	// BSVR end
 }
 
 

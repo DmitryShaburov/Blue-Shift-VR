@@ -402,7 +402,7 @@ void W_Precache()
 	// BSVR start
 	// VR hand model
 	PRECACHE_MODEL("models/v_hand.mdl");
-	// BSVR ends
+	// BSVR end
 }
 
 
@@ -646,7 +646,6 @@ void CBasePlayerItem::Holster()
 	// m_pPlayer->pev->viewmodel = 0; - original
 	m_pPlayer->pev->viewmodel = MAKE_STRING("models/v_hand.mdl");
 	m_pPlayer->pev->weaponmodel = 0;
-	// BSVR start
 	m_pPlayer->HolsterWeapon(false);
 	// BSVR end
 }
@@ -1059,7 +1058,7 @@ void CBasePlayerWeapon::RetireWeapon()
 	// BSVR end
 }
 
-// BSVR commented out original
+// BSVR start - commented out original
 void CBasePlayerWeapon::DoRetireWeapon()
 {
 	// if (!m_pPlayer || m_pPlayer->m_pActiveItem != this)

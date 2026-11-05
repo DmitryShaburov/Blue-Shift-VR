@@ -1676,7 +1676,7 @@ void EV_TripmineFire(event_args_t* args)
 		return;
 
 	// Grab predicted result for local player
-	// BSVR commented upstream
+	// BSVR start - commented upstream
 	// gEngfuncs.pEventAPI->EV_LocalPlayerViewheight(view_ofs);
 
 	// vecSrc = vecSrc + view_ofs;

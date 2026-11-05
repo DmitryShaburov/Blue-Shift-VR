@@ -927,7 +927,7 @@ bool CTalkMonster::FOkToSpeak()
 	// don't talk while at gunpoint
 	if (vr_flGunPointTime != 0.f)
 		return false;
-	// BSVR stop
+	// BSVR end
 
 	return true;
 }
