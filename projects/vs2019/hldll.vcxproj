@@ -246,9 +246,11 @@ cmd /c ""$(ProjectDir)..\..\filecopy.bat" "$(SolutionDir)../../network" "" "delt
     <ClCompile Include="..\..\dlls\vr\VRRotatableEnt.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRUtil.cpp" />
     <ClCompile Include="..\..\dlls\vr\VRAnimatedModelHelper.cpp" />
+    <ClCompile Include="..\..\dlls\vr\VRAnimation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\dlls\vr\hlmv_mathlib.h" />
+    <ClInclude Include="..\..\dlls\vr\VRAnimation.h" />
     <ClInclude Include="..\..\dlls\vr\VRCommons.h" />
     <ClInclude Include="..\..\dlls\vr\VRController.h" />
     <ClInclude Include="..\..\dlls\vr\VRControllerInteractionManager.h" />

@@ -43,26 +43,9 @@ int GetAnimationEvent(void* pmodel, entvars_t* pev, MonsterEvent_t* pMonsterEven
 bool ExtractBbox(void* pmodel, int sequence, float* mins, float* maxs);
 
 // BSVR start
-struct StudioHitBox
-{
-	Vector abscenter;
-	Vector origin;
-	Vector angles;
-	Vector mins;
-	Vector maxs;
-	int hitgroup = 0;
-};
-struct StudioAttachment
-{
-	Vector pos;
-};
+#include "vr/VRAnimation.h"
 int GetSequenceInfo(void* pmodel, entvars_t* pev, float* pflFrameRate, float* pflGroundSpeed, float* pflFPS = nullptr, int* piNumFrames = nullptr, bool* pfIsLooping = nullptr);
 int GetSequenceInfo(void* pmodel, int sequence, float* pflFrameRate, float* pflGroundSpeed, float* pflFPS = nullptr, int* piNumFrames = nullptr, bool* pfIsLooping = nullptr);
-int GetNumSequences(void* pmodel);
-int GetNumHitboxes(void* pmodel);
-int GetNumBodies(void* pmodel);
-int GetNumAttachments(void* pmodel);
-int GetHitboxesAndAttachments(entvars_t* pev, void* pmodel, int sequence, float frame, StudioHitBox* hitboxes, StudioAttachment* attachments, bool mirrored = false);
 // BSVR end
 
 // From /engine/studio.h

@@ -159,7 +159,8 @@ VR_OBJS = \
 	$(VR_OBJ_DIR)/VRPlayer.o \
 	$(VR_OBJ_DIR)/VRRotatableEnt.o \
 	$(VR_OBJ_DIR)/VRUtil.o \
-	$(VR_OBJ_DIR)/VRAnimatedModelHelper.o
+	$(VR_OBJ_DIR)/VRAnimatedModelHelper.o \
+	$(VR_OBJ_DIR)/VRAnimation.o
 
 all: dirs hl.$(SHLIBEXT)
 

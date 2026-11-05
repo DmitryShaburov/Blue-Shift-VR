@@ -417,6 +417,9 @@
     <ClCompile Include="..\..\dlls\vr\VRAnimatedModelHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\dlls\vr\VRAnimation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\dlls\doors.h">
@@ -675,6 +678,9 @@
       <Filter>Header Files\public</Filter>
     </ClInclude>
     <ClInclude Include="..\..\dlls\vr\hlmv_mathlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dlls\vr\VRAnimation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\dlls\vr\VRCommons.h">
