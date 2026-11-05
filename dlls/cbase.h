@@ -350,14 +350,7 @@ public:
 	virtual bool TakeHealth(float flHealth, int bitsDamageType);
 	virtual void Killed(entvars_t* pevAttacker, int iGib);
 
-	// BSVR start
-	// virtual int BloodColor() { return DONT_BLEED; }
-	// Made BloodColor() non-virtual and moved m_bloodColor member here
-	// to avoid issues when temporarily disabling blood in VR melee code.
-	// - Max Makes Mods, 2019-04-13
-	int m_bloodColor{DONT_BLEED};
-	int BloodColor() { return m_bloodColor; }
-	// BSVR end
+	virtual int BloodColor() { return DONT_BLEED; }
 	virtual void TraceBleed(float flDamage, Vector vecDir, TraceResult* ptr, int bitsDamageType);
 	virtual bool IsTriggered(CBaseEntity* pActivator) { return true; }
 	virtual CBaseToggle* MyTogglePointer() { return NULL; }

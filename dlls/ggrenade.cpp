@@ -371,10 +371,6 @@ void CGrenade::Spawn()
 
 	pev->dmg = 100;
 	m_fRegisteredSound = false;
-
-	// BSVR start
-	m_bloodColor = DONT_BLEED;
-	// BSVR end
 }
 
 

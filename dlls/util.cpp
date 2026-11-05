@@ -1149,6 +1149,12 @@ bool UTIL_IsMasterTriggered(string_t sMaster, CBaseEntity* pActivator)
 
 bool UTIL_ShouldShowBlood(int color)
 {
+	// BSVR start
+	extern bool g_vrSuppressBlood; // set while VR melee hits with a soft weapon (vr/VRControllerInteractionManager.cpp)
+	if (g_vrSuppressBlood)
+		return false;
+	// BSVR end
+
 	if (color != DONT_BLEED)
 	{
 		if (color == BLOOD_COLOR_RED)

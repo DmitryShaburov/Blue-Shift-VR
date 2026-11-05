@@ -2158,7 +2158,7 @@ public:
 	void EXPORT Wait();
 	void Stop() override;
 
-	int BloodColor() { return DONT_BLEED; }
+	int BloodColor() override { return DONT_BLEED; }
 	int Classify() override { return CLASS_MACHINE; }
 	bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType) override;
 	void Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value) override;

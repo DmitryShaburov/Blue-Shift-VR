@@ -60,9 +60,7 @@ public:
 	void EXPORT TumbleThink();
 
 	virtual void BounceSound();
-	// BSVR start - commented out
-	int BloodColor() { return DONT_BLEED; }
-	// BSVR end
+	int BloodColor() override { return DONT_BLEED; }
 	void Killed(entvars_t* pevAttacker, int iGib) override;
 
 	bool m_fRegisteredSound; // whether or not this grenade has issued its DANGER sound to the world sound list yet.

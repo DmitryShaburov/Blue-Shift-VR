@@ -39,7 +39,7 @@ class CSqueakGrenade : public CGrenade
 	int Classify() override;
 	void EXPORT SuperBounceTouch(CBaseEntity* pOther);
 	void EXPORT HuntThink();
-	int BloodColor() { return BLOOD_COLOR_YELLOW; }
+	int BloodColor() override { return BLOOD_COLOR_YELLOW; }
 	void Killed(entvars_t* pevAttacker, int iGib) override;
 	void GibMonster() override;
 

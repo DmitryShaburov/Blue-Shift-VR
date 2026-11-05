@@ -30,6 +30,9 @@
 
 #define bits_COND_CLIENT_PUSH (bits_COND_SPECIAL1)
 
+// Read by UTIL_ShouldShowBlood; true only during a soft-weapon melee hit (see DoDamage)
+bool g_vrSuppressBlood = false;
+
 constexpr const int VR_MAX_ANGRY_GUNPOINT_DIST = 128;
 constexpr const int VR_INITIAL_ANGRY_GUNPOINT_TIME = 2;
 constexpr const int VR_MIN_ANGRY_GUNPOINT_TIME = 2;
@@ -711,12 +714,8 @@ float VRControllerInteractionManager::DoDamage(CBasePlayer* pPlayer, CBaseEntity
 
 		pPlayer->PlayMeleeSmackSound(pEntity, controller.GetWeaponId(), impactPosition, controllerSwingVelocity);
 
-		int backupBlood = pEntity->m_bloodColor;
-		if (IsSoftWeapon(controller.GetWeaponId()))
-		{
-			// Slapping with soft things (hands, snarks or hornetgun) just causes damage, but no blood or decals
-			pEntity->m_bloodColor = DONT_BLEED;
-		}
+		// Slapping with soft things (hands, snarks or hornetgun) just causes damage, but no blood or decals
+		g_vrSuppressBlood = IsSoftWeapon(controller.GetWeaponId());
 		TraceResult fakeTrace = {0};
 		fakeTrace.pHit = pEntity->edict();
 		fakeTrace.vecEndPos = impactPosition;
@@ -728,7 +727,7 @@ float VRControllerInteractionManager::DoDamage(CBasePlayer* pPlayer, CBaseEntity
 		ClearMultiDamage();
 		pEntity->TraceAttack(pPlayer->pev, damage, controllerSwingVelocity.Normalize(), &fakeTrace, UTIL_DamageTypeFromWeapon(controller.GetWeaponId()));
 		ApplyMultiDamage(pPlayer->pev, pPlayer->pev);
-		pEntity->m_bloodColor = backupBlood;
+		g_vrSuppressBlood = false;
 
 		// Entities that support being "baseballed" overwrite this method
 		pEntity->BaseBalled(pPlayer, controllerSwingVelocity);

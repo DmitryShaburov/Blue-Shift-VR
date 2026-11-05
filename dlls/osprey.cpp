@@ -47,7 +47,7 @@ public:
 	void Spawn() override;
 	void Precache() override;
 	int Classify() override { return CLASS_MACHINE; }
-	int BloodColor() { return DONT_BLEED; }
+	int BloodColor() override { return DONT_BLEED; }
 	void Killed(entvars_t* pevAttacker, int iGib) override;
 
 	void UpdateGoal();

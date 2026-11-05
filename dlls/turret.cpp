@@ -63,7 +63,7 @@ public:
 	bool TakeDamage(entvars_t* pevInflictor, entvars_t* pevAttacker, float flDamage, int bitsDamageType) override;
 	int Classify() override;
 
-	int BloodColor() { return DONT_BLEED; }
+	int BloodColor() override { return DONT_BLEED; }
 	void GibMonster() override {} // UNDONE: Throw turret gibs?
 
 	// Think functions

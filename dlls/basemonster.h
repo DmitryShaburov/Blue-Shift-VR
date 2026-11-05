@@ -89,9 +89,7 @@ public:
 
 	int m_lastDamageAmount; // how much damage did monster (player) last take
 							// time based damage counters, decr. 1 per 2 seconds
-	// BSVR start - commented out
-	// int m_bloodColor;		// color of blood particless
-	// BSVR end
+	int m_bloodColor;		// color of blood particless
 
 	int m_failSchedule; // Schedule type to choose if current schedule fails
 
@@ -126,9 +124,7 @@ public:
 
 	// overrideable Monster member functions
 
-	// BSVR start - commented out
-	// int BloodColor() override { return m_bloodColor; }
-	// BSVR end
+	int BloodColor() override { return m_bloodColor; }
 
 	CBaseMonster* MyMonsterPointer() override { return this; }
 	virtual void Look(int iDistance); // basic sight function for monsters
